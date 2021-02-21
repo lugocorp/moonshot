@@ -54,13 +54,13 @@ List* tokenize(FILE* f){
       break;
     }
     fflush(stdout);
-    if(c=='\n') line++;
     int char_class=get_char_class(c);
     if(current_class!=-1 && char_class!=current_class){
       discover_tokens(ls,line,buffer,i,current_class);
       i=0;
     }
     current_class=char_class;
+    if(c=='\n') line++;
     buffer[i++]=c;
   }
   return ls;
@@ -143,10 +143,11 @@ static void discover_tokens(List* ls,int line,char* buffer,int n,int char_class)
       SPECIAL_TOKEN("[",1,TK_SQUARE)
       SPECIAL_TOKEN("]",1,TK_SQUARE)
       else{
-        tk->text=(char*)malloc(sizeof(char)*(n-a+1));
-        strcpy(tk->text,buffer+a);
+        tk->text=(char*)malloc(sizeof(char)*2);
+        tk->text[0]=buffer[a];
         tk->type=TK_MISC;
-        a=n;
+        tk->text[1]=0;
+        a++;
       }
       add_to_list(ls,(void*)tk);
     }

@@ -4,8 +4,9 @@ An optionally-typed object-oriented language that compiles to Lua. This project 
 ## Todo
 - [x] Obtain a grammar for vanilla Lua code
 - [x] Build a tokenizer for Lua source
-- [ ] Write parser to consume tokens and validate the syntax
-- [ ] Write parser to consume tokens and output Lua code
+- [ ] Write parser structure to consume tokens and validate syntax
+- [ ] Test vanilla parser vs official Lua distribution
+- [ ] Write AST traversal to consume tokens and output Lua code
 - [ ] Extend the Lua grammar for the new language
 - [ ] Modify tokenizer for new keywords
 - [ ] Create additional AST nodes as needed for new syntax
@@ -76,10 +77,11 @@ Base Lua Grammar
 Extended Grammar
 ----------
     block -> stmt `end
-    stmt -> (function | if | set | call)*
-    expr -> `name | `nil | tuple | boolean | number | string | function | table | operation | `paren expr `paren | `call
+    stmt -> (function | if | set | call | while | repeat | local | goto | label | return | `break | do | fornum)*
+    expr -> lhs | `nil | `true | `false | number | string | function | table | operation | `paren expr `paren | call
+    while -> `while expr do
+    repeat -> `repeat stmt `until expr
     tuple -> expr (`comma expr)+
-    boolean -> (`true | `false)
     number -> `int+ (`dot `int+)?
     set -> lhs `equal expr
     string -> `quote whatever `quote
@@ -87,6 +89,13 @@ Extended Grammar
     sub -> (`square expr `square | `dot `name)
     operation ->
     function -> `function `name (`dot `name)* `paren expr* `paren block
-    table -> (`curly `curly | `curly `name `equal expr (`comma `name `equal expr)* `curly)
-    if -> `if expr `then block
+    table -> `curly (`name `equal expr (`comma `name `equal expr)* )? `curly)
+    if -> `if expr `then stmt (`elseif expr `then stmt)* (`else stmt)? `end
     call -> lhs `paren expr* `paren
+    local -> `local lhs (`equal expr)?
+    goto -> `goto `name
+    label -> `dbcolon `name `dbcolon
+    return -> `return expr?
+    do -> `do block
+    fornum -> `for `name `equal expr `comma expr (`comma expr)? do
+    forin -> `for `name (`comma `name)+ `in expr (`comma expr)+ do
