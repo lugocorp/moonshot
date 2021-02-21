@@ -3,7 +3,7 @@ An optionally-typed object-oriented language that compiles to Lua. This project 
 
 ## Todo
 - [x] Obtain a grammar for vanilla Lua code
-- [ ] Build a tokenizer for Lua source
+- [x] Build a tokenizer for Lua source
 - [ ] Write parser to consume tokens and validate the syntax
 - [ ] Write parser to consume tokens and output Lua code
 - [ ] Extend the Lua grammar for the new language

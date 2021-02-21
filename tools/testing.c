@@ -6,11 +6,10 @@
 List* tokenize(FILE* f);
 
 int main(int argc,char** argv){
-  const char* code="function hello\n\tif red==5 then\n\n\tend\nend";
+  const char* code="function hello\n\tif red==5 then\n\t\tred=red+7\n\t\tprint(\"Hello there\")\n\tend\nend";
   FILE* f=fmemopen((char*)code,strlen(code),"r");
   List* ls=tokenize(f);
   fclose(f);
-  if(!ls) return 1;
   for(int a=0;a<ls->n;a++){
     Token* tk=(Token*)get_from_list(ls,a);
     if(tk->type==TK_SPACE) printf("\n");

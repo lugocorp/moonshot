@@ -17,7 +17,9 @@ enum TOKENS{
   TK_DBCOLON, TK_EOS,
   TK_FLT, TK_INT, TK_NAME, TK_STRING,
 
-  // New tokens
-  TK_SPACE
+  // New tokens for vanilla lexing
+  TK_PAREN, TK_CURLY, TK_SQUARE,
+  TK_COMMENT, TK_QUOTE,
+  TK_SPACE, TK_MISC
 
 };

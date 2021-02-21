@@ -17,7 +17,7 @@ static int class_whitespace=1;
 static int class_special=2;
 
 // Preemptive function definitions
-static int discover_tokens(List* ls,int line,char* buffer,int n,int char_class);
+static void discover_tokens(List* ls,int line,char* buffer,int n,int char_class);
 
 /*
   Deallocate a Token
@@ -50,23 +50,14 @@ List* tokenize(FILE* f){
   while(1){
     char c=fgetc(f);
     if(feof(f)){
-      if(i && discover_tokens(ls,line,buffer,i,current_class)){
-        for(int a=0;a<ls->n;a++) dealloc_token((Token*)get_from_list(ls,a));
-        dealloc_list(ls);
-        return NULL;
-      }
+      if(i) discover_tokens(ls,line,buffer,i,current_class);
       break;
     }
     fflush(stdout);
     if(c=='\n') line++;
     int char_class=get_char_class(c);
     if(current_class!=-1 && char_class!=current_class){
-      int res=discover_tokens(ls,line,buffer,i,current_class);
-      if(res){
-        for(int a=0;a<ls->n;a++) dealloc_token((Token*)get_from_list(ls,a));
-        dealloc_list(ls);
-        return NULL;
-      }
+      discover_tokens(ls,line,buffer,i,current_class);
       i=0;
     }
     current_class=char_class;
@@ -79,7 +70,7 @@ List* tokenize(FILE* f){
   Generate tokens from a group of similar characters
   Returns 0 if there's no error
 */
-static int discover_tokens(List* ls,int line,char* buffer,int n,int char_class){
+static void discover_tokens(List* ls,int line,char* buffer,int n,int char_class){
   buffer[n]=0;
   if(char_class!=class_special){
     Token* tk=(Token*)malloc(sizeof(Token));
@@ -133,22 +124,31 @@ static int discover_tokens(List* ls,int line,char* buffer,int n,int char_class){
         tk->type=TK_DOTS;
         a+=3;
       }
+      SPECIAL_TOKEN("--[[",4,TK_COMMENT)
       SPECIAL_TOKEN("..",2,TK_DOTS)
       SPECIAL_TOKEN("<=",2,TK_LE)
       SPECIAL_TOKEN(">=",2,TK_GE)
       SPECIAL_TOKEN("==",2,TK_EQ)
       SPECIAL_TOKEN("!=",2,TK_NE)
       SPECIAL_TOKEN("::",2,TK_DBCOLON)
+      SPECIAL_TOKEN("--",2,TK_COMMENT)
       SPECIAL_TOKEN("<",1,TK_SHL)
       SPECIAL_TOKEN(">",1,TK_SHR)
-      SPECIAL_TOKEN(".",1,TK_DOTS)
+      SPECIAL_TOKEN("'",1,TK_QUOTE)
+      SPECIAL_TOKEN("\"",1,TK_QUOTE)
+      SPECIAL_TOKEN("(",1,TK_PAREN)
+      SPECIAL_TOKEN(")",1,TK_PAREN)
+      SPECIAL_TOKEN("{",1,TK_CURLY)
+      SPECIAL_TOKEN("}",1,TK_CURLY)
+      SPECIAL_TOKEN("[",1,TK_SQUARE)
+      SPECIAL_TOKEN("]",1,TK_SQUARE)
       else{
-        dealloc_token(tk);
-        printf("ERROR found unknown token '%s'\n",buffer+a);
-        return 1;
+        tk->text=(char*)malloc(sizeof(char)*(n-a+1));
+        strcpy(tk->text,buffer+a);
+        tk->type=TK_MISC;
+        a=n;
       }
       add_to_list(ls,(void*)tk);
     }
   }
-  return 0;
 }
