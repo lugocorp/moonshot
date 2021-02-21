@@ -73,4 +73,20 @@ Base Lua Grammar
           | 'eq'   | 'ne'  | 'lt'   | 'gt'  | 'le'   | 'ge'
           | 'and'  | 'or'  | 'unm'  | 'len' | 'bnot' | 'not'
 
-## Modified language grammar
+Extended Grammar
+----------
+    block -> stmt `end
+    stmt -> (function | if | set | call)*
+    expr -> `name | `nil | tuple | boolean | number | string | function | table | operation | `paren expr `paren | `call
+    tuple -> expr (`comma expr)+
+    boolean -> (`true | `false)
+    number -> `int+ (`dot `int+)?
+    set -> lhs `equal expr
+    string -> `quote whatever `quote
+    lhs -> `name | `name sub+ | `name (`comma `name)+
+    sub -> (`square expr `square | `dot `name)
+    operation ->
+    function -> `function `name (`dot `name)* `paren expr* `paren block
+    table -> (`curly `curly | `curly `name `equal expr (`comma `name `equal expr)* `curly)
+    if -> `if expr `then block
+    call -> lhs `paren expr* `paren
