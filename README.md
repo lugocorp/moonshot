@@ -4,8 +4,9 @@ An optionally-typed object-oriented language that compiles to Lua. This project 
 ## Todo
 - [x] Obtain a grammar for vanilla Lua code
 - [x] Build a tokenizer for Lua source
-- [ ] Write parser structure to consume tokens and validate syntax
-- [ ] Test vanilla parser vs official Lua distribution
+- [x] Write parser structure to consume tokens and validate syntax
+- [x] Test vanilla parser vs official Lua distribution
+- [ ] Figure out recursive parsing with operators
 - [ ] Write AST traversal to consume tokens and output Lua code
 - [ ] Extend the Lua grammar for the new language
 - [ ] Modify tokenizer for new keywords

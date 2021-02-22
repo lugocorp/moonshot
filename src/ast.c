@@ -27,6 +27,12 @@ void set_token_string(List* ls){
   tokens=ls;
   _i=0;
 }
+int finish_parsing(){
+  while(_i<tokens->n){
+    if(((Token*)get_from_list(tokens,_i++))->type!=TK_SPACE) return 1;
+  }
+  return 0;
+}
 
 // Parse helper functions
 static Token* consume(){
@@ -50,6 +56,7 @@ static Token* check_ahead(int n){
   int a=_i;
   while(n){
     while(a<tokens->n && ((Token*)get_from_list(tokens,a))->type==TK_SPACE) a++;
+    if(n>1 && a<tokens->n) a++;
     n--;
   }
   return (a<tokens->n)?((Token*)get_from_list(tokens,a)):NULL;
@@ -93,6 +100,7 @@ int parse_stmt(){
     else if(tk->type==TK_REPEAT) error=parse_repeat();
     else if(tk->type==TK_WHILE) error=parse_while();
     else if(tk->type==TK_GOTO) error=parse_goto();
+    else if(tk->type==TK_DO) error=parse_do();
     else if(tk->type==TK_FOR){
       int line=tk->line;
       tk=check_ahead(3);
@@ -242,13 +250,13 @@ static int parse_fornum(){
   EXPECT(TK_FOR,"invalid for loop");
   EXPECT(TK_NAME,"invalid for loop");
   SPECIFIC(TK_MISC,"=","invalid for loop");
-  SUBCALL(parse_expr());
+  SUBCALL(parse_number());
   SPECIFIC(TK_MISC,",","invalid for loop");
-  SUBCALL(parse_expr());
+  SUBCALL(parse_number());
   tk=check();
   if(tk && tk->type==TK_MISC && !strcmp(tk->text,",")){
     consume();
-    SUBCALL(parse_expr());
+    SUBCALL(parse_number());
   }
   SUBCALL(parse_do());
   return 0;

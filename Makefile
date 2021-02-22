@@ -6,7 +6,7 @@ LIBNAME:=$(BUILD)/liblang.so
 all: clean $(LIBNAME)
 
 clean:
-	rm -rf $(BUILD) ./test
+	rm -rf $(BUILD)
 
 $(BUILD):
 	mkdir $(BUILD)
@@ -17,6 +17,6 @@ $(BUILD)/%.o: $(BUILD)
 $(LIBNAME): $(OBJ)
 	gcc -shared $(OBJ) -o $(LIBNAME)
 
-test: $(LIBNAME)
-	gcc -c tools/testing.c -o $(BUILD)/test.o
-	gcc $(BUILD)/test.o $(LIBNAME) -o ./test
+$(BUILD)/cli: $(LIBNAME)
+	gcc -c tools/cli.c -o $(BUILD)/cli.o
+	gcc $(BUILD)/cli.o $(LIBNAME) -o $(BUILD)/cli
