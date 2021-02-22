@@ -4,11 +4,12 @@
 #include <stdio.h>
 
 AstNode* parse(List* ls);
+char* get_parse_error();
 List* tokenize(FILE* f);
 
 int main(int argc,char** argv){
-  // FILE* f=fmemopen((char*)code,strlen(code),"r");
-  FILE* f=stdin;
+  const char* code="do y=a.b() ::hello:: goto hello return y end while true do print(\"hello\") end";
+  FILE* f=fmemopen((char*)code,strlen(code),"r");
   List* ls=tokenize(f);
   fclose(f);
   printf("Step 1: Tokenization\n");
@@ -18,6 +19,7 @@ int main(int argc,char** argv){
   }
   printf("\nStep 2: parsing\n");
   AstNode* node=parse(ls);
+  if(!node) printf("%s\n",get_parse_error());
   dealloc_list(ls);
   return node?0:1;
 }

@@ -20,3 +20,7 @@ $(LIBNAME): $(OBJ)
 $(BUILD)/cli: $(LIBNAME)
 	gcc -c tools/cli.c -o $(BUILD)/cli.o
 	gcc $(BUILD)/cli.o $(LIBNAME) -o $(BUILD)/cli
+
+$(BUILD)/test: $(LIBNAME)
+	gcc -c tools/test.c -o $(BUILD)/test.o
+	gcc $(BUILD)/test.o $(LIBNAME) -o $(BUILD)/test

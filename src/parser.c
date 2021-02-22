@@ -1,40 +1,81 @@
 #include "./tokens.h"
 #include "./types.h"
 #include <string.h>
+#include <stdlib.h>
 #include <stdio.h>
-#define SUBCALL(call) if(call) return 1;
-#define EXPECT(t,msg) tk=consume(); \
-  if(!tk){ \
-    printf("ERROR %s\n",(msg)); \
-    return 1; \
-  }else if(tk->type!=(t)){ \
-    printf("ERROR %s on line %i\n",(msg),tk->line); \
-    return 1; \
-  }
-#define SPECIFIC(t,str,msg) tk=consume(); \
-  if(!tk){ \
-    printf("ERROR %s\n",(msg)); \
-    return 1; \
-  }else if(tk->type!=(t) || strcmp(tk->text,(str))){ \
-    printf("ERROR %s on line %i\n",(msg),tk->line); \
-    return 1; \
-  }
-
-// Token string setup
-static int _i;
+#define DEBUG(...) printf(__VA_ARGS__)
+static char error_msg[256];
 static List* tokens;
-void set_token_string(List* ls){
-  tokens=ls;
-  _i=0;
+static int _i;
+
+// Preemptive function declarations
+static AstNode* parse_stmt();
+static AstNode* parse_call_or_set();
+static AstNode* parse_function();
+static AstNode* parse_repeat();
+static AstNode* parse_string();
+static AstNode* parse_number();
+static AstNode* parse_return();
+static AstNode* parse_fornum();
+static AstNode* parse_tuple();
+static AstNode* parse_while();
+static AstNode* parse_local();
+static AstNode* parse_table();
+static AstNode* parse_forin();
+static AstNode* parse_label();
+static AstNode* parse_goto();
+static AstNode* parse_expr();
+static AstNode* parse_lhs();
+static AstNode* parse_if();
+static AstNode* parse_do();
+
+// Errors
+static AstNode* line_error(int line,const char* msg){
+  sprintf(error_msg,"ERROR %s on line %i",msg,line);
+  return NULL;
 }
-int finish_parsing(){
-  while(_i<tokens->n){
-    if(((Token*)get_from_list(tokens,_i++))->type!=TK_SPACE) return 1;
-  }
-  return 0;
+static AstNode* error(Token* tk,const char* msg){
+  if(tk) return line_error(tk->line,msg);
+  sprintf(error_msg,"ERROR %s",msg);
+  return NULL;
 }
 
-// Parse helper functions
+// Parsing interface
+AstNode* parse(List* ls){
+  _i=0;
+  tokens=ls;
+  error_msg[0]=0;
+  AstNode* root=parse_stmt();
+  if(root){
+    while(_i<tokens->n){
+      if(((Token*)get_from_list(tokens,_i++))->type!=TK_SPACE){
+        error(NULL,"unparsed tokens");
+        // deallocate root somehow
+        return NULL;
+      }
+    }
+  }
+  return root;
+}
+char* get_parse_error(){
+  return error_msg;
+}
+
+// Node constructors
+static AstNode* new_node(int type,void* data){
+  AstNode* node=(AstNode*)malloc(sizeof(AstNode));
+  node->type=type;
+  node->data=data;
+  return node;
+}
+static ValueNode* new_value_node(char* type,char* text){
+  ValueNode* node=(ValueNode*)malloc(sizeof(ValueNode));
+  strcpy(node->text,text);
+  strcpy(node->type,type);
+  return node;
+}
+
+// Token consumption functions
 static Token* consume(){
   while(_i<tokens->n && ((Token*)get_from_list(tokens,_i))->type==TK_SPACE) _i++;
   return (_i<tokens->n)?((Token*)get_from_list(tokens,_i++)):NULL;
@@ -61,46 +102,31 @@ static Token* check_ahead(int n){
   }
   return (a<tokens->n)?((Token*)get_from_list(tokens,a)):NULL;
 }
-
-// Preemptive function declarations
-int parse_stmt();
-static int parse_call_or_set();
-static int parse_function();
-static int parse_repeat();
-static int parse_string();
-static int parse_number();
-static int parse_return();
-static int parse_fornum();
-static int parse_tuple();
-static int parse_while();
-static int parse_local();
-static int parse_table();
-static int parse_forin();
-static int parse_label();
-static int parse_goto();
-static int parse_expr();
-static int parse_lhs();
-static int parse_if();
-static int parse_do();
+static int expect(Token* tk,int type){
+  return tk && tk->type==type;
+}
+static int specific(Token* tk,int type,const char* val){
+  return tk && tk->type==type && !strcmp(tk->text,val);
+}
 
 // Statement group parse functions
-int parse_stmt(){
-  printf("Create stmt node, load with other nodes\n");
+static AstNode* parse_stmt(){
   Token* tk;
-  int error=0;
-  while(!error){
+  AstNode* node;
+  while(1){
     tk=check();
     if(!tk) break;
-    if(tk->type==TK_FUNCTION) error=parse_function();
-    else if(tk->type==TK_IF) error=parse_if();
-    else if(tk->type==TK_NAME) error=parse_call_or_set();
-    else if(tk->type==TK_RETURN) error=parse_return();
-    else if(tk->type==TK_DBCOLON) error=parse_label();
-    else if(tk->type==TK_REPEAT) error=parse_repeat();
-    else if(tk->type==TK_WHILE) error=parse_while();
-    else if(tk->type==TK_GOTO) error=parse_goto();
-    else if(tk->type==TK_DO) error=parse_do();
-    else if(tk->type==TK_FOR){
+    //if(expect(tk,TK_FUNCTION)) node=parse_function();
+    //else if(expect(tk,TK_IF)) node=parse_if();
+    /*else */if(expect(tk,TK_NAME)) node=parse_call_or_set();
+    else if(expect(tk,TK_RETURN)) node=parse_return();
+    else if(expect(tk,TK_DBCOLON)) node=parse_label();
+    else if(expect(tk,TK_LOCAL)) node=parse_local();
+    else if(expect(tk,TK_REPEAT)) node=parse_repeat();
+    else if(expect(tk,TK_WHILE)) node=parse_while();
+    else if(expect(tk,TK_GOTO)) node=parse_goto();
+    else if(expect(tk,TK_DO)) node=parse_do();
+    /*else if(expect(tk,TK_FOR)){
       int line=tk->line;
       tk=check_ahead(3);
       if((tk->type==TK_MISC && !strcmp(tk->text,",")) || tk->type==TK_IN) error=parse_forin();
@@ -109,90 +135,106 @@ int parse_stmt(){
         printf("ERROR invalid for loop on line %i\n",line);
         error=1;
       }
-    }
+    }*/
     else break;
+    if(!node) return NULL;
   }
-  return error;
+  return new_node(AST_PRIMITIVE,node);
 }
-static int parse_do(){
-  printf("do node with stmt\n");
-  Token* tk;
-  EXPECT(TK_DO,"invalid do block");
-  SUBCALL(parse_stmt());
-  EXPECT(TK_END,"invalid do block");
-  return 0;
+static AstNode* parse_do(){
+  Token* tk=consume();
+  if(!expect(tk,TK_DO)) return error(tk,"invalid do block");
+  AstNode* node=parse_stmt();
+  if(!node) return NULL;
+  tk=consume();
+  if(!expect(tk,TK_END)) return error(tk,"invalid do block");
+  DEBUG("do stmt\n");
+  return new_node(AST_PRIMITIVE,node);
 }
 
 // Statement parse functions
-static int parse_call_or_set(){
-  SUBCALL(parse_lhs());
+static AstNode* parse_call_or_set(){
+  AstNode* node=parse_lhs();
+  if(!node) return NULL;
   Token* tk=consume();
-  if(tk && tk->type==TK_PAREN && !strcmp(tk->text,"(")){
-    printf("call node\n");
+  if(specific(tk,TK_PAREN,"(")){
     tk=check();
-    if(tk && (tk->type!=TK_PAREN || strcmp(tk->text,")"))) SUBCALL(parse_tuple());
-    SPECIFIC(TK_PAREN,")","invalid function invocation");
-  }else if(tk && tk->type==TK_MISC && !strcmp(tk->text,"=")){
-    printf("set node\n");
-    SUBCALL(parse_expr());
+    if(tk && !specific(tk,TK_PAREN,")")){
+      node=parse_tuple();
+      if(!node) return NULL;
+    }
+    tk=consume();
+    if(!specific(tk,TK_PAREN,")")) return error(tk,"invalid function invocation");
+    DEBUG("call node\n");
+  }else if(specific(tk,TK_MISC,"=")){
+    node=parse_expr();
+    if(!node) return NULL;
+    DEBUG("set node\n");
   }else{
-    printf("ERROR unexpected lhs\n");
-    return 1;
+    return error(tk,"unexpected lhs");
   }
-  return 0;
+  return node;
 }
-static int parse_return(){
-  printf("return\n");
-  Token* tk;
-  EXPECT(TK_RETURN,"invalid return statement");
-  SUBCALL(parse_expr());
-  return 0;
+static AstNode* parse_return(){
+  Token* tk=consume();
+  if(!expect(tk,TK_RETURN)) return error(tk,"invalid return statement");
+  AstNode* node=parse_expr();
+  if(!node) return NULL;
+  return new_node(AST_PRIMITIVE,NULL);
 }
-static int parse_lhs(){
-  printf("lhs\n");
-  Token* tk;
-  EXPECT(TK_NAME,"invalid left-hand side of statement");
+static AstNode* parse_lhs(){ // TODO finalize output
+  Token* tk=consume();
+  if(!expect(tk,TK_NAME)) return error(tk,"invalid left-hand side of statement");
+  DEBUG("lhs: %s\n",tk->text);
   tk=check();
-  if(tk && tk->type==TK_MISC && !strcmp(tk->text,",")){
-    while(tk && tk->type==TK_MISC && !strcmp(tk->text,",")){
+  if(specific(tk,TK_MISC,",")){
+    while(specific(tk,TK_MISC,",")){
       consume();
-      EXPECT(TK_NAME,"invalid left-hand tuple");
+      tk=consume();
+      if(!expect(tk,TK_NAME)) return error(tk,"invalid left-hand tuple");
+      DEBUG(",%s\n",tk->text);
       tk=check();
     }
   }else{
-    tk=check();
     int attempt=(tk)?1:0;
     while(attempt){
-      if(tk->type==TK_SQUARE && !strcmp(tk->text,"[")){
+      if(specific(tk,TK_SQUARE,"[")){
         consume();
-        SUBCALL(parse_expr());
-        SPECIFIC(TK_SQUARE,"]","invalid property");
+        DEBUG("square bracket\n");
+        AstNode* node=parse_expr();
+        if(!node) return NULL;
+        tk=consume();
+        if(!specific(tk,TK_SQUARE,"]")) return error(tk,"invalid property");
       }
-      if(tk->type==TK_MISC && !strcmp(tk->text,".")){
+      if(specific(tk,TK_MISC,".")){
         consume();
-        EXPECT(TK_NAME,"invalid field");
+        tk=consume();
+        DEBUG(".%s\n",tk->text);
+        if(!expect(tk,TK_NAME)) return error(tk,"invalid field");
       }
       tk=check();
-      attempt=(tk && ((tk->type==TK_MISC && !strcmp(tk->text,".")) || (tk->type==TK_SQUARE && !strcmp(tk->text,"["))));
+      attempt=specific(tk,TK_MISC,".") || specific(tk,TK_SQUARE,"[");
     }
   };
-  return 0;
+  return new_node(AST_PRIMITIVE,NULL);
 }
-static int parse_local(){
-  printf("local\n");
-  Token* tk;
-  EXPECT(TK_LOCAL,"invalid local variable declaration");
-  SUBCALL(parse_lhs());
+static AstNode* parse_local(){
+  Token* tk=consume();
+  if(!expect(tk,TK_LOCAL)) return error(tk,"invalid local variable declaration");
+  AstNode* node=parse_lhs();
+  if(!node) return NULL;
   tk=check();
-  if(tk && tk->type==TK_MISC && !strcmp(tk->text,"=")){
+  if(specific(tk,TK_MISC,"=")){
     consume();
-    SUBCALL(parse_expr());
+    node=parse_expr();
+    if(!node) return NULL;
   }
-  return 0;
+  DEBUG("local\n");
+  return new_node(AST_PRIMITIVE,NULL);
 }
 
 // Control parse functions
-static int parse_function(){
+/*static int parse_function(){
   printf("function\n");
   Token* tk;
   EXPECT(TK_FUNCTION,"invalid function");
@@ -211,27 +253,34 @@ static int parse_function(){
   SUBCALL(parse_stmt());
   EXPECT(TK_END,"invalid function");
   return 0;
+}*/
+static AstNode* parse_repeat(){
+  Token* tk=consume();
+  if(!expect(tk,TK_REPEAT)) return error(tk,"invalid repeat statement");
+  AstNode* node=parse_stmt();
+  if(!node) return NULL;
+  tk=consume();
+  if(!expect(tk,TK_UNTIL)) return error(tk,"invalid repeat statement");
+  node=parse_expr();
+  if(!node) return NULL;
+  DEBUG("repeat\n");
+  return new_node(AST_PRIMITIVE,NULL);
 }
-static int parse_repeat(){
-  printf("repeat\n");
-  Token* tk;
-  EXPECT(TK_REPEAT,"invalid repeat statement");
-  SUBCALL(parse_stmt());
-  EXPECT(TK_UNTIL,"invalid repeat statement");
-  SUBCALL(parse_expr());
-  return 0;
+static AstNode* parse_while(){
+  Token* tk=consume();
+  if(!expect(tk,TK_WHILE)) return error(tk,"invalid while statement");
+  AstNode* node=parse_expr();
+  if(!node) return NULL;
+  tk=consume();
+  if(!expect(tk,TK_DO)) return error(tk,"invalid while statement");
+  node=parse_stmt();
+  if(!node) return NULL;
+  tk=consume();
+  if(!expect(tk,TK_END)) return error(tk,"invalid while statement");
+  DEBUG("while\n");
+  return new_node(AST_PRIMITIVE,NULL);
 }
-static int parse_while(){
-  printf("while\n");
-  Token* tk;
-  EXPECT(TK_WHILE,"invalid while statement");
-  SUBCALL(parse_expr());
-  EXPECT(TK_DO,"invalid while statement");
-  SUBCALL(parse_stmt());
-  EXPECT(TK_END,"invalid while statement");
-  return 0;
-}
-static int parse_if(){
+/*static int parse_if(){
   printf("if\n");
   Token* tk;
   EXPECT(TK_IF,"invalid if statement");
@@ -283,104 +332,151 @@ static int parse_forin(){
   SUBCALL(parse_stmt());
   EXPECT(TK_END,"invalid for loop");
   return 0;
+}*/
+static AstNode* parse_label(){
+  char text[256];
+  Token* tk=consume();
+  if(!expect(tk,TK_DBCOLON)) return error(tk,"invalid label");
+  tk=consume();
+  if(!expect(tk,TK_NAME)) return error(tk,"invalid label");
+  strcpy(text,tk->text);
+  tk=consume();
+  if(!expect(tk,TK_DBCOLON)) return error(tk,"invalid label");
+  DEBUG("label %s\n",text);
+  return new_node(AST_PRIMITIVE,NULL);
 }
-static int parse_label(){
-  printf("label\n");
-  Token* tk;
-  EXPECT(TK_DBCOLON,"invalid label");
-  EXPECT(TK_NAME,"invalid label");
-  EXPECT(TK_DBCOLON,"invalid label");
-  return 0;
-}
-static int parse_goto(){
-  printf("goto\n");
-  Token* tk;
-  EXPECT(TK_GOTO,"invalid goto statement");
-  EXPECT(TK_NAME,"invalid goto statement");
-  return 0;
+static AstNode* parse_goto(){
+  char text[256];
+  Token* tk=consume();
+  if(!expect(tk,TK_GOTO)) return error(tk,"invalid goto statement");
+  tk=consume();
+  if(!expect(tk,TK_NAME)) return error(tk,"invalid goto statement");
+  strcpy(text,tk->text);
+  DEBUG("goto %s\n",text);
+  return new_node(AST_PRIMITIVE,NULL);
 }
 
 // Primitive types parse functions
-static int parse_string(){
-  printf("string\n");
-  Token* tk;
-  EXPECT(TK_QUOTE,"invalid string");
+static AstNode* parse_string(){
+  char text[256];
+  Token* tk=consume();
+  if(!expect(tk,TK_QUOTE)) return error(tk,"invalid string");
   char* quote=tk->text;
+  int line=tk->line;
+  strcpy(text,quote);
   tk=consume_next();
-  while(tk && (tk->type!=TK_QUOTE || strcmp(tk->text,quote))) tk=consume_next();
-  return tk==NULL;
-}
-static int parse_number(){
-  printf("number\n");
-  Token* tk;
-  EXPECT(TK_INT,"invalid number");
-  tk=check_next();
-  if(tk->type==TK_MISC && !strcmp(tk->text,".")){
-    consume();
-    EXPECT(TK_INT,"invalid number");
+  while(tk && !specific(tk,TK_QUOTE,quote)){
+    strcat(text,tk->text);
+    tk=consume_next();
   }
-  return 0;
+  if(tk) strcat(text,quote);
+  else return line_error(line,"unclosed string");
+  DEBUG("string %s\n",text);
+  return new_node(AST_PRIMITIVE,new_value_node("string",text));
 }
-static int parse_table(){
-  printf("table\n");
-  Token* tk;
-  SPECIFIC(TK_CURLY,"{","invalid table");
-  tk=check();
-  while(tk && (tk->type!=TK_CURLY || strcmp(tk->text,"}"))){
-    EXPECT(TK_NAME,"invalid table");
-    SPECIFIC(TK_MISC,"=","invalid table");
-    SUBCALL(parse_expr());
-    tk=check();
-    if(tk && (tk->type!=TK_CURLY || strcmp(tk->text,"}"))){
-      SPECIFIC(TK_MISC,",","invalid table");
-      tk=check();
+static AstNode* parse_number(){
+  char type[256];
+  char text[256];
+  Token* tk=consume();
+  if(!expect(tk,TK_INT)) return error(tk,"invalid number");
+  strcpy(text,tk->text);
+  sprintf(type,"int");
+  tk=check_next();
+  if(specific(tk,TK_MISC,".")){
+    sprintf(type,"float");
+    consume();
+    tk=consume();
+    if(!expect(tk,TK_INT)) return error(tk,"invalid number");
+    strcat(text,".");
+    strcat(text,tk->text);
+  }
+  DEBUG("%s %s\n",type,text);
+  return new_node(AST_PRIMITIVE,new_value_node(type,text));
+}
+static AstNode* parse_boolean(){
+  char text[6];
+  Token* tk=consume();
+  if(!expect(tk,TK_TRUE) && !expect(tk,TK_FALSE)) return error(tk,"invalid boolean");
+  strcpy(text,tk->text);
+  DEBUG("boolean %s\n",text);
+  return new_node(AST_PRIMITIVE,new_value_node("boolean",text));
+}
+static AstNode* parse_nil(){
+  char text[4];
+  Token* tk=consume();
+  if(!expect(tk,TK_NIL)) return error(tk,"invalid nil");
+  DEBUG("nil\n");
+  return new_node(AST_PRIMITIVE,new_value_node("boolean","nil"));
+}
+static AstNode* parse_table(){ // TODO finalize table output
+  Token* tk=consume();
+  if(!specific(tk,TK_CURLY,"{")) return error(tk,"invalid table");
+  tk=consume();
+  while(tk && !specific(tk,TK_CURLY,"}")){
+    if(!expect(tk,TK_NAME)) return error(tk,"invalid table");
+    DEBUG("key: %s\n",tk->text);
+    tk=consume();
+    if(!specific(tk,TK_MISC,"=")) return error(tk,"invalid table");
+    AstNode* node=parse_expr();
+    if(!node) return NULL;
+    tk=consume();
+    if(!specific(tk,TK_CURLY,"}")){
+      if(!specific(tk,TK_MISC,",")) return error(tk,"invalid table");
+      tk=consume();
     }
   }
-  SPECIFIC(TK_CURLY,"}","invalid table");
-  return 0;
+  if(!tk) return error(tk,"unclosed table");
+  DEBUG("table\n");
+  return new_node(AST_TABLE,NULL);
 }
 
 // Expression parse functions
-static int parse_tuple(){
-  printf("tuple\n");
-  Token* tk;
-  SUBCALL(parse_expr());
-  tk=check();
-  while(tk && tk->type==TK_MISC && !strcmp(tk->text,",")){
+static AstNode* parse_tuple(){ // TODO finalize output
+  AstNode* node=parse_expr();
+  if(!node) return NULL;
+  Token* tk=check();
+  while(specific(tk,TK_MISC,",")){
     consume();
-    SUBCALL(parse_expr());
+    node=parse_expr();
+    if(!node) return NULL;
     tk=check();
   }
-  return 0;
+  DEBUG("tuple\n");
+  return new_node(AST_PRIMITIVE,NULL);
 }
-static int parse_expr(){
-  printf("expression\n");
+static AstNode* parse_expr(){
+  AstNode* node;
   Token* tk=check();
-  if(!tk) return 1;
-  if(tk->type==TK_NIL) consume();
-  else if(tk->type==TK_TRUE) consume();
-  else if(tk->type==TK_FALSE) consume();
-  else if(tk->type==TK_INT){
-    SUBCALL(parse_number());
-  }else if(tk->type==TK_QUOTE){
-    SUBCALL(parse_string());
-  }else if(tk->type==TK_FUNCTION){
+  if(!tk) return error(tk,"incomplete expression");
+  if(tk->type==TK_NIL) return parse_nil();
+  else if(expect(tk,TK_TRUE) || expect(tk,TK_FALSE)) return parse_boolean();
+  else if(expect(tk,TK_INT)){
+    return parse_number();
+  }else if(expect(tk,TK_QUOTE)){
+    return parse_string();
+  }/*else if(tk->type==TK_FUNCTION){
     SUBCALL(parse_function());
-  }else if(tk->type==TK_PAREN && !strcmp(tk->text,"{")){
-    SUBCALL(parse_table());
-  }else if(tk->type==TK_PAREN && !strcmp(tk->text,"(")){
-    SPECIFIC(TK_PAREN,"(","invalid expression");
-    SUBCALL(parse_expr());
-    SPECIFIC(TK_PAREN,")","invalid expression");
+  }*/else if(specific(tk,TK_CURLY,"{")){
+    return parse_table();
+  }else if(specific(tk,TK_PAREN,"(")){
+    tk=consume();
+    node=parse_expr();
+    if(!node) return NULL;
+    tk=consume();
+    if(!specific(tk,TK_PAREN,")")) return error(tk,"unclosed expression");
+    return node;
   }else if(tk->type==TK_NAME){
-    SUBCALL(parse_lhs());
+    AstNode* node=parse_lhs();
     tk=check();
-    if(tk && tk->type==TK_PAREN && !strcmp(tk->text,"(")){
-      SPECIFIC(TK_PAREN,"(","invalid function invocation");
+    if(specific(tk,TK_PAREN,"(")){
+      consume();
       tk=check();
-      if(tk && (tk->type!=TK_PAREN || strcmp(tk->text,")"))) SUBCALL(parse_tuple());
-      SPECIFIC(TK_PAREN,")","invalid function invocation");
+      if(!specific(tk,TK_PAREN,")")) node=parse_tuple();
+      tk=consume();
+      if(!specific(tk,TK_PAREN,")")) return error(tk,"invalid function invocation");
     }
-  }else return 1;
-  return 0;
+    DEBUG("function call\n");
+    return node;
+  }
+  return error(tk,"unexpected expression");
 }

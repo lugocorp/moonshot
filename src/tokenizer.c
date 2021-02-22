@@ -32,7 +32,7 @@ void dealloc_token(Token* tk){
   Helps detect boundaries for tokens
 */
 static int get_char_class(char c){
-  if(('a'<=c && c<='z') || ('A'<=c && c<='Z') || ('0'<=c && c<='9')) return class_alphanumeric;
+  if(c=='_' || ('a'<=c && c<='z') || ('A'<=c && c<='Z') || ('0'<=c && c<='9')) return class_alphanumeric;
   if(c==' ' || c=='\t' || c=='\n') return class_whitespace;
   return class_special;
 }

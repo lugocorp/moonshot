@@ -38,3 +38,8 @@ typedef struct{
   AstNode* expr;
   List* body;
 } ExprBodyNode;
+
+typedef struct{
+  char text[256];
+  char type[256];
+} ValueNode;
