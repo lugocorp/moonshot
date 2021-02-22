@@ -27,3 +27,14 @@ typedef struct{
 } Token;
 
 void deallocate_token(Token* token);
+
+// AST node types
+typedef struct{
+  void* data;
+  int type;
+} AstNode;
+
+typedef struct{
+  AstNode* expr;
+  List* body;
+} ExprBodyNode;

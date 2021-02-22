@@ -6,7 +6,6 @@ An optionally-typed object-oriented language that compiles to Lua. This project 
 - [x] Build a tokenizer for Lua source
 - [x] Write parser structure to consume tokens and validate syntax
 - [x] Test vanilla parser vs official Lua distribution
-- [ ] Figure out recursive parsing with operators
 - [ ] Write AST traversal to consume tokens and output Lua code
 - [ ] Extend the Lua grammar for the new language
 - [ ] Modify tokenizer for new keywords
@@ -77,10 +76,9 @@ Base Lua Grammar
 
 Extended Grammar
 ----------
-    block -> stmt `end
     stmt -> (function | if | set | call | while | repeat | local | goto | label | return | `break | do | fornum)*
     expr -> lhs | `nil | `true | `false | number | string | function | table | operation | `paren expr `paren | call
-    while -> `while expr do
+    while -> `while expr `do stmt `end
     repeat -> `repeat stmt `until expr
     tuple -> expr (`comma expr)+
     number -> `int+ (`dot `int+)?
@@ -89,7 +87,7 @@ Extended Grammar
     lhs -> `name | `name sub+ | `name (`comma `name)+
     sub -> (`square expr `square | `dot `name)
     operation ->
-    function -> `function `name (`dot `name)* `paren expr* `paren block
+    function -> `function `name (`dot `name)* `paren expr* `paren stmt `do
     table -> `curly (`name `equal expr (`comma `name `equal expr)* )? `curly)
     if -> `if expr `then stmt (`elseif expr `then stmt)* (`else stmt)? `end
     call -> lhs `paren expr* `paren
@@ -97,6 +95,6 @@ Extended Grammar
     goto -> `goto `name
     label -> `dbcolon `name `dbcolon
     return -> `return expr?
-    do -> `do block
-    fornum -> `for `name `equal expr `comma expr (`comma expr)? do
-    forin -> `for `name (`comma `name)+ `in expr (`comma expr)+ do
+    do -> `do stmt `end
+    fornum -> `for `name `equal expr `comma expr (`comma expr)? `do stmt `end
+    forin -> `for `name (`comma `name)+ `in expr (`comma expr)+ `do stmt `end

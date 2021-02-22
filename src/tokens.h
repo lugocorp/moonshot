@@ -23,3 +23,11 @@ enum TOKENS{
   TK_SPACE, TK_MISC
 
 };
+
+/*
+  List of all grammar rules
+*/
+enum RULES{
+  AST_DO, AST_WHILE, AST_IF, AST_REPEAT, // Body (with optional expr) nodes
+  AST_SET // Expr nodes
+};

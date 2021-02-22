@@ -76,7 +76,6 @@ static int parse_while();
 static int parse_local();
 static int parse_table();
 static int parse_forin();
-static int parse_block();
 static int parse_label();
 static int parse_goto();
 static int parse_expr();
@@ -86,7 +85,7 @@ static int parse_do();
 
 // Statement group parse functions
 int parse_stmt(){
-  printf("stmt\n");
+  printf("Create stmt node, load with other nodes\n");
   Token* tk;
   int error=0;
   while(!error){
@@ -115,18 +114,12 @@ int parse_stmt(){
   }
   return error;
 }
-static int parse_block(){
-  printf("block\n");
-  Token* tk;
-  SUBCALL(parse_stmt());
-  EXPECT(TK_END,"unclosed block");
-  return 0;
-}
 static int parse_do(){
-  printf("do\n");
+  printf("do node with stmt\n");
   Token* tk;
   EXPECT(TK_DO,"invalid do block");
-  SUBCALL(parse_block());
+  SUBCALL(parse_stmt());
+  EXPECT(TK_END,"invalid do block");
   return 0;
 }
 
@@ -135,12 +128,12 @@ static int parse_call_or_set(){
   SUBCALL(parse_lhs());
   Token* tk=consume();
   if(tk && tk->type==TK_PAREN && !strcmp(tk->text,"(")){
-    printf("call\n");
+    printf("call node\n");
     tk=check();
     if(tk && (tk->type!=TK_PAREN || strcmp(tk->text,")"))) SUBCALL(parse_tuple());
     SPECIFIC(TK_PAREN,")","invalid function invocation");
   }else if(tk && tk->type==TK_MISC && !strcmp(tk->text,"=")){
-    printf("set\n");
+    printf("set node\n");
     SUBCALL(parse_expr());
   }else{
     printf("ERROR unexpected lhs\n");
@@ -215,7 +208,8 @@ static int parse_function(){
     }
   }
   SPECIFIC(TK_PAREN,")","invalid function");
-  SUBCALL(parse_block());
+  SUBCALL(parse_stmt());
+  EXPECT(TK_END,"invalid function");
   return 0;
 }
 static int parse_repeat(){
@@ -232,7 +226,9 @@ static int parse_while(){
   Token* tk;
   EXPECT(TK_WHILE,"invalid while statement");
   SUBCALL(parse_expr());
-  SUBCALL(parse_do());
+  EXPECT(TK_DO,"invalid while statement");
+  SUBCALL(parse_stmt());
+  EXPECT(TK_END,"invalid while statement");
   return 0;
 }
 static int parse_if(){
@@ -241,7 +237,8 @@ static int parse_if(){
   EXPECT(TK_IF,"invalid if statement");
   SUBCALL(parse_expr());
   EXPECT(TK_THEN,"invalid if statement");
-  SUBCALL(parse_block());
+  SUBCALL(parse_stmt());
+  EXPECT(TK_END,"invalid if statement");
   return 0;
 }
 static int parse_fornum(){
@@ -258,7 +255,9 @@ static int parse_fornum(){
     consume();
     SUBCALL(parse_number());
   }
-  SUBCALL(parse_do());
+  EXPECT(TK_DO,"invalid for loop");
+  SUBCALL(parse_stmt());
+  EXPECT(TK_END,"invalid for loop");
   return 0;
 }
 static int parse_forin(){
@@ -280,7 +279,9 @@ static int parse_forin(){
     SUBCALL(parse_expr());
     tk=check();
   }
-  SUBCALL(parse_do());
+  EXPECT(TK_DO,"invalid for loop");
+  SUBCALL(parse_stmt());
+  EXPECT(TK_END,"invalid for loop");
   return 0;
 }
 static int parse_label(){
