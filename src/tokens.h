@@ -28,8 +28,10 @@ enum TOKENS{
   List of all grammar rules
 */
 enum RULES{
-  AST_DO, AST_WHILE, AST_IF, AST_REPEAT, // Body (with optional expr) nodes
-  AST_SET, // Expr nodes
-  AST_PRIMITIVE, // Value nodes
-  AST_TABLE
+  AST_DO, AST_WHILE, AST_IF, AST_REPEAT, AST_FUNCTION,
+  AST_STMT, AST_PRIMITIVE, AST_SET, AST_CALL,
+  AST_LABEL, AST_GOTO, AST_RETURN, AST_LOCAL,
+  AST_TABLE, AST_TUPLE, AST_LTUPLE,
+  AST_ID, AST_FIELD, AST_SUB,
+  AST_UNKNOWN
 };

@@ -35,11 +35,32 @@ typedef struct{
 } AstNode;
 
 typedef struct{
-  AstNode* expr;
-  List* body;
-} ExprBodyNode;
+  AstNode* node;
+  List* list;
+} AstListNode;
 
 typedef struct{
   char text[256];
   char type[256];
 } ValueNode;
+
+typedef struct{
+  char name[256];
+  List* body;
+  List* args;
+} FunctionNode;
+
+typedef struct{
+  List* keys;
+  List* vals;
+} TableNode;
+
+typedef struct{
+  AstNode* l;
+  AstNode* r;
+} AstAstNode;
+
+typedef struct{
+  AstNode* node;
+  char* text;
+} StringAstNode;

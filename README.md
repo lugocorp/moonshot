@@ -23,6 +23,11 @@ An optionally-typed object-oriented language that compiles to Lua. This project 
 - [ ] Design website
 - [ ] Launch
 
+## CLI options
+- Organize output files after the input files or compress them into a single file
+- Just compile into Lua or also run Lua after compilation
+- Remove comments
+
 ## Notes
 - Lua 5.3 [source code](https://www.lua.org/source/5.3/)
   - [parser](https://www.lua.org/source/5.3/lparser.c.html)
