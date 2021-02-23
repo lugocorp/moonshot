@@ -6,7 +6,7 @@ An optionally-typed object-oriented language that compiles to Lua. This project 
 - [x] Build a tokenizer for Lua source
 - [x] Write parser structure to consume tokens and validate syntax
 - [x] Test vanilla parser vs official Lua distribution
-- [ ] Write AST traversal to consume tokens and output Lua code
+- [ ] Write traversal algorithm to validate AST and output Lua code
 - [ ] Extend the Lua grammar for the new language
 - [ ] Modify tokenizer for new keywords
 - [ ] Create additional AST nodes as needed for new syntax
@@ -26,9 +26,12 @@ An optionally-typed object-oriented language that compiles to Lua. This project 
 ## CLI options
 - Organize output files after the input files or compress them into a single file
 - Just compile into Lua or also run Lua after compilation
+- Input from stdin or a file/directory
+- Output code or just validate syntax
 - Remove comments
 
 ## Notes
+- [Parts of a compiler](https://cs.lmu.edu/~ray/notes/compilerarchitecture/)
 - Lua 5.3 [source code](https://www.lua.org/source/5.3/)
   - [parser](https://www.lua.org/source/5.3/lparser.c.html)
 

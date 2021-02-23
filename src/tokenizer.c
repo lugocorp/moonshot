@@ -76,7 +76,7 @@ static void discover_tokens(List* ls,int line,char* buffer,int n,int char_class)
     Token* tk=(Token*)malloc(sizeof(Token));
     tk->text=(char*)malloc(sizeof(char)*(n+1));
     strcpy(tk->text,buffer);
-    add_to_list(ls,(void*)tk);
+    add_to_list(ls,tk);
     tk->line=line;
     if(char_class==class_whitespace) tk->type=TK_SPACE;
     else{
@@ -149,7 +149,7 @@ static void discover_tokens(List* ls,int line,char* buffer,int n,int char_class)
         tk->text[1]=0;
         a++;
       }
-      add_to_list(ls,(void*)tk);
+      add_to_list(ls,tk);
     }
   }
 }

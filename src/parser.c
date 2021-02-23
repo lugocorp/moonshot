@@ -105,6 +105,11 @@ static StringAstNode* new_string_ast_node(char* text,AstNode* ast){
   node->node=ast;
   return node;
 }
+static char* new_string_node(char* msg){
+  char* text=(char*)malloc(sizeof(char)*(strlen(msg)+1));
+  strcpy(text,msg);
+  return text;
+}
 
 // Token consumption functions
 static Token* consume(){
@@ -169,7 +174,7 @@ static AstNode* parse_stmt(){
       }
     }*/
     else break;
-    if(node) add_to_list(ls,(void*)node);
+    if(node) add_to_list(ls,node);
     else return NULL;
   }
   return new_node(AST_STMT,ls);
@@ -263,11 +268,13 @@ static AstNode* parse_lhs(){
   return node;
 }
 static AstNode* parse_local(){
+  char name[256];
+  AstNode* node=NULL;
   Token* tk=consume();
   if(!expect(tk,TK_LOCAL)) return error(tk,"invalid local variable declaration");
-  AstNode* lhs=parse_lhs();
-  if(!lhs) return NULL;
-  AstNode* node;
+  tk=consume();
+  if(!expect(tk,TK_NAME)) return error(tk,"invalid lcoal variable declaration");
+  strcpy(name,tk->text);
   tk=check();
   if(specific(tk,TK_MISC,"=")){
     consume();
@@ -275,7 +282,7 @@ static AstNode* parse_local(){
     if(!node) return NULL;
   }
   DEBUG("local\n");
-  return new_node(AST_LOCAL,new_ast_ast_node(lhs,node));
+  return new_node(AST_LOCAL,new_string_ast_node(name,node));
 }
 
 // Control parse functions
@@ -292,7 +299,7 @@ static AstNode* parse_function(){
   tk=consume();
   while(tk && !specific(tk,TK_PAREN,")")){
     if(!expect(tk,TK_NAME)) return error(tk,"invalid function argument");
-    add_to_list(args,(void*)tk->text);
+    add_to_list(args,tk->text);
     tk=consume();
     if(specific(tk,TK_MISC,",")){
       tk=consume();
@@ -399,7 +406,7 @@ static AstNode* parse_label(){
   tk=consume();
   if(!expect(tk,TK_DBCOLON)) return error(tk,"invalid label");
   DEBUG("label %s\n",text);
-  return new_node(AST_LABEL,text);
+  return new_node(AST_LABEL,new_string_node(text));
 }
 static AstNode* parse_goto(){
   char text[256];
@@ -409,7 +416,7 @@ static AstNode* parse_goto(){
   if(!expect(tk,TK_NAME)) return error(tk,"invalid goto statement");
   strcpy(text,tk->text);
   DEBUG("goto %s\n",text);
-  return new_node(AST_GOTO,text);
+  return new_node(AST_GOTO,new_string_node(text));
 }
 
 // Primitive types parse functions
@@ -472,11 +479,13 @@ static AstNode* parse_table(){
   tk=consume();
   while(tk && !specific(tk,TK_CURLY,"}")){
     if(!expect(tk,TK_NAME)) return error(tk,"invalid table");
+    add_to_list(keys,tk->text);
     DEBUG("key: %s\n",tk->text);
     tk=consume();
     if(!specific(tk,TK_MISC,"=")) return error(tk,"invalid table");
     AstNode* node=parse_expr();
     if(!node) return NULL;
+    add_to_list(vals,node);
     tk=consume();
     if(!specific(tk,TK_CURLY,"}")){
       if(!specific(tk,TK_MISC,",")) return error(tk,"invalid table");
@@ -493,21 +502,21 @@ static AstNode* parse_tuple(){
   List* ls=new_default_list();
   AstNode* node=parse_expr();
   if(!node) return NULL;
-  add_to_list(ls,(void*)node);
+  add_to_list(ls,node);
   Token* tk=check();
   while(specific(tk,TK_MISC,",")){
     consume();
     node=parse_expr();
     if(!node) return NULL;
-    add_to_list(ls,(void*)node);
+    add_to_list(ls,node);
     tk=check();
   }
   DEBUG("tuple\n");
   return new_node(AST_TUPLE,ls);
 }
 static AstNode* parse_expr(){
-  AstNode* node;
   Token* tk=check();
+  AstNode* node=NULL;
   if(!tk) return error(tk,"incomplete expression");
   if(tk->type==TK_NIL) return parse_nil();
   else if(expect(tk,TK_TRUE) || expect(tk,TK_FALSE)) return parse_boolean();
@@ -527,7 +536,7 @@ static AstNode* parse_expr(){
     if(!specific(tk,TK_PAREN,")")) return error(tk,"unclosed expression");
     return node;
   }else if(tk->type==TK_NAME){
-    AstNode* node=parse_lhs();
+    AstNode* lhs=parse_lhs();
     tk=check();
     if(specific(tk,TK_PAREN,"(")){
       consume();
@@ -537,7 +546,7 @@ static AstNode* parse_expr(){
       if(!specific(tk,TK_PAREN,")")) return error(tk,"invalid function invocation");
     }
     DEBUG("function call\n");
-    return node;
+    return new_node(AST_CALL,new_ast_ast_node(lhs,node));
   }
   return error(tk,"unexpected expression");
 }

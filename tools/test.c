@@ -9,7 +9,7 @@ char* get_parse_error();
 List* tokenize(FILE* f);
 
 int main(int argc,char** argv){
-  const char* code="if a then print() end";
+  const char* code="do while a.b[c] do if a then a=hello() ::hello:: return hello(\"hello there\") goto hello end end return {hello=true} end";
   FILE* f=fmemopen((char*)code,strlen(code),"r");
   List* ls=tokenize(f);
   fclose(f);
@@ -19,7 +19,7 @@ int main(int argc,char** argv){
     if(tk->type!=TK_SPACE) printf("%i: %s\n",tk->type,tk->text);
   }
 
-  printf("\nStep 2: parsing\n");
+  printf("\nStep 2: Parsing\n");
   AstNode* root=parse(ls);
   if(root){
     printf("\nStep 3: AST traversal\n");
