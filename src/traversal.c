@@ -9,6 +9,8 @@ static void* process_function(AstNode* node);
 static void* process_repeat(AstNode* node);
 static void* process_ltuple(AstNode* node);
 static void* process_return(AstNode* node);
+static void* process_fornum(AstNode* node);
+static void* process_forin(AstNode* node);
 static void* process_tuple(AstNode* node);
 static void* process_table(AstNode* node);
 static void* process_local(AstNode* node);
@@ -38,6 +40,8 @@ void* process_node(AstNode* node){
     case AST_REPEAT: return process_repeat(node);
     case AST_LTUPLE: return process_ltuple(node);
     case AST_RETURN: return process_return(node);
+    case AST_FORNUM: return process_fornum(node);
+    case AST_FORIN: return process_forin(node);
     case AST_TUPLE: return process_tuple(node);
     case AST_TABLE: return process_table(node);
     case AST_LOCAL: return process_local(node);
@@ -182,6 +186,34 @@ static void* process_if(AstNode* node){
     process_node((AstNode*)get_from_list(data->list,a));
   }
   printf("if end body\n");
+  return NULL;
+}
+static void* process_fornum(AstNode* node){
+  FornumNode* data=(FornumNode*)(node->data);
+  printf("fornum %s\n",data->name);
+  process_node(data->num1);
+  process_node(data->num2);
+  if(data->num3) process_node(data->num3);
+  printf("fornum body\n");
+  for(int a=0;a<data->body->n;a++){
+    process_node((AstNode*)get_from_list(data->body,a));
+  }
+  printf("fornum end\n");
+  return NULL;
+}
+static void* process_forin(AstNode* node){
+  ForinNode* data=(ForinNode*)(node->data);
+  printf("forin node lhs\n");
+  process_node(data->lhs);
+  printf("forin end lhs\n");
+  printf("forin node lhs\n");
+  process_node(data->tuple);
+  printf("forin end lhs\n");
+  printf("forin body\n");
+  for(int a=0;a<data->body->n;a++){
+    process_node((AstNode*)get_from_list(data->body,a));
+  }
+  printf("forin end\n");
   return NULL;
 }
 static void* process_label(AstNode* node){

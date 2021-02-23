@@ -55,6 +55,12 @@ enum RULES{
   // StringAstNode*
   AST_FIELD, AST_LOCAL,
 
+  // FornumNode*
+  AST_FORNUM,
+
+  // ForinNode*
+  AST_FORIN,
+
   // Miscellaneous
   AST_UNKNOWN
 };

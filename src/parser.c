@@ -105,6 +105,22 @@ static StringAstNode* new_string_ast_node(char* text,AstNode* ast){
   node->node=ast;
   return node;
 }
+static FornumNode* new_fornum_node(char* name,AstNode* num1,AstNode* num2,AstNode* num3,List* body){
+  FornumNode* node=(FornumNode*)malloc(sizeof(FornumNode));
+  strcpy(node->name,name);
+  node->num1=num1;
+  node->num2=num2;
+  node->num3=num3;
+  node->body=body;
+  return node;
+}
+static ForinNode* new_forin_node(AstNode* lhs,AstNode* tuple,List* body){
+  ForinNode* node=(ForinNode*)malloc(sizeof(ForinNode));
+  node->tuple=tuple;
+  node->body=body;
+  node->lhs=lhs;
+  return node;
+}
 static char* new_string_node(char* msg){
   char* text=(char*)malloc(sizeof(char)*(strlen(msg)+1));
   strcpy(text,msg);
@@ -163,17 +179,12 @@ static AstNode* parse_stmt(){
     else if(expect(tk,TK_WHILE)) node=parse_while();
     else if(expect(tk,TK_GOTO)) node=parse_goto();
     else if(expect(tk,TK_DO)) node=parse_do();
-    /*else if(expect(tk,TK_FOR)){
-      int line=tk->line;
+    else if(expect(tk,TK_FOR)){
       tk=check_ahead(3);
-      if((tk->type==TK_MISC && !strcmp(tk->text,",")) || tk->type==TK_IN) error=parse_forin();
-      else if(tk->type==TK_MISC && !strcmp(tk->text,"=")) error=parse_fornum();
-      else{
-        printf("ERROR invalid for loop on line %i\n",line);
-        error=1;
-      }
-    }*/
-    else break;
+      if(specific(tk,TK_MISC,",") || expect(tk,TK_IN)) node=parse_forin();
+      else if(specific(tk,TK_MISC,"=")) node=parse_fornum();
+      else return error(tk,"invalid loop");
+    }else break;
     if(node) add_to_list(ls,node);
     else return NULL;
   }
@@ -353,49 +364,66 @@ static AstNode* parse_if(){
   DEBUG("if\n");
   return new_node(AST_IF,new_ast_list_node(expr,(List*)(body->data)));
 }
-/*static int parse_fornum(){
-  printf("for number\n");
-  Token* tk;
-  EXPECT(TK_FOR,"invalid for loop");
-  EXPECT(TK_NAME,"invalid for loop");
-  SPECIFIC(TK_MISC,"=","invalid for loop");
-  SUBCALL(parse_number());
-  SPECIFIC(TK_MISC,",","invalid for loop");
-  SUBCALL(parse_number());
+static AstNode* parse_fornum(){
+  char name[256];
+  Token* tk=consume();
+  AstNode *num1,*num2,*num3=NULL;
+  if(!expect(tk,TK_FOR)) return error(tk,"invalid for loop");
+  tk=consume();
+  if(!expect(tk,TK_NAME)) return error(tk,"invalid for loop");
+  strcpy(name,tk->text);
+  tk=consume();
+  if(!specific(tk,TK_MISC,"=")) return error(tk,"invalid for loop");
+  num1=parse_number();
+  if(!num1) return NULL;
+  tk=consume();
+  if(!specific(tk,TK_MISC,",")) return error(tk,"invalid for loop");
+  num2=parse_number();
+  if(!num2) return NULL;
   tk=check();
-  if(tk && tk->type==TK_MISC && !strcmp(tk->text,",")){
+  if(specific(tk,TK_MISC,",")){
     consume();
-    SUBCALL(parse_number());
+    num3=parse_number();
+    if(!num3) return NULL;
   }
-  EXPECT(TK_DO,"invalid for loop");
-  SUBCALL(parse_stmt());
-  EXPECT(TK_END,"invalid for loop");
-  return 0;
+  tk=consume();
+  if(!expect(tk,TK_DO)) return error(tk,"invalid for loop");
+  AstNode* body=parse_stmt();
+  if(!body) return NULL;
+  tk=consume();
+  if(!expect(tk,TK_END)) return error(tk,"invalid for loop");
+  DEBUG("for num\n");
+  return new_node(AST_FORNUM,new_fornum_node(name,num1,num2,num3,(List*)(body->data)));
 }
-static int parse_forin(){
-  printf("for in\n");
-  Token* tk;
-  EXPECT(TK_FOR,"invalid for loop");
-  EXPECT(TK_NAME,"invalid for loop");
+static AstNode* parse_forin(){
+  Token* tk=consume();
+  List* lhs=new_default_list();
+  if(!expect(tk,TK_FOR)) return error(tk,"invalid for loop");
+  tk=consume();
+  if(!expect(tk,TK_NAME)) return error(tk,"invalid for loop");
+  add_to_list(lhs,tk->text);
   tk=check();
-  while(tk && tk->type==TK_MISC && !strcmp(tk->text,",")){
+  while(specific(tk,TK_MISC,",")){
     consume();
-    EXPECT(TK_NAME,"invalid for loop");
+    tk=consume();
+    if(!expect(tk,TK_NAME)) return error(tk,"invalid for loop");
+    add_to_list(lhs,tk->text);
     tk=check();
   }
-  EXPECT(TK_IN,"invalid for loop");
-  SUBCALL(parse_expr());
-  tk=check();
-  while(tk && tk->type==TK_MISC && !strcmp(tk->text,",")){
-    consume();
-    SUBCALL(parse_expr());
-    tk=check();
-  }
-  EXPECT(TK_DO,"invalid for loop");
-  SUBCALL(parse_stmt());
-  EXPECT(TK_END,"invalid for loop");
-  return 0;
-}*/
+  tk=consume();
+  if(!expect(tk,TK_IN)) return error(tk,"invalid for loop");
+  AstNode* tuple=parse_tuple();
+  if(!tuple) return NULL;
+  tk=consume();
+  if(!expect(tk,TK_DO)) return error(tk,"invalid for loop");
+  AstNode* body=parse_stmt();
+  if(!body) return NULL;
+  tk=consume();
+  if(!expect(tk,TK_END)) return error(tk,"invalid for loop");
+  AstNode* lhs_node=new_node(AST_LTUPLE,lhs);
+  DEBUG("for in\n");
+  return new_node(AST_FORIN,new_forin_node(lhs_node,tuple,(List*)(body->data)));
+}
 static AstNode* parse_label(){
   char text[256];
   Token* tk=consume();

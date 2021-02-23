@@ -64,3 +64,17 @@ typedef struct{
   AstNode* node;
   char* text;
 } StringAstNode;
+
+typedef struct{
+  char name[256];
+  AstNode* num1;
+  AstNode* num2;
+  AstNode* num3;
+  List* body;
+} FornumNode;
+
+typedef struct{
+  AstNode* lhs;
+  AstNode* tuple;
+  List* body;
+} ForinNode;

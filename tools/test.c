@@ -9,7 +9,8 @@ char* get_parse_error();
 List* tokenize(FILE* f);
 
 int main(int argc,char** argv){
-  const char* code="do while a.b[c] do if a then a=hello() ::hello:: return hello(\"hello there\") goto hello end end return {hello=true} end";
+  //const char* code="do while a.b[c] do if a then a=hello() ::hello:: return hello(\"hello there\") goto hello end end return {hello=true} end";
+  const char* code="for a in hello() do print(\"Sup lol\") end";
   FILE* f=fmemopen((char*)code,strlen(code),"r");
   List* ls=tokenize(f);
   fclose(f);
