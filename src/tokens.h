@@ -20,7 +20,8 @@ enum TOKENS{
   // New tokens for vanilla lexing
   TK_PAREN, TK_CURLY, TK_SQUARE,
   TK_COMMENT, TK_QUOTE,
-  TK_SPACE, TK_MISC
+  TK_UNARY, TK_BINARY,
+  TK_SPACE, TK_MISC,
 
 };
 
@@ -47,13 +48,13 @@ enum RULES{
   AST_TABLE,
 
   // AstAstNode*
-  AST_SET, AST_CALL, AST_SUB,
+  AST_SET, AST_CALL, AST_SUB, AST_BINARY,
 
   // AstNode*
-  AST_RETURN,
+  AST_RETURN, AST_PAREN,
 
   // StringAstNode*
-  AST_FIELD, AST_LOCAL,
+  AST_FIELD, AST_LOCAL, AST_UNARY,
 
   // FornumNode*
   AST_FORNUM,

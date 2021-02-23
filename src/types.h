@@ -78,3 +78,9 @@ typedef struct{
   AstNode* tuple;
   List* body;
 } ForinNode;
+
+typedef struct{
+  char text[256];
+  AstNode* l;
+  AstNode* r;
+} BinaryNode;

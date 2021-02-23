@@ -9,8 +9,11 @@ static void* process_function(AstNode* node);
 static void* process_repeat(AstNode* node);
 static void* process_ltuple(AstNode* node);
 static void* process_return(AstNode* node);
+static void* process_binary(AstNode* node);
 static void* process_fornum(AstNode* node);
+static void* process_paren(AstNode* node);
 static void* process_forin(AstNode* node);
+static void* process_unary(AstNode* node);
 static void* process_tuple(AstNode* node);
 static void* process_table(AstNode* node);
 static void* process_local(AstNode* node);
@@ -40,8 +43,11 @@ void* process_node(AstNode* node){
     case AST_REPEAT: return process_repeat(node);
     case AST_LTUPLE: return process_ltuple(node);
     case AST_RETURN: return process_return(node);
+    case AST_BINARY: return process_binary(node);
     case AST_FORNUM: return process_fornum(node);
     case AST_FORIN: return process_forin(node);
+    case AST_PAREN: return process_paren(node);
+    case AST_UNARY: return process_unary(node);
     case AST_TUPLE: return process_tuple(node);
     case AST_TABLE: return process_table(node);
     case AST_LOCAL: return process_local(node);
@@ -247,4 +253,28 @@ static void* process_tuple(AstNode* node){
     process_node((AstNode*)get_from_list(ls,a));
   }
   printf("tuple end\n");
+}
+
+// Expressions
+static void* process_unary(AstNode* node){
+  StringAstNode* data=(StringAstNode*)(node->data);
+  printf("unary node %s\n",data->text);
+  process_node(data->node);
+  printf("unary end\n");
+  return NULL;
+}
+static void* process_binary(AstNode* node){
+  BinaryNode* data=(BinaryNode*)(node->data);
+  printf("binary node %s\n",data->text);
+  printf("binary node left\n");
+  process_node(data->l);
+  printf("binary end left\n");
+  printf("binary node right\n");
+  process_node(data->r);
+  printf("binary end right\n");
+  printf("binary end\n");
+  return NULL;
+}
+static void* process_paren(AstNode* node){
+  process_node((AstNode*)(node->data));
 }

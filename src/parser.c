@@ -121,6 +121,13 @@ static ForinNode* new_forin_node(AstNode* lhs,AstNode* tuple,List* body){
   node->lhs=lhs;
   return node;
 }
+static BinaryNode* new_binary_node(char* text,AstNode* l,AstNode* r){
+  BinaryNode* node=(BinaryNode*)malloc(sizeof(BinaryNode));
+  strcpy(node->text,text);
+  node->r=r;
+  node->l=l;
+  return node;
+}
 static char* new_string_node(char* msg){
   char* text=(char*)malloc(sizeof(char)*(strlen(msg)+1));
   strcpy(text,msg);
@@ -159,6 +166,18 @@ static int expect(Token* tk,int type){
 }
 static int specific(Token* tk,int type,const char* val){
   return tk && tk->type==type && !strcmp(tk->text,val);
+}
+
+// Precedence
+int precedence(char* op){
+  if(!strcmp(op,"^")) return 6;
+  //if(!strcmp(op,"not") || !strcmp(op,"-")) return 6;
+  if(!strcmp(op,"*") || !strcmp(op,"/")) return 5;
+  if(!strcmp(op,"+") || !strcmp(op,"-")) return 4;
+  if(!strcmp(op,"..")) return 3;
+  if(!strcmp(op,"<=") || !strcmp(op,">=") || !strcmp(op,"<") || !strcmp(op,">") || !strcmp(op,"==") || !strcmp(op,"~=")) return 2;
+  if(!strcmp(op,"and")) return 1;
+  return 0;
 }
 
 // Statement group parse functions
@@ -546,23 +565,25 @@ static AstNode* parse_expr(){
   Token* tk=check();
   AstNode* node=NULL;
   if(!tk) return error(tk,"incomplete expression");
-  if(tk->type==TK_NIL) return parse_nil();
-  else if(expect(tk,TK_TRUE) || expect(tk,TK_FALSE)) return parse_boolean();
-  else if(expect(tk,TK_INT)){
-    return parse_number();
+  if(tk->type==TK_NIL){
+    node=parse_nil();
+  }else if(expect(tk,TK_TRUE) || expect(tk,TK_FALSE)){
+    node=parse_boolean();
+  }else if(expect(tk,TK_INT)){
+    node=parse_number();
   }else if(expect(tk,TK_QUOTE)){
-    return parse_string();
+    node=parse_string();
   }else if(tk->type==TK_FUNCTION){
-    return parse_function();
+    node=parse_function();
   }else if(specific(tk,TK_CURLY,"{")){
-    return parse_table();
+    node=parse_table();
   }else if(specific(tk,TK_PAREN,"(")){
     tk=consume();
     node=parse_expr();
     if(!node) return NULL;
     tk=consume();
     if(!specific(tk,TK_PAREN,")")) return error(tk,"unclosed expression");
-    return node;
+    node=new_node(AST_PAREN,node);
   }else if(tk->type==TK_NAME){
     AstNode* lhs=parse_lhs();
     tk=check();
@@ -572,9 +593,47 @@ static AstNode* parse_expr(){
       if(!specific(tk,TK_PAREN,")")) node=parse_tuple();
       tk=consume();
       if(!specific(tk,TK_PAREN,")")) return error(tk,"invalid function invocation");
+      DEBUG("function call\n");
+      node=new_node(AST_CALL,new_ast_ast_node(lhs,node));
+    }else{
+      node=lhs;
     }
-    DEBUG("function call\n");
-    return new_node(AST_CALL,new_ast_ast_node(lhs,node));
+  }else if(expect(tk,TK_UNARY) || specific(tk,TK_MISC,"-")){
+    char* text=consume()->text;
+    node=parse_expr();
+    if(!node) return NULL;
+    if(node->type==AST_BINARY){
+      BinaryNode* data=(BinaryNode*)(node->data);
+      if(strcmp(data->text,"^")){
+        while(data->l->type==AST_BINARY) data=(BinaryNode*)(data->l->data);
+        data->l=new_node(AST_UNARY,new_string_ast_node(text,data->l));
+      }else{
+        node=new_node(AST_UNARY,new_string_ast_node(text,node));
+      }
+    }else{
+      node=new_node(AST_UNARY,new_string_ast_node(text,node));
+    }
   }
-  return error(tk,"unexpected expression");
+  tk=check();
+  if(expect(tk,TK_BINARY) || specific(tk,TK_MISC,"-")){
+    char* op=tk->text;
+    consume();
+    AstNode* r=parse_expr();
+    if(!r) return NULL;
+    if(r->type==AST_BINARY){
+      BinaryNode* br=(BinaryNode*)(r->data);
+      int lp=precedence(op);
+      int rp=precedence(br->text);
+      if(lp>rp){
+        AstNode* l=new_node(AST_BINARY,new_binary_node(op,node,br->l));
+        node=new_node(AST_BINARY,new_binary_node(br->text,l,br->r));
+      }else{
+        node=new_node(AST_BINARY,new_binary_node(op,node,r));
+      }
+    }else{
+      node=new_node(AST_BINARY,new_binary_node(op,node,r));
+    }
+  }
+  if(!node) error(tk,"unexpected expression");
+  return node;
 }
