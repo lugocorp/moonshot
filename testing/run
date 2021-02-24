@@ -3,12 +3,10 @@ make bin/cli
 [ "$?" == 1 ] && exit 1
 
 tests=( $(ls testing/tests) )
-printf "\ntest name\tcustom\toriginal\n"
 for test in "${tests[@]}"; do
-  cat "testing/tests/$test" | ./bin/cli > /dev/null 2>&1
-  custom="$?"
-  official="$(cat "testing/tests/$test" | lua5.3 2>&1 > /dev/null)"
-  [ "$official" == "" ] && official=0 || official=1
-
-  printf "$test\t$custom\t$official\n"
+  echo "Test: $test"
+  cat "testing/tests/$test" | ./bin/cli | lua5.3 > bin/custom.txt
+  cat "testing/tests/$test" | lua5.3 > bin/vanilla.txt
+  diff bin/custom.txt bin/vanilla.txt
+  echo ""
 done

@@ -1,13 +1,20 @@
-function sup() end
-red=true
+function sup()
+  return red==0
+end
+red=0
 
 function hello()
+  msg="Hello there"
   while sup() do
-    hello="ello gov'nor"
+    msg="Ello gov'nor"
   end
-  if red then
-    hello()
-    red=5
+  if not red then
+    red=1
   end
-  print("Hello there")
+  print("msg")
+end
+
+do
+  print("Goodbye")
+  print("Ad".."i".."os")
 end

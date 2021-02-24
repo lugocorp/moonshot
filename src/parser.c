@@ -3,7 +3,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
-#define DEBUG(...) printf(__VA_ARGS__)
+#define DEBUG(...) //printf(__VA_ARGS__)
 static char error_msg[256];
 static List* tokens;
 static int _i;
@@ -23,6 +23,7 @@ static AstNode* parse_local();
 static AstNode* parse_table();
 static AstNode* parse_forin();
 static AstNode* parse_label();
+static AstNode* parse_break();
 static AstNode* parse_goto();
 static AstNode* parse_expr();
 static AstNode* parse_lhs();
@@ -194,6 +195,7 @@ static AstNode* parse_stmt(){
     else if(expect(tk,TK_RETURN)) node=parse_return();
     else if(expect(tk,TK_DBCOLON)) node=parse_label();
     else if(expect(tk,TK_LOCAL)) node=parse_local();
+    else if(expect(tk,TK_BREAK)) node=parse_break();
     else if(expect(tk,TK_REPEAT)) node=parse_repeat();
     else if(expect(tk,TK_WHILE)) node=parse_while();
     else if(expect(tk,TK_GOTO)) node=parse_goto();
@@ -321,9 +323,13 @@ static AstNode* parse_function(){
   Token* tk=consume();
   List* args=new_default_list();
   if(!expect(tk,TK_FUNCTION)) return error(tk,"invalid function");
-  tk=consume();
-  if(!expect(tk,TK_NAME)) return error(tk,"invalid function");
-  strcpy(name,tk->text);
+  tk=check();
+  if(expect(tk,TK_NAME)){
+    tk=consume();
+    strcpy(name,tk->text);
+  }else{
+    name[0]=0;
+  }
   tk=consume();
   if(!specific(tk,TK_PAREN,"(")) return error(tk,"invalid function");
   tk=consume();
@@ -346,12 +352,12 @@ static AstNode* parse_function(){
 static AstNode* parse_repeat(){
   Token* tk=consume();
   if(!expect(tk,TK_REPEAT)) return error(tk,"invalid repeat statement");
-  AstNode* expr=parse_stmt();
-  if(!expr) return NULL;
+  AstNode* body=parse_stmt();
+  if(!body) return NULL;
   tk=consume();
   if(!expect(tk,TK_UNTIL)) return error(tk,"invalid repeat statement");
-  AstNode* body=parse_expr();
-  if(!body) return NULL;
+  AstNode* expr=parse_expr();
+  if(!expr) return NULL;
   DEBUG("repeat\n");
   return new_node(AST_REPEAT,new_ast_list_node(expr,(List*)(body->data)));
 }
@@ -442,6 +448,11 @@ static AstNode* parse_forin(){
   AstNode* lhs_node=new_node(AST_LTUPLE,lhs);
   DEBUG("for in\n");
   return new_node(AST_FORIN,new_forin_node(lhs_node,tuple,(List*)(body->data)));
+}
+static AstNode* parse_break(){
+  Token* tk=consume();
+  if(!expect(tk,TK_BREAK)) return error(tk,"invalid break");
+  return new_node(AST_BREAK,NULL);
 }
 static AstNode* parse_label(){
   char text[256];

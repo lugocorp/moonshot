@@ -8,13 +8,10 @@ An optionally-typed object-oriented language that extends Lua. This project allo
 - [x] Build a tokenizer for Lua source
 - [x] Write parser structure to consume tokens and validate syntax
 - [x] Test vanilla parser vs official Lua distribution
-- [ ] Write traversal algorithm to validate AST and output Lua code
+- [x] Write traversal algorithm to validate AST and output Lua code
 - [ ] Extend the Lua grammar for the new language
-- [ ] Modify tokenizer for new keywords
-- [ ] Create additional AST nodes as needed for new syntax
-- [ ] Finalize the error system for throwing multiple parsing errors at once
+- [ ] Implement a type checker
 - [ ] Consider lazy tokenizing while parsing (fully streamed approach)
-- [ ] Unit test generated code
 - [ ] Integrate library into command line tool
 - [ ] Double check the commenting
 - [ ] Add a permissive license

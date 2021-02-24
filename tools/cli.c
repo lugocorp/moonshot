@@ -3,21 +3,22 @@
 #include <string.h>
 #include <stdio.h>
 
+void traverse(AstNode* root);
 AstNode* parse(List* ls);
+char* get_parse_error();
 List* tokenize(FILE* f);
 
 int main(int argc,char** argv){
   // FILE* f=fmemopen((char*)code,strlen(code),"r");
   FILE* f=stdin;
   List* ls=tokenize(f);
-  fclose(f);
-  printf("Step 1: Tokenization\n");
-  for(int a=0;a<ls->n;a++){
-    Token* tk=(Token*)get_from_list(ls,a);
-    if(tk->type!=TK_SPACE) printf("%i: %s\n",tk->type,tk->text);
+  AstNode* root=parse(ls);
+  if(root){
+    traverse(root);
+  }else{
+    printf("%s\n",get_parse_error());
   }
-  printf("\nStep 2: parsing\n");
-  AstNode* node=parse(ls);
   dealloc_list(ls);
-  return node?0:1;
+  fclose(f);
+  return root?0:1;
 }

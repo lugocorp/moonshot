@@ -11,6 +11,7 @@ static void* process_ltuple(AstNode* node);
 static void* process_return(AstNode* node);
 static void* process_binary(AstNode* node);
 static void* process_fornum(AstNode* node);
+static void* process_break(AstNode* node);
 static void* process_paren(AstNode* node);
 static void* process_forin(AstNode* node);
 static void* process_unary(AstNode* node);
@@ -45,6 +46,7 @@ void* process_node(AstNode* node){
     case AST_RETURN: return process_return(node);
     case AST_BINARY: return process_binary(node);
     case AST_FORNUM: return process_fornum(node);
+    case AST_BREAK: return process_break(node);
     case AST_FORIN: return process_forin(node);
     case AST_PAREN: return process_paren(node);
     case AST_UNARY: return process_unary(node);
@@ -69,161 +71,167 @@ void* process_node(AstNode* node){
 // Statement group
 static void* process_stmt(AstNode* node){
   List* ls=(List*)(node->data);
-  printf("stmt node\n");
   for(int a=0;a<ls->n;a++){
     process_node((AstNode*)get_from_list(ls,a));
   }
-  printf("stmt end\n");
   return NULL;
 }
 static void* process_do(AstNode* node){
   List* ls=(List*)(node->data);
-  printf("do node\n");
+  printf("do\n");
   for(int a=0;a<ls->n;a++){
     process_node((AstNode*)get_from_list(ls,a));
   }
-  printf("do end\n");
+  printf("end\n");
   return NULL;
 }
 
 // Statement
 static void* process_call(AstNode* node){
   AstAstNode* data=(AstAstNode*)(node->data);
-  printf("invocation node left\n");
   process_node(data->l);
-  printf("invocation end left\n");
-  printf("invocation node right\n");
+  printf("(");
   if(data->r) process_node(data->r);
-  printf("invocation end right\n");
+  printf(")\n");
   return NULL;
 }
 static void* process_set(AstNode* node){
   AstAstNode* data=(AstAstNode*)(node->data);
-  printf("set node left\n");
   process_node(data->l);
-  printf("set end left\n");
-  printf("set node right\n");
+  printf("=");
   process_node(data->r);
-  printf("set end right\n");
+  printf("\n");
   return NULL;
 }
 static void* process_return(AstNode* node){
-  printf("return node\n");
+  printf("return ");
   process_node((AstNode*)(node->data));
-  printf("return end\n");
+  printf("\n");
   return NULL;
 }
 static void* process_ltuple(AstNode* node){
   List* ls=(List*)(node->data);
-  printf("ltuple node\n");
   for(int a=0;a<ls->n;a++){
-    printf("%s\n",(char*)get_from_list(ls,a));
+    if(a) printf(",");
+    printf("%s",(char*)get_from_list(ls,a));
   }
-  printf("ltuple end\n");
   return NULL;
 }
 static void* process_field(AstNode* node){
   StringAstNode* data=(StringAstNode*)(node->data);
-  printf("field node %s\n",data->text);
   process_node(data->node);
-  printf("field end\n");
+  printf(".%s",data->text);
   return NULL;
 }
 static void* process_sub(AstNode* node){
   AstAstNode* data=(AstAstNode*)(node->data);
-  printf("sub node left\n");
   process_node(data->l);
-  printf("sub end left\n");
-  printf("sub node right\n");
+  printf("[");
   process_node(data->r);
-  printf("sub end right\n");
+  printf("]");
   return NULL;
 }
 static void* process_id(AstNode* node){
-  printf("id %s\n",(char*)(node->data));
+  printf("%s",(char*)(node->data));
   return NULL;
 }
 static void* process_local(AstNode* node){
   StringAstNode* data=(StringAstNode*)(node->data);
-  printf("local node %s\n",data->text);
-  process_node(data->node);
-  printf("local node end\n");
+  printf("local %s",data->text);
+  if(data->node){
+    printf("=");
+    process_node(data->node);
+  }
+  printf("\n");
   return NULL;
 }
 
 // Control
 static void* process_function(AstNode* node){
   FunctionNode* data=(FunctionNode*)(node->data);
-  printf("function node\n");
-  printf("function end\n");
+  printf("function");
+  if(data->name[0]) printf(" %s",data->name);
+  printf("(");
+  for(int a=0;a<data->args->n;a++){
+    if(a) printf(",");
+    printf("%s",(char*)get_from_list(data->args,a));
+  }
+  printf(")\n");
+  for(int a=0;a<data->body->n;a++){
+    process_node((AstNode*)get_from_list(data->body,a));
+  }
+  printf("end\n");
   return NULL;
 }
 static void* process_repeat(AstNode* node){
   AstListNode* data=(AstListNode*)(node->data);
-  printf("repeat node body\n");
+  printf("repeat\n");
   for(int a=0;a<data->list->n;a++){
     process_node((AstNode*)get_from_list(data->list,a));
   }
-  printf("repeat end body\n");
-  printf("repeat node expr\n");
+  printf("until ");
   process_node(data->node);
-  printf("repeat end expr\n");
+  printf("\n");
   return NULL;
 }
 static void* process_while(AstNode* node){
   AstListNode* data=(AstListNode*)(node->data);
-  printf("while node expr\n");
+  printf("while ");
   process_node(data->node);
-  printf("while end expr\n");
-  printf("while node body\n");
+  printf(" do\n");
   for(int a=0;a<data->list->n;a++){
     process_node((AstNode*)get_from_list(data->list,a));
   }
-  printf("if end body\n");
+  printf("end\n");
   return NULL;
 }
 static void* process_if(AstNode* node){
   AstListNode* data=(AstListNode*)(node->data);
-  printf("if node expr\n");
+  printf("if ");
   process_node(data->node);
-  printf("if end expr\n");
-  printf("if node body\n");
+  printf(" then\n");
   for(int a=0;a<data->list->n;a++){
     process_node((AstNode*)get_from_list(data->list,a));
   }
-  printf("if end body\n");
+  printf("end\n");
   return NULL;
 }
 static void* process_fornum(AstNode* node){
   FornumNode* data=(FornumNode*)(node->data);
-  printf("fornum %s\n",data->name);
+  printf("for %s=",data->name);
   process_node(data->num1);
+  printf(",");
   process_node(data->num2);
-  if(data->num3) process_node(data->num3);
-  printf("fornum body\n");
+  if(data->num3){
+    printf(",");
+    process_node(data->num3);
+  }
+  printf(" do\n");
   for(int a=0;a<data->body->n;a++){
     process_node((AstNode*)get_from_list(data->body,a));
   }
-  printf("fornum end\n");
+  printf("end\n");
   return NULL;
 }
 static void* process_forin(AstNode* node){
   ForinNode* data=(ForinNode*)(node->data);
-  printf("forin node lhs\n");
+  printf("for ");
   process_node(data->lhs);
-  printf("forin end lhs\n");
-  printf("forin node lhs\n");
+  printf(" in ");
   process_node(data->tuple);
-  printf("forin end lhs\n");
-  printf("forin body\n");
+  printf(" do\n");
   for(int a=0;a<data->body->n;a++){
     process_node((AstNode*)get_from_list(data->body,a));
   }
-  printf("forin end\n");
+  printf("end\n");
+  return NULL;
+}
+static void* process_break(AstNode* node){
+  printf("break\n");
   return NULL;
 }
 static void* process_label(AstNode* node){
-  printf("label %s\n",(char*)(node->data));
+  printf("::%s::\n",(char*)(node->data));
   return NULL;
 }
 static void* process_goto(AstNode* node){
@@ -234,47 +242,49 @@ static void* process_goto(AstNode* node){
 // Primitives
 static void* process_primitive(AstNode* node){
   ValueNode* data=(ValueNode*)(node->data);
-  printf("%s %s\n",data->type,data->text);
+  printf("%s",data->text);
+  return NULL;
 }
 static void* process_table(AstNode* node){
   TableNode* data=(TableNode*)(node->data);
-  printf("table node\n");
+  printf("{");
   for(int a=0;a<data->keys->n;a++){
-    printf("key node %s\n",(char*)get_from_list(data->keys,a));
+    if(a) printf(",");
+    printf("%s=",(char*)get_from_list(data->keys,a));
     process_node((AstNode*)get_from_list(data->vals,a));
-    printf("key end\n");
   }
-  printf("table end\n");
+  printf("}");
+  return NULL;
 }
 static void* process_tuple(AstNode* node){
   List* ls=(List*)(node->data);
-  printf("tuple node\n");
   for(int a=0;a<ls->n;a++){
+    if(a) printf(",");
     process_node((AstNode*)get_from_list(ls,a));
   }
-  printf("tuple end\n");
+  return NULL;
 }
 
 // Expressions
 static void* process_unary(AstNode* node){
   StringAstNode* data=(StringAstNode*)(node->data);
-  printf("unary node %s\n",data->text);
+  printf("(%s ",data->text);
   process_node(data->node);
-  printf("unary end\n");
+  printf(")");
   return NULL;
 }
 static void* process_binary(AstNode* node){
   BinaryNode* data=(BinaryNode*)(node->data);
-  printf("binary node %s\n",data->text);
-  printf("binary node left\n");
+  printf("(");
   process_node(data->l);
-  printf("binary end left\n");
-  printf("binary node right\n");
+  printf(" %s ",data->text);
   process_node(data->r);
-  printf("binary end right\n");
-  printf("binary end\n");
+  printf(")");
   return NULL;
 }
 static void* process_paren(AstNode* node){
+  printf("(");
   process_node((AstNode*)(node->data));
+  printf(")");
+  return NULL;
 }

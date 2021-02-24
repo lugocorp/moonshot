@@ -29,6 +29,9 @@ enum TOKENS{
   List of all grammar rules
 */
 enum RULES{
+  // NULL,
+  AST_BREAK,
+
   // char*
   AST_LABEL, AST_GOTO, AST_ID,
 
