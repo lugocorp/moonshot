@@ -1,4 +1,4 @@
-#include "../src/tokens.h"
+#include "../src/enums.h"
 #include "../src/types.h"
 #include <string.h>
 #include <stdio.h>

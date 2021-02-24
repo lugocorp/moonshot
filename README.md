@@ -1,5 +1,7 @@
-# Optionally-typed Lua wrapper language
-An optionally-typed object-oriented language that compiles to Lua. This project allows you to use your favorite Lua libraries and frameworks with a better organized and error-safe syntax. This is a compiler, so it has no effect on the performance at runtime.
+<img src="moonshot.svg" height="300px"/>
+
+# Moonshot
+An optionally-typed object-oriented language that extends Lua. This project allows you to use your favorite Lua libraries and frameworks with a better organized and error-safe syntax. This is a compiler, so it has no effect on the performance at runtime.
 
 ## Todo
 - [x] Obtain a grammar for vanilla Lua code
@@ -13,9 +15,6 @@ An optionally-typed object-oriented language that compiles to Lua. This project 
 - [ ] Finalize the error system for throwing multiple parsing errors at once
 - [ ] Consider lazy tokenizing while parsing (fully streamed approach)
 - [ ] Unit test generated code
-- [ ] Provide options for code output
-  - Generate one vs multiple files
-  - Remove comments vs leave them
 - [ ] Integrate library into command line tool
 - [ ] Double check the commenting
 - [ ] Add a permissive license
