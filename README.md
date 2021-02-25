@@ -9,7 +9,8 @@ An optionally-typed object-oriented language that extends Lua. This project allo
 - [x] Write parser structure to consume tokens and validate syntax
 - [x] Test vanilla parser vs official Lua distribution
 - [x] Write traversal algorithm to validate AST and output Lua code
-- [ ] Extend the Lua grammar for the new language
+- [x] Extend the Lua grammar for the new language
+- [ ] Add new language features to tokenizer, parser and traverser
 - [ ] Implement a type checker
 - [ ] Consider lazy tokenizing while parsing (fully streamed approach)
 - [ ] Integrate library into command line tool
@@ -31,7 +32,7 @@ An optionally-typed object-oriented language that extends Lua. This project allo
 - Lua 5.3 [source code](https://www.lua.org/source/5.3/)
   - [parser](https://www.lua.org/source/5.3/lparser.c.html)
 
-Base Lua Grammar
+Lua grammar (reference)
 ----------
 
 	block: { stat* }
@@ -78,9 +79,9 @@ Base Lua Grammar
           | 'eq'   | 'ne'  | 'lt'   | 'gt'  | 'le'   | 'ge'
           | 'and'  | 'or'  | 'unm'  | 'len' | 'bnot' | 'not'
 
-Extended Grammar
+Lua Grammar (Simplified)
 ----------
-    stmt -> (function | if | set | call | while | repeat | local | goto | label | return | `break | do | fornum)*
+    stmt -> (function | if | set | call | while | repeat | local | goto | label | return | `break | do | fornum | forin)*
     expr -> lhs | `nil | `true | `false | number | string | function | table | operation | `paren expr `paren | call
     while -> `while expr `do stmt `end
     repeat -> `repeat stmt `until expr
@@ -102,3 +103,44 @@ Extended Grammar
     do -> `do stmt `end
     fornum -> `for `name `equal expr `comma expr (`comma expr)? `do stmt `end
     forin -> `for `name (`comma `name)+ `in expr (`comma expr)+ `do stmt `end
+
+Moonshot Grammar (Simplified)
+----------
+    stmt -> (function | if | set | call | while | repeat | local | goto | label | return | `break | do | fornum | forin | typedef | define)*
+
+    type -> basic_type | (`paren basic_type (`comma basic_type)* `paren)
+    basic_type -> (`var | name_type | (type (`paren (type (`comma type)* )? `paren)?)) (`!)?
+    name_type -> `name (`< type (`comma type)* `>)?
+    ltuple -> (type | `var)? `name (`comma (type | `var)? `name)*
+
+    interface -> `interface name_type (`extends name_type)? `where interface_func+ `end
+    interface_func -> (`function | type) `name `paren ltuple `paren
+    class -> `class name_type (`extends name_type)? (`implements name_type (`comma name_type)* )? `where (function | define)* `end
+
+    typedef -> `typedef name_type type
+    define -> `final? type `name (`equal expr)?
+    local -> `local lhs (`equal expr)?
+    call -> lhs `paren expr* `paren
+    set -> lhs `equal expr
+
+    goto -> `goto `name
+    label -> `dbcolon `name `dbcolon
+    return -> `return expr?
+
+    lhs -> `name | `name sub+ | `name (`comma `name)+
+    sub -> (`square expr `square | `dot `name)
+
+    expr -> lhs | `nil | `true | `false | number | string | function | table | operation | `paren expr `paren | call | `new call
+    function -> (`function | type) `name (`dot `name)* `paren ltuple `paren stmt `do
+    table -> `curly (`name `equal expr (`comma `name `equal expr)* )? `curly)
+    operation -> *unary or binary operations*
+    string -> `quote whatever `quote
+    number -> `int+ (`dot `int+)?
+    tuple -> expr (`comma expr)+
+
+    fornum -> `for `name `equal expr `comma expr (`comma expr)? `do stmt `end
+    forin -> `for `name (`comma `name)+ `in expr (`comma expr)+ `do stmt `end
+    if -> `if expr `then stmt (`elseif expr `then stmt)* (`else stmt)? `end
+    while -> `while expr `do stmt `end
+    repeat -> `repeat stmt `until expr
+    do -> `do stmt `end
