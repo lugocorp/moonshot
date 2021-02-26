@@ -13,6 +13,7 @@ An optionally-typed object-oriented language that extends Lua. This project allo
 - [ ] Add new language features to tokenizer, parser and traverser
 - [ ] Implement a type checker
 - [ ] Consider lazy tokenizing while parsing (fully streamed approach)
+- [ ] Ensure that strings work in all scenarios, double check memory deallocation
 - [ ] Integrate library into command line tool
 - [ ] Double check the commenting
 - [ ] Add a permissive license
@@ -25,7 +26,6 @@ An optionally-typed object-oriented language that extends Lua. This project allo
 - Just compile into Lua or also run Lua after compilation
 - Input from stdin or a file/directory
 - Output code or just validate syntax
-- Remove comments
 
 ## Notes
 - [Parts of a compiler](https://cs.lmu.edu/~ray/notes/compilerarchitecture/)
@@ -109,15 +109,14 @@ Moonshot Grammar (Simplified)
     stmt -> (function | if | set | call | while | repeat | local | goto | label | return | `break | do | fornum | forin | typedef | define)*
 
     type -> basic_type | (`paren basic_type (`comma basic_type)* `paren)
-    basic_type -> (`var | name_type | (type (`paren (type (`comma type)* )? `paren)?)) (`!)?
-    name_type -> `name (`< type (`comma type)* `>)?
+    basic_type -> (`var | `name | (type (`paren (type (`comma type)* )? `paren)?)) (`!)?
     ltuple -> (type | `var)? `name (`comma (type | `var)? `name)*
 
-    interface -> `interface name_type (`extends name_type)? `where interface_func+ `end
+    interface -> `interface `name (`extends `name)? `where interface_func+ `end
     interface_func -> (`function | type) `name `paren ltuple `paren
-    class -> `class name_type (`extends name_type)? (`implements name_type (`comma name_type)* )? `where (function | define)* `end
+    class -> `class `name (`extends `name)? (`implements `name (`comma `name)* )? `where (function | define)* `end
 
-    typedef -> `typedef name_type type
+    typedef -> `typedef `name type
     define -> `final? type `name (`equal expr)?
     local -> `local lhs (`equal expr)?
     call -> lhs `paren expr* `paren
@@ -133,7 +132,7 @@ Moonshot Grammar (Simplified)
     expr -> lhs | `nil | `true | `false | number | string | function | table | operation | `paren expr `paren | call | `new call
     function -> (`function | type) `name (`dot `name)* `paren ltuple `paren stmt `do
     table -> `curly (`name `equal expr (`comma `name `equal expr)* )? `curly)
-    operation -> *unary or binary operations*
+    operation -> * unary or binary operations *
     string -> `quote whatever `quote
     number -> `int+ (`dot `int+)?
     tuple -> expr (`comma expr)+

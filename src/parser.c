@@ -9,6 +9,12 @@ static List* tokens;
 static int _i;
 
 // Preemptive function declarations
+static AstNode* parse_interface();
+static AstNode* parse_typedef();
+static AstNode* parse_define();
+static AstNode* parse_class();
+static AstNode* parse_basic_type();
+static AstNode* parse_type();
 static AstNode* parse_stmt();
 static AstNode* parse_call_or_set();
 static AstNode* parse_function();
@@ -172,13 +178,102 @@ static int specific(Token* tk,int type,const char* val){
 // Precedence
 int precedence(char* op){
   if(!strcmp(op,"^")) return 6;
-  //if(!strcmp(op,"not") || !strcmp(op,"-")) return 6;
   if(!strcmp(op,"*") || !strcmp(op,"/")) return 5;
   if(!strcmp(op,"+") || !strcmp(op,"-")) return 4;
   if(!strcmp(op,"..")) return 3;
   if(!strcmp(op,"<=") || !strcmp(op,">=") || !strcmp(op,"<") || !strcmp(op,">") || !strcmp(op,"==") || !strcmp(op,"~=")) return 2;
   if(!strcmp(op,"and")) return 1;
   return 0;
+}
+
+// Moonshot-specific parse functions
+static AstNode* parse_interface(){
+  return NULL;
+}
+static AstNode* parse_class(){
+  return NULL;
+}
+static AstNode* parse_typedef(){
+  Token* tk=consume();
+  if(!expect(tk,TK_TYPEDEF)) return error(tk,"invalid typedef");
+  tk=consume();
+  if(!expect(tk,TK_NAME)) return error(tk,"invalid typedef");
+  char* name=tk->text;
+  AstNode* node=parse_type();
+  if(!node) return NULL;
+  return new_node(AST_TYPEDEF,new_string_ast_node(name,node));
+}
+static AstNode* parse_define(){
+  AstNode* type=parse_type();
+  AstNode* expr=NULL;
+  Token* tk=consume();
+  if(!expect(tk,TK_NAME)) return error(tk,"invalid definition");
+  char* name=tk->text;
+  tk=check();
+  if(specific(tk,TK_MISC,"=")){
+    consume();
+    expr=parse_expr();
+    if(!expr) return NULL;
+  }
+  return new_node(AST_DEFINE,new_binary_node(name,type,expr));
+}
+static AstNode* parse_basic_type(){
+  Token* tk=check();
+  AstNode* node=NULL;
+  if(expect(tk,TK_VAR)){
+    consume();
+    node=new_node(AST_TYPE_ANY,NULL);
+  }else if(expect(tk,TK_NAME)){
+    consume();
+    node=new_node(AST_TYPE_BASIC,tk->text);
+  }else if(specific(tk,TK_PAREN,"(")){
+    node=parse_type();
+    if(!node) return NULL;
+  }else{
+    return error(tk,"invalid type");
+  }
+  tk=check();
+  while(specific(tk,TK_PAREN,"(")){
+    consume();
+    tk=check();
+    List* ls=new_default_list();
+    while(!specific(tk,TK_PAREN,")")){
+      AstNode* arg=parse_type();
+      if(!arg) return error(tk,"invalid function type");
+      add_to_list(ls,arg);
+      tk=check();
+      if(specific(tk,TK_MISC,",")){
+        consume();
+      }
+    }
+    node=new_node(AST_TYPE_FUNC,new_ast_list_node(node,ls));
+    tk=consume();
+    if(!specific(tk,TK_PAREN,")")) return error(tk,"invalid function type");
+    tk=check();
+  }
+  return node;
+}
+static AstNode* parse_type(){
+  Token* tk=check();
+  if(specific(tk,TK_PAREN,"(")){
+    List* ls=new_default_list();
+    consume();
+    AstNode* e=parse_type();
+    if(!e) return NULL;
+    add_to_list(ls,e);
+    tk=check();
+    while(specific(tk,TK_MISC,",")){
+      consume();
+      e=parse_type();
+      if(!e) return NULL;
+      add_to_list(ls,e);
+      tk=check();
+    }
+    tk=consume();
+    if(!specific(tk,TK_PAREN,")")) return error(tk,"invalid tuple type");
+    return new_node(AST_TYPE_TUPLE,ls);
+  }
+  return parse_basic_type();
 }
 
 // Statement group parse functions
@@ -192,6 +287,7 @@ static AstNode* parse_stmt(){
     if(expect(tk,TK_FUNCTION)) node=parse_function();
     else if(expect(tk,TK_IF)) node=parse_if();
     else if(expect(tk,TK_NAME)) node=parse_call_or_set();
+    else if(expect(tk,TK_TYPEDEF)) node=parse_typedef();
     else if(expect(tk,TK_RETURN)) node=parse_return();
     else if(expect(tk,TK_DBCOLON)) node=parse_label();
     else if(expect(tk,TK_LOCAL)) node=parse_local();

@@ -4,6 +4,9 @@
 
 // Preemptive function declarations
 static void* process_stmt(AstNode* node);
+static void* process_type(AstNode* node);
+static void* process_define(AstNode* node);
+static void* process_typedef(AstNode* node);
 static void* process_primitive(AstNode* node);
 static void* process_function(AstNode* node);
 static void* process_repeat(AstNode* node);
@@ -41,6 +44,8 @@ void* process_node(AstNode* node){
     case AST_STMT: return process_stmt(node);
     case AST_PRIMITIVE: return process_primitive(node);
     case AST_FUNCTION: return process_function(node);
+    case AST_TYPEDEF: return process_typedef(node);
+    case AST_DEFINE: return process_define(node);
     case AST_REPEAT: return process_repeat(node);
     case AST_LTUPLE: return process_ltuple(node);
     case AST_RETURN: return process_return(node);
@@ -65,6 +70,44 @@ void* process_node(AstNode* node){
     case AST_ID: return process_id(node);
     default: printf("Uh oh, you shouldn't be here (%i)\n",node->type);
   }
+  return NULL;
+}
+
+// Extended grammar
+static void* process_type(AstNode* node){
+  if(node->type==AST_TYPE_ANY){
+    printf("var");
+  }else if(node->type==AST_TYPE_BASIC){
+    char* name=(char*)(node->data);
+    printf("%s",name);
+  }else if(node->type==AST_TYPE_TUPLE){
+    List* ls=(List*)(node->data);
+    printf("(");
+    for(int a=0;a<ls->n;a++){
+      if(a) printf(",");
+      process_type((AstNode*)get_from_list(ls,a));
+    }
+    printf(")");
+  }else if(node->type==AST_TYPE_FUNC){
+    AstListNode* data=(AstListNode*)(node->data);
+    process_type(data->node);
+    printf("(");
+    for(int a=0;a<data->list->n;a++){
+      if(a) printf(",");
+      process_type((AstNode*)get_from_list(data->list,a));
+    }
+    printf(")");
+  }
+  return NULL;
+}
+static void* process_define(AstNode* node){
+  return NULL;
+}
+static void* process_typedef(AstNode* node){
+  StringAstNode* data=(StringAstNode*)(node->data);
+  printf("typedef %s -> ",data->text);
+  process_type(data->node);
+  printf("\n");
   return NULL;
 }
 

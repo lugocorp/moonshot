@@ -102,6 +102,15 @@ static void discover_tokens(List* ls,int line,char* buffer,int n,int char_class)
       KEY_TOKEN("true",TK_TRUE)
       KEY_TOKEN("until",TK_UNTIL)
       KEY_TOKEN("while",TK_WHILE)
+      KEY_TOKEN("new",TK_NEW)
+      KEY_TOKEN("final",TK_FINAL)
+      KEY_TOKEN("typedef",TK_TYPEDEF)
+      KEY_TOKEN("var",TK_VAR)
+      KEY_TOKEN("interface",TK_INTERFACE)
+      KEY_TOKEN("class",TK_CLASS)
+      KEY_TOKEN("extends",TK_EXTENDS)
+      KEY_TOKEN("implements",TK_IMPLEMENTS)
+      KEY_TOKEN("where",TK_WHERE)
       else{
         tk->type=TK_INT;
         for(int a=0;a<n;a++){
