@@ -130,7 +130,7 @@ Moonshot Grammar (Simplified)
     sub -> (`square expr `square | `dot `name)
 
     expr -> lhs | `nil | `true | `false | number | string | function | table | operation | `paren expr `paren | call | `new call
-    function -> (`function | type) `name (`dot `name)* `paren ltuple `paren stmt `do
+    function -> type? `function (`name (`dot `name)* )? `paren ltuple `paren stmt `do
     table -> `curly (`name `equal expr (`comma `name `equal expr)* )? `curly)
     operation -> * unary or binary operations *
     string -> `quote whatever `quote

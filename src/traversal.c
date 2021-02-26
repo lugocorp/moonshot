@@ -91,16 +91,21 @@ static void* process_type(AstNode* node){
   }else if(node->type==AST_TYPE_FUNC){
     AstListNode* data=(AstListNode*)(node->data);
     process_type(data->node);
-    printf("(");
+    printf("[");
     for(int a=0;a<data->list->n;a++){
       if(a) printf(",");
       process_type((AstNode*)get_from_list(data->list,a));
     }
-    printf(")");
+    printf("]");
   }
   return NULL;
 }
 static void* process_define(AstNode* node){
+  BinaryNode* data=(BinaryNode*)(node->data);
+  process_type(data->l);
+  printf(" %s=",data->text);
+  process_node(data->r);
+  printf("\n");
   return NULL;
 }
 static void* process_typedef(AstNode* node){

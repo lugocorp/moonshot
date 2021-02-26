@@ -9,7 +9,7 @@ char* get_parse_error();
 List* tokenize(FILE* f);
 
 int main(int argc,char** argv){
-  const char* code="typedef hello void(int,(string,string),string())(int,int)";
+  const char* code="var a=hello (int,int) a=5";
   FILE* f=fmemopen((char*)code,strlen(code),"r");
   List* ls=tokenize(f);
   fclose(f);

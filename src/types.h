@@ -46,6 +46,7 @@ typedef struct{
 
 typedef struct{
   char name[256];
+  AstNode* type;
   List* body;
   List* args;
 } FunctionNode;
