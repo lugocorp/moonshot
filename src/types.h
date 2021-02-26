@@ -85,3 +85,16 @@ typedef struct{
   AstNode* l;
   AstNode* r;
 } BinaryNode;
+
+typedef struct{
+  char parent[256];
+  char name[256];
+  List* ls;
+} InterfaceNode;
+
+typedef struct{
+  List* interfaces;
+  char parent[256];
+  char name[256];
+  List* ls;
+} ClassNode;

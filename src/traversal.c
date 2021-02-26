@@ -8,6 +8,8 @@ static void* process_type(AstNode* node);
 static void* process_define(AstNode* node);
 static void* process_typedef(AstNode* node);
 static void* process_primitive(AstNode* node);
+static void* process_interface(AstNode* node);
+static void* process_class(AstNode* node);
 static void* process_function(AstNode* node);
 static void* process_repeat(AstNode* node);
 static void* process_ltuple(AstNode* node);
@@ -43,6 +45,7 @@ void* process_node(AstNode* node){
   switch(node->type){
     case AST_STMT: return process_stmt(node);
     case AST_PRIMITIVE: return process_primitive(node);
+    case AST_INTERFACE: return process_interface(node);
     case AST_FUNCTION: return process_function(node);
     case AST_TYPEDEF: return process_typedef(node);
     case AST_DEFINE: return process_define(node);
@@ -51,6 +54,7 @@ void* process_node(AstNode* node){
     case AST_RETURN: return process_return(node);
     case AST_BINARY: return process_binary(node);
     case AST_FORNUM: return process_fornum(node);
+    case AST_CLASS: return process_class(node);
     case AST_BREAK: return process_break(node);
     case AST_FORIN: return process_forin(node);
     case AST_PAREN: return process_paren(node);
@@ -91,20 +95,23 @@ static void* process_type(AstNode* node){
   }else if(node->type==AST_TYPE_FUNC){
     AstListNode* data=(AstListNode*)(node->data);
     process_type(data->node);
-    printf("[");
+    printf("(");
     for(int a=0;a<data->list->n;a++){
       if(a) printf(",");
       process_type((AstNode*)get_from_list(data->list,a));
     }
-    printf("]");
+    printf(")");
   }
   return NULL;
 }
 static void* process_define(AstNode* node){
   BinaryNode* data=(BinaryNode*)(node->data);
   process_type(data->l);
-  printf(" %s=",data->text);
-  process_node(data->r);
+  printf(" %s",data->text);
+  if(data->r){
+    printf("=");
+    process_node(data->r);
+  }
   printf("\n");
   return NULL;
 }
@@ -113,6 +120,36 @@ static void* process_typedef(AstNode* node){
   printf("typedef %s -> ",data->text);
   process_type(data->node);
   printf("\n");
+  return NULL;
+}
+static void* process_interface(AstNode* node){
+  InterfaceNode* data=(InterfaceNode*)(node->data);
+  printf("interface %s ",data->name);
+  if(data->parent[0]) printf("extends %s ",data->parent);
+  printf("where\n");
+  for(int a=0;a<data->ls->n;a++){
+    process_node((AstNode*)get_from_list(data->ls,a));
+  }
+  printf("end\n");
+  return NULL;
+}
+static void* process_class(AstNode* node){
+  ClassNode* data=(ClassNode*)(node->data);
+  printf("class %s ",data->name);
+  if(data->parent[0]) printf("extends %s ",data->parent);
+  if(data->interfaces->n){
+    printf("implements ");
+    for(int a=0;a<data->interfaces->n;a++){
+      if(a) printf(",");
+      printf("%s",(char*)get_from_list(data->interfaces,a));
+    }
+    printf(" ");
+  }
+  printf("where\n");
+  for(int a=0;a<data->ls->n;a++){
+    process_node((AstNode*)get_from_list(data->ls,a));
+  }
+  printf("end\n");
   return NULL;
 }
 
@@ -197,6 +234,10 @@ static void* process_local(AstNode* node){
 // Control
 static void* process_function(AstNode* node){
   FunctionNode* data=(FunctionNode*)(node->data);
+  if(data->type->type!=AST_TYPE_ANY){
+    process_type(data->type);
+    printf(" ");
+  }
   printf("function");
   if(data->name[0]) printf(" %s",data->name);
   printf("(");
@@ -205,10 +246,12 @@ static void* process_function(AstNode* node){
     printf("%s",(char*)get_from_list(data->args,a));
   }
   printf(")\n");
-  for(int a=0;a<data->body->n;a++){
-    process_node((AstNode*)get_from_list(data->body,a));
+  if(data->body){
+    for(int a=0;a<data->body->n;a++){
+      process_node((AstNode*)get_from_list(data->body,a));
+    }
+    printf("end\n");
   }
-  printf("end\n");
   return NULL;
 }
 static void* process_repeat(AstNode* node){

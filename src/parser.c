@@ -3,7 +3,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
-#define DEBUG(...) printf(__VA_ARGS__)
+#define DEBUG(...) //printf(__VA_ARGS__)
 static char error_msg[256];
 static List* tokens;
 static int _i;
@@ -18,7 +18,7 @@ static AstNode* parse_type();
 static AstNode* parse_stmt();
 static AstNode* parse_call();
 static AstNode* parse_set();
-static AstNode* parse_function(AstNode* type);
+static AstNode* parse_function(AstNode* type,int include_body);
 static AstNode* parse_repeat();
 static AstNode* parse_string();
 static AstNode* parse_number();
@@ -137,6 +137,25 @@ static BinaryNode* new_binary_node(char* text,AstNode* l,AstNode* r){
   node->l=l;
   return node;
 }
+static InterfaceNode* new_interface_node(char* name,char* parent,List* ls){
+  InterfaceNode* node=(InterfaceNode*)malloc(sizeof(InterfaceNode));
+  if(parent) strcpy(node->parent,parent);
+  else node->parent[0]=0;
+  if(name) strcpy(node->name,name);
+  else node->name[0]=0;
+  node->ls=ls;
+  return node;
+}
+static ClassNode* new_class_node(char* name,char* parent,List* interfaces,List* ls){
+  ClassNode* node=(ClassNode*)malloc(sizeof(ClassNode));
+  if(parent) strcpy(node->parent,parent);
+  else node->parent[0]=0;
+  if(name) strcpy(node->name,name);
+  else node->name[0]=0;
+  node->interfaces=interfaces;
+  node->ls=ls;
+  return node;
+}
 static char* new_string_node(char* msg){
   char* text=(char*)malloc(sizeof(char)*(strlen(msg)+1));
   strcpy(text,msg);
@@ -190,16 +209,93 @@ int precedence(char* op){
 
 // Moonshot-specific parse functions
 static AstNode* parse_interface(){
-  // interface -> `interface `name (`extends `name)? `where interface_func+ `end
-  // interface_func -> (`function | type) `name `paren ltuple `paren
-  /*Token* tk=consume();
+  char* parent=NULL;
+  Token* tk=consume();
+  List* ls=new_default_list();
   if(!expect(tk,TK_INTERFACE)) return error(tk,"invalid interface");
   tk=consume();
-  if(!expect(tk,TK_NAME)) return error(tk,"invalid interface");*/
-  return NULL;
+  if(!expect(tk,TK_NAME)) return error(tk,"invalid interface");
+  char* name=tk->text;
+  tk=check();
+  if(expect(tk,TK_EXTENDS)){
+    consume();
+    tk=consume();
+    if(!expect(tk,TK_NAME)) return error(tk,"invalid interface");
+    parent=tk->text;
+  }
+  tk=consume();
+  if(!expect(tk,TK_WHERE)) return error(tk,"invalid interface");
+  tk=check();
+  while(tk && !expect(tk,TK_END)){
+    AstNode* type=NULL;
+    if(!expect(tk,TK_FUNCTION)){
+      type=parse_type();
+      if(!type) return NULL;
+    }
+    AstNode* func=parse_function(type,0);
+    if(!func) return NULL;
+    add_to_list(ls,func);
+    tk=check();
+  }
+  tk=consume();
+  if(!expect(tk,TK_END)) return error(tk,"invalid interface");
+  return new_node(AST_INTERFACE,new_interface_node(name,parent,ls));
 }
 static AstNode* parse_class(){
-  return NULL;
+  char* parent=NULL;
+  Token* tk=consume();
+  List* ls=new_default_list();
+  List* interfaces=new_default_list();
+  if(!expect(tk,TK_CLASS)) return error(tk,"invalid class");
+  tk=consume();
+  if(!expect(tk,TK_NAME)) return error(tk,"invalid class");
+  char* name=tk->text;
+  tk=check();
+  if(expect(tk,TK_EXTENDS)){
+    consume();
+    tk=consume();
+    if(!expect(tk,TK_NAME)) return error(tk,"invalid class");
+    parent=tk->text;
+    tk=check();
+  }
+  if(expect(tk,TK_IMPLEMENTS)){
+    consume();
+    tk=consume();
+    if(!expect(tk,TK_NAME)) return error(tk,"invalid class");
+    add_to_list(interfaces,tk->text);
+    tk=check();
+    while(specific(tk,TK_MISC,",")){
+      consume();
+      tk=consume();
+      if(!expect(tk,TK_NAME)) return error(tk,"invalid class");
+      add_to_list(interfaces,tk->text);
+      tk=check();
+    }
+  }
+  tk=consume();
+  if(!expect(tk,TK_WHERE)) return error(tk,"invalid class");
+  tk=check();
+  while(tk && !expect(tk,TK_END)){
+    AstNode* node=NULL;
+    if(expect(tk,TK_FUNCTION)){
+      node=parse_function(NULL,1);
+    }else{
+      AstNode* type=parse_type();
+      if(!type) return NULL;
+      tk=check();
+      if(expect(tk,TK_FUNCTION)){
+        node=parse_function(type,1);
+      }else{
+        node=parse_define(type);
+      }
+    }
+    if(!node) return NULL;
+    add_to_list(ls,node);
+    tk=check();
+  }
+  tk=consume();
+  if(!expect(tk,TK_END)) return error(tk,"invalid class");
+  return new_node(AST_CLASS,new_class_node(name,parent,interfaces,ls));
 }
 static AstNode* parse_typedef(){
   Token* tk=consume();
@@ -244,7 +340,7 @@ static AstNode* parse_basic_type(){
     consume();
     tk=check();
     List* ls=new_default_list();
-    while(!specific(tk,TK_PAREN,")")){
+    while(tk && !specific(tk,TK_PAREN,")")){
       AstNode* arg=parse_type();
       if(!arg) return error(tk,"invalid function type");
       add_to_list(ls,arg);
@@ -291,8 +387,10 @@ static AstNode* parse_stmt(){
   while(1){
     tk=check();
     if(!tk) break;
-    if(expect(tk,TK_FUNCTION)) node=parse_function(NULL);
+    if(expect(tk,TK_FUNCTION)) node=parse_function(NULL,1);
     else if(expect(tk,TK_IF)) node=parse_if();
+    else if(expect(tk,TK_CLASS)) node=parse_class();
+    else if(expect(tk,TK_INTERFACE)) node=parse_interface();
     else if(expect(tk,TK_TYPEDEF)) node=parse_typedef();
     else if(expect(tk,TK_RETURN)) node=parse_return();
     else if(expect(tk,TK_DBCOLON)) node=parse_label();
@@ -309,7 +407,7 @@ static AstNode* parse_stmt(){
         if(expect(tk,TK_NAME)){
           node=parse_define(type);
         }else if(expect(tk,TK_FUNCTION)){
-          node=parse_function(type);
+          node=parse_function(type,1);
         }else{
           node=error(tk,"invalid statement");
         }
@@ -329,7 +427,7 @@ static AstNode* parse_stmt(){
         if(expect(tk,TK_NAME)){
           node=parse_define(type);
         }else if(expect(tk,TK_FUNCTION)){
-          node=parse_function(type);
+          node=parse_function(type,1);
         }else{
           node=error(tk,"invalid statement");
         }
@@ -459,7 +557,7 @@ static AstNode* parse_local(){
 }
 
 // Control parse functions
-static AstNode* parse_function(AstNode* type){
+static AstNode* parse_function(AstNode* type,int include_body){
   char name[256];
   Token* tk=consume();
   List* args=new_default_list();
@@ -484,12 +582,16 @@ static AstNode* parse_function(AstNode* type){
     }
   }
   if(!tk) return error(tk,"invalid function");
-  AstNode* node=parse_stmt();
-  if(!node) return NULL;
-  tk=consume();
-  if(!expect(tk,TK_END)) return error(tk,"invalid function");
-  DEBUG("Function %s (%i args) (%i stmts)\n",name,args->n,((List*)(node->data))->n);
-  return new_node(AST_FUNCTION,new_function_node(name,type,args,(List*)(node->data)));
+  List* ls=NULL;
+  if(include_body){
+    AstNode* node=parse_stmt();
+    if(!node) return NULL;
+    tk=consume();
+    if(!expect(tk,TK_END)) return error(tk,"invalid function");
+    ls=(List*)(node->data);
+  }
+  DEBUG("Function %s (%i args) (%i stmts)\n",name,args->n,ls?ls->n:0);
+  return new_node(AST_FUNCTION,new_function_node(name,type,args,ls));
 }
 static AstNode* parse_repeat(){
   Token* tk=consume();
@@ -727,7 +829,7 @@ static AstNode* parse_expr(){
   }else if(expect(tk,TK_QUOTE)){
     node=parse_string();
   }else if(tk->type==TK_FUNCTION){
-    node=parse_function(NULL);
+    node=parse_function(NULL,1);
   }else if(specific(tk,TK_CURLY,"{")){
     node=parse_table();
   }else if(specific(tk,TK_PAREN,"(")){

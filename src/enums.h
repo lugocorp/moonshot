@@ -50,6 +50,9 @@ enum RULES{
   AST_PRIMITIVE,
 
   // FunctionNode*
+  AST_INTERFACE,
+
+  // FunctionNode*
   AST_FUNCTION,
 
   // TableNode*
@@ -74,5 +77,5 @@ enum RULES{
   AST_FORIN,
 
   // Miscellaneous
-  AST_UNKNOWN
+  AST_UNKNOWN, AST_CLASS
 };

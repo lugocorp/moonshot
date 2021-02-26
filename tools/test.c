@@ -9,7 +9,7 @@ char* get_parse_error();
 List* tokenize(FILE* f);
 
 int main(int argc,char** argv){
-  const char* code="var a=hello (int,int) a=5";
+  const char* code="class hello extends hi where function yo() end (int,string,int) msg end";
   FILE* f=fmemopen((char*)code,strlen(code),"r");
   List* ls=tokenize(f);
   fclose(f);
