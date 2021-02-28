@@ -5,22 +5,20 @@ LIBNAME:=$(BUILD)/liblang.so
 
 all: clean $(LIBNAME)
 
+tools: clean bin/test bin/cli
+
 clean:
 	rm -rf $(BUILD)
 
 $(BUILD):
 	mkdir $(BUILD)
 
-$(BUILD)/%.o: $(BUILD)
+$(BUILD)/%.o: src/%.c $(BUILD)
 	gcc -c -fPIC src/$*.c -o $@
 
 $(LIBNAME): $(OBJ)
 	gcc -shared $(OBJ) -o $(LIBNAME)
 
-$(BUILD)/cli: $(LIBNAME)
-	gcc -c tools/cli.c -o $(BUILD)/cli.o
-	gcc $(BUILD)/cli.o $(LIBNAME) -o $(BUILD)/cli
-
-$(BUILD)/test: $(LIBNAME)
-	gcc -c tools/test.c -o $(BUILD)/test.o
-	gcc $(BUILD)/test.o $(LIBNAME) -o $(BUILD)/test
+$(BUILD)/%: tools/%.c $(LIBNAME)
+	gcc -c tools/$*.c -o $(BUILD)/$*.o
+	gcc $(BUILD)/$*.o $(LIBNAME) -o $(BUILD)/$*

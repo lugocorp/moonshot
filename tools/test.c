@@ -1,5 +1,4 @@
-#include "../src/enums.h"
-#include "../src/types.h"
+#include "../src/moonshot.h"
 #include <string.h>
 #include <stdio.h>
 

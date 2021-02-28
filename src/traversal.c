@@ -1,40 +1,7 @@
-#include "./enums.h"
-#include "./types.h"
+#include "./moonshot.h"
 #include <string.h>
 #include <stdio.h>
 static List* scopes;
-
-// Preemptive function declarations
-static void* process_stmt(AstNode* node);
-static void* process_type(AstNode* node);
-static void* process_define(AstNode* node);
-static void* process_typedef(AstNode* node);
-static void* process_primitive(AstNode* node);
-static void* process_interface(AstNode* node);
-static void* process_class(AstNode* node);
-static void* process_function(AstNode* node);
-static void* process_repeat(AstNode* node);
-static void* process_ltuple(AstNode* node);
-static void* process_return(AstNode* node);
-static void* process_binary(AstNode* node);
-static void* process_fornum(AstNode* node);
-static void* process_break(AstNode* node);
-static void* process_paren(AstNode* node);
-static void* process_forin(AstNode* node);
-static void* process_unary(AstNode* node);
-static void* process_tuple(AstNode* node);
-static void* process_table(AstNode* node);
-static void* process_local(AstNode* node);
-static void* process_while(AstNode* node);
-static void* process_field(AstNode* node);
-static void* process_label(AstNode* node);
-static void* process_goto(AstNode* node);
-static void* process_call(AstNode* node);
-static void* process_set(AstNode* node);
-static void* process_sub(AstNode* node);
-static void* process_if(AstNode* node);
-static void* process_do(AstNode* node);
-static void* process_id(AstNode* node);
 
 // Variable scope tracking
 static void push_scope(){
@@ -104,7 +71,7 @@ static int typed_match(AstNode* l,AstNode* r){ // TODO implement function types
   return 0;
 }
 
-// Public interface
+// Traversal interface
 void traverse(AstNode* root){
   scopes=new_default_list();
   push_scope();
@@ -152,7 +119,7 @@ void* process_node(AstNode* node){
 }
 
 // Extended grammar
-static void* process_type(AstNode* node){
+void* process_type(AstNode* node){
   if(!node || node->type==AST_TYPE_ANY){
     printf("var");
   }else if(node->type==AST_TYPE_BASIC){
@@ -186,7 +153,7 @@ static void* process_type(AstNode* node){
   }
   return NULL;
 }
-static void* process_define(AstNode* node){
+void* process_define(AstNode* node){
   BinaryNode* data=(BinaryNode*)(node->data);
   AstNode* tr=get_type(data->r);
   if(!typed_match(data->l,tr)){
@@ -207,14 +174,14 @@ static void* process_define(AstNode* node){
   printf("\n");
   return NULL;
 }
-static void* process_typedef(AstNode* node){
+void* process_typedef(AstNode* node){
   StringAstNode* data=(StringAstNode*)(node->data);
   printf("typedef %s -> ",data->text);
   process_type(data->node);
   printf("\n");
   return NULL;
 }
-static void* process_interface(AstNode* node){
+void* process_interface(AstNode* node){
   InterfaceNode* data=(InterfaceNode*)(node->data);
   printf("interface %s ",data->name);
   if(data->parent[0]) printf("extends %s ",data->parent);
@@ -225,7 +192,7 @@ static void* process_interface(AstNode* node){
   printf("end\n");
   return NULL;
 }
-static void* process_class(AstNode* node){
+void* process_class(AstNode* node){
   ClassNode* data=(ClassNode*)(node->data);
   printf("class %s ",data->name);
   if(data->parent[0]) printf("extends %s ",data->parent);
@@ -246,14 +213,14 @@ static void* process_class(AstNode* node){
 }
 
 // Statement group
-static void* process_stmt(AstNode* node){
+void* process_stmt(AstNode* node){
   List* ls=(List*)(node->data);
   for(int a=0;a<ls->n;a++){
     process_node((AstNode*)get_from_list(ls,a));
   }
   return NULL;
 }
-static void* process_do(AstNode* node){
+void* process_do(AstNode* node){
   List* ls=(List*)(node->data);
   printf("do\n");
   for(int a=0;a<ls->n;a++){
@@ -264,7 +231,7 @@ static void* process_do(AstNode* node){
 }
 
 // Statement
-static void* process_call(AstNode* node){
+void* process_call(AstNode* node){
   AstAstNode* data=(AstAstNode*)(node->data);
   process_node(data->l);
   printf("(");
@@ -272,7 +239,7 @@ static void* process_call(AstNode* node){
   printf(")\n");
   return NULL;
 }
-static void* process_set(AstNode* node){
+void* process_set(AstNode* node){
   AstAstNode* data=(AstAstNode*)(node->data);
   process_node(data->l);
   printf("=");
@@ -280,13 +247,13 @@ static void* process_set(AstNode* node){
   printf("\n");
   return NULL;
 }
-static void* process_return(AstNode* node){
+void* process_return(AstNode* node){
   printf("return ");
   process_node((AstNode*)(node->data));
   printf("\n");
   return NULL;
 }
-static void* process_ltuple(AstNode* node){
+void* process_ltuple(AstNode* node){
   List* ls=(List*)(node->data);
   for(int a=0;a<ls->n;a++){
     if(a) printf(",");
@@ -294,13 +261,13 @@ static void* process_ltuple(AstNode* node){
   }
   return NULL;
 }
-static void* process_field(AstNode* node){
+void* process_field(AstNode* node){
   StringAstNode* data=(StringAstNode*)(node->data);
   process_node(data->node);
   printf(".%s",data->text);
   return NULL;
 }
-static void* process_sub(AstNode* node){
+void* process_sub(AstNode* node){
   AstAstNode* data=(AstAstNode*)(node->data);
   process_node(data->l);
   printf("[");
@@ -308,11 +275,11 @@ static void* process_sub(AstNode* node){
   printf("]");
   return NULL;
 }
-static void* process_id(AstNode* node){
+void* process_id(AstNode* node){
   printf("%s",(char*)(node->data));
   return NULL;
 }
-static void* process_local(AstNode* node){
+void* process_local(AstNode* node){
   StringAstNode* data=(StringAstNode*)(node->data);
   printf("local %s",data->text);
   if(data->node){
@@ -324,7 +291,7 @@ static void* process_local(AstNode* node){
 }
 
 // Control
-static void* process_function(AstNode* node){
+void* process_function(AstNode* node){
   FunctionNode* data=(FunctionNode*)(node->data);
   /*if(data->type->type!=AST_TYPE_ANY){
     process_type(data->type);
@@ -346,7 +313,7 @@ static void* process_function(AstNode* node){
   }
   return NULL;
 }
-static void* process_repeat(AstNode* node){
+void* process_repeat(AstNode* node){
   AstListNode* data=(AstListNode*)(node->data);
   printf("repeat\n");
   for(int a=0;a<data->list->n;a++){
@@ -357,7 +324,7 @@ static void* process_repeat(AstNode* node){
   printf("\n");
   return NULL;
 }
-static void* process_while(AstNode* node){
+void* process_while(AstNode* node){
   AstListNode* data=(AstListNode*)(node->data);
   printf("while ");
   process_node(data->node);
@@ -368,7 +335,7 @@ static void* process_while(AstNode* node){
   printf("end\n");
   return NULL;
 }
-static void* process_if(AstNode* node){
+void* process_if(AstNode* node){
   AstListNode* data=(AstListNode*)(node->data);
   printf("if ");
   process_node(data->node);
@@ -379,7 +346,7 @@ static void* process_if(AstNode* node){
   printf("end\n");
   return NULL;
 }
-static void* process_fornum(AstNode* node){
+void* process_fornum(AstNode* node){
   FornumNode* data=(FornumNode*)(node->data);
   printf("for %s=",data->name);
   process_node(data->num1);
@@ -396,7 +363,7 @@ static void* process_fornum(AstNode* node){
   printf("end\n");
   return NULL;
 }
-static void* process_forin(AstNode* node){
+void* process_forin(AstNode* node){
   ForinNode* data=(ForinNode*)(node->data);
   printf("for ");
   process_node(data->lhs);
@@ -409,26 +376,26 @@ static void* process_forin(AstNode* node){
   printf("end\n");
   return NULL;
 }
-static void* process_break(AstNode* node){
+void* process_break(AstNode* node){
   printf("break\n");
   return NULL;
 }
-static void* process_label(AstNode* node){
+void* process_label(AstNode* node){
   printf("::%s::\n",(char*)(node->data));
   return NULL;
 }
-static void* process_goto(AstNode* node){
+void* process_goto(AstNode* node){
   printf("goto %s\n",(char*)(node->data));
   return NULL;
 }
 
 // Primitives
-static void* process_primitive(AstNode* node){
+void* process_primitive(AstNode* node){
   StringAstNode* data=(StringAstNode*)(node->data);
   printf("%s",data->text);
   return NULL;
 }
-static void* process_table(AstNode* node){
+void* process_table(AstNode* node){
   TableNode* data=(TableNode*)(node->data);
   printf("{");
   for(int a=0;a<data->keys->n;a++){
@@ -439,7 +406,7 @@ static void* process_table(AstNode* node){
   printf("}");
   return NULL;
 }
-static void* process_tuple(AstNode* node){
+void* process_tuple(AstNode* node){
   List* ls=(List*)(node->data);
   for(int a=0;a<ls->n;a++){
     if(a) printf(",");
@@ -449,14 +416,14 @@ static void* process_tuple(AstNode* node){
 }
 
 // Expressions
-static void* process_unary(AstNode* node){
+void* process_unary(AstNode* node){
   StringAstNode* data=(StringAstNode*)(node->data);
   printf("(%s ",data->text);
   process_node(data->node);
   printf(")");
   return NULL;
 }
-static void* process_binary(AstNode* node){
+void* process_binary(AstNode* node){
   BinaryNode* data=(BinaryNode*)(node->data);
   printf("(");
   process_node(data->l);
@@ -465,7 +432,7 @@ static void* process_binary(AstNode* node){
   printf(")");
   return NULL;
 }
-static void* process_paren(AstNode* node){
+void* process_paren(AstNode* node){
   printf("(");
   process_node((AstNode*)(node->data));
   printf(")");

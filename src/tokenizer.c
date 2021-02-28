@@ -1,5 +1,4 @@
-#include "./enums.h"
-#include "./types.h"
+#include "./moonshot.h"
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
