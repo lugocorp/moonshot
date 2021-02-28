@@ -1,83 +1,27 @@
 #include "./moonshot.h"
-#include <string.h>
+//#include <string.h>
+#include <stdlib.h>
 #include <stdio.h>
-static List* scopes;
+static List* error_msgs;
 
-// Variable scope tracking
-static void push_scope(){
-  add_to_list(scopes,new_default_list());
-}
-static void pop_scope(){
-  List* ls=remove_from_list(scopes,scopes->n-1);
-  dealloc_list(ls);
-}
-static void add_scoped_var(BinaryNode* node){
-  List* scope=get_from_list(scopes,scopes->n-1);
-  // TODO name collisions
-  add_to_list(scope,node);
-}
-static BinaryNode* get_scoped_var(char* name){
-  for(int a=(scopes->n)-1;a>=0;a--){
-    List* scope=(List*)get_from_list(scopes,a);
-    for(int b=0;b<scope->n;b++){
-      BinaryNode* n=(BinaryNode*)get_from_list(scope,b);
-      if(!strcmp(n->text,name)) return n;
-    }
-  }
+// Errors
+static AstNode* error(AstNode* node,const char* msg){
+  char* e=(char*)malloc(sizeof(char)*256);
+  sprintf(e,"ERROR %s",msg);
+  add_to_list(error_msgs,e);
   return NULL;
-}
-static AstNode* get_type(AstNode* node){ // TODO implement the commented branches
-  int type=node->type;
-  switch(node->type){
-    case AST_PRIMITIVE: return ((StringAstNode*)(node->data))->node;
-    //case AST_FUNCTION: return process_function(node);
-    //case AST_BINARY: return process_binary(node);
-    case AST_PAREN: return get_type((AstNode*)(node->data));
-    //case AST_UNARY: return process_unary(node);
-    case AST_TUPLE: return node;
-    //case AST_FIELD: return process_field(node);
-    //case AST_CALL: return process_call(node);
-    //case AST_SUB: return process_sub(node);
-    case AST_ID:{
-      char* name=(char*)(node->data);
-      BinaryNode* var=get_scoped_var(name);
-      return var?(var->l):NULL;
-    };
-    default: return NULL;
-  }
-}
-static int typed_match(AstNode* l,AstNode* r){ // TODO implement function types
-  // FUNC
-  if(l->type==AST_TYPE_ANY) return 1;
-  if(!r) return 0;
-  if(r->type==AST_TYPE_BASIC){
-    if(!strcmp((char*)(r->data),"nil")) return 1;
-  }
-  if(l->type==AST_TYPE_BASIC && r->type==AST_TYPE_BASIC){
-    return !strcmp((char*)(l->data),(char*)(r->data));
-  }
-  if(l->type==AST_TYPE_TUPLE && r->type==AST_TUPLE){
-    List* lls=(List*)(l->data);
-    List* rls=(List*)(r->data);
-    if(lls->n!=rls->n) return 0;
-    for(int a=0;a<lls->n;a++){
-      AstNode* nl=(AstNode*)get_from_list(lls,a);
-      AstNode* nr=(AstNode*)get_from_list(rls,a);
-      int match=typed_match(nl,get_type(nr));
-      if(!match) return 0;
-    }
-    return 1;
-  }
-  return 0;
 }
 
 // Traversal interface
 void traverse(AstNode* root){
-  scopes=new_default_list();
+  init_scopes();
   push_scope();
   process_stmt(root);
   pop_scope();
-  dealloc_list(scopes);
+  dealloc_scopes();
+}
+List* get_traversal_errors(){
+  return error_msgs;
 }
 
 // Node to function switch
@@ -131,14 +75,6 @@ void* process_type(AstNode* node){
     for(int a=0;a<ls->n;a++){
       if(a) printf(",");
       process_type((AstNode*)get_from_list(ls,a));
-    }
-    printf(")");
-  }else if(node->type==AST_TUPLE){
-    List* ls=(List*)(node->data);
-    printf("(");
-    for(int a=0;a<ls->n;a++){
-      if(a) printf(",");
-      process_type(get_type((AstNode*)get_from_list(ls,a)));
     }
     printf(")");
   }else if(node->type==AST_TYPE_FUNC){
@@ -407,10 +343,10 @@ void* process_table(AstNode* node){
   return NULL;
 }
 void* process_tuple(AstNode* node){
-  List* ls=(List*)(node->data);
-  for(int a=0;a<ls->n;a++){
+  AstListNode* data=(AstListNode*)(node->data);
+  for(int a=0;a<data->list->n;a++){
     if(a) printf(",");
-    process_node((AstNode*)get_from_list(ls,a));
+    process_node((AstNode*)get_from_list(data->list,a));
   }
   return NULL;
 }

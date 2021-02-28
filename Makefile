@@ -5,8 +5,6 @@ LIBNAME:=$(BUILD)/liblang.so
 
 all: clean $(LIBNAME)
 
-tools: clean bin/test bin/cli
-
 clean:
 	rm -rf $(BUILD)
 

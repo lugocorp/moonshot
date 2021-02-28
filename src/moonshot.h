@@ -134,10 +134,10 @@ enum RULES{
   AST_LABEL, AST_GOTO, AST_ID, AST_TYPE_BASIC,
 
   // List*
-  AST_STMT, AST_DO, AST_LTUPLE, AST_TUPLE, AST_TYPE_TUPLE,
+  AST_STMT, AST_DO, AST_LTUPLE, AST_TYPE_TUPLE,
 
   // AstListNode*
-  AST_REPEAT, AST_WHILE, AST_IF, AST_TYPE_FUNC,
+  AST_REPEAT, AST_WHILE, AST_IF, AST_TYPE_FUNC, AST_TUPLE,
 
   // ClassNode*
   AST_CLASS,
@@ -172,6 +172,18 @@ enum RULES{
   // Miscellaneous
   AST_UNKNOWN
 };
+
+// Variable scope tracking
+void init_scopes();
+void dealloc_scopes();
+void push_scope();
+void pop_scope();
+void add_scoped_var(BinaryNode* node);
+BinaryNode* get_scoped_var(char* name);
+
+// Type nodes
+AstNode* get_type(AstNode* node);
+int typed_match(AstNode* l,AstNode* r);
 
 // Node constructors
 AstNode* new_node(int type,void* data);
@@ -223,6 +235,7 @@ AstNode* parse_do();
 
 // Traversal interface
 void traverse(AstNode* root);
+List* get_traversal_errors();
 
 // Traversal functions
 void* process_stmt(AstNode* node);

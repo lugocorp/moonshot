@@ -670,20 +670,24 @@ AstNode* parse_table(){
 
 // Expression parse functions
 AstNode* parse_tuple(){
+  List* types=new_default_list();
   List* ls=new_default_list();
   AstNode* node=parse_expr();
   if(!node) return NULL;
   add_to_list(ls,node);
+  add_to_list(types,get_type(node));
   Token* tk=check();
   while(specific(tk,TK_MISC,",")){
     consume();
     node=parse_expr();
     if(!node) return NULL;
     add_to_list(ls,node);
+    add_to_list(types,get_type(node));
     tk=check();
   }
   DEBUG("tuple\n");
-  return new_node(AST_TUPLE,ls);
+  AstNode* type_node=new_node(AST_TYPE_TUPLE,types);
+  return new_node(AST_TUPLE,new_ast_list_node(type_node,ls));
 }
 AstNode* parse_expr(){
   Token* tk=check();

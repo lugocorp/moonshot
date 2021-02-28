@@ -2,6 +2,52 @@
 #include <string.h>
 #include <stdlib.h>
 
+// Type nodes
+AstNode* get_type(AstNode* node){ // TODO implement the commented branches
+  int type=node->type;
+  switch(node->type){
+    case AST_PRIMITIVE: return ((StringAstNode*)(node->data))->node;
+    //case AST_FUNCTION: return process_function(node);
+    //case AST_BINARY: return process_binary(node);
+    case AST_PAREN: return get_type((AstNode*)(node->data));
+    //case AST_UNARY: return process_unary(node);
+    case AST_TUPLE: return ((AstListNode*)(node->data))->node;
+    //case AST_FIELD: return process_field(node);
+    //case AST_CALL: return process_call(node);
+    //case AST_SUB: return process_sub(node);
+    case AST_ID:{
+      char* name=(char*)(node->data);
+      BinaryNode* var=get_scoped_var(name);
+      return var?(var->l):NULL;
+    };
+    default: return NULL;
+  }
+}
+int typed_match(AstNode* l,AstNode* r){ // TODO implement function types
+  // FUNC
+  if(l->type==AST_TYPE_ANY) return 1;
+  if(!r) return 0;
+  if(r->type==AST_TYPE_BASIC){
+    if(!strcmp((char*)(r->data),"nil")) return 1;
+  }
+  if(l->type==AST_TYPE_BASIC && r->type==AST_TYPE_BASIC){
+    return !strcmp((char*)(l->data),(char*)(r->data));
+  }
+  if(l->type==AST_TYPE_TUPLE && r->type==AST_TYPE_TUPLE){
+    List* lls=(List*)(l->data);
+    List* rls=(List*)(r->data);
+    if(lls->n!=rls->n) return 0;
+    for(int a=0;a<lls->n;a++){
+      AstNode* nl=(AstNode*)get_from_list(lls,a);
+      AstNode* nr=(AstNode*)get_from_list(rls,a);
+      int match=typed_match(nl,nr);
+      if(!match) return 0;
+    }
+    return 1;
+  }
+  return 0;
+}
+
 // Node constructors
 AstNode* new_node(int type,void* data){
   AstNode* node=(AstNode*)malloc(sizeof(AstNode));
