@@ -17,10 +17,15 @@ void pop_scope(){
   List* ls=remove_from_list(scopes,scopes->n-1);
   dealloc_list(ls);
 }
-void add_scoped_var(BinaryNode* node){
+int add_scoped_var(BinaryNode* node){
   List* scope=get_from_list(scopes,scopes->n-1);
-  // TODO name collisions
+  for(int a=0;a<scope->n;a++){
+    if(!strcmp(((BinaryNode*)get_from_list(scope,a))->text,node->text)){
+      return 0;
+    }
+  }
   add_to_list(scope,node);
+  return 1;
 }
 BinaryNode* get_scoped_var(char* name){
   for(int a=(scopes->n)-1;a>=0;a--){

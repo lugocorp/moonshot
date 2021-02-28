@@ -1,12 +1,27 @@
 #include "./moonshot.h"
 #include <stdlib.h>
 #include <string.h>
+static List* types_registry;
 static List* types_graph;
 
-// TODO implement nonexistent type checking
 // TODO implement function parameter types (also function types in general)
 
-// Type nodes
+// Init/dealloc
+void init_types(){
+  types_graph=new_default_list();
+  types_registry=new_default_list();
+  register_primitive(PRIMITIVE_STRING);
+  register_primitive(PRIMITIVE_FLOAT);
+  register_primitive(PRIMITIVE_BOOL);
+  register_primitive(PRIMITIVE_INT);
+  register_primitive(PRIMITIVE_NIL);
+}
+void dealloc_types(){
+  dealloc_list(types_registry);
+  dealloc_list(types_graph);
+}
+
+// Type matching for AST traversal
 static int is_primitive(AstNode* node,const char* type){
   return node->type==AST_TYPE_BASIC && !strcmp((char*)(node->data),type);
 }
@@ -77,15 +92,41 @@ int typed_match(AstNode* l,AstNode* r){
   return typed_match_no_equivalence(l,r);
 }
 
+// Type registry
+void register_type(char* name){
+  add_to_list(types_registry,name);
+}
+void register_primitive(const char* name){
+  char* type=(char*)malloc(sizeof(char)*(strlen(name)+1));
+  strcpy(type,name);
+  add_to_list(types_registry,type);
+}
+int type_exists(char* name){
+  for(int a=0;a<types_registry->n;a++){
+    if(!strcmp((char*)get_from_list(types_registry,a),name)) return 1;
+  }
+  return 0;
+}
+int compound_type_exists(AstNode* node){
+  switch(node->type){
+    case AST_TYPE_ANY: return 1;
+    case AST_TYPE_BASIC: return type_exists((char*)(node->data));
+    case AST_TYPE_TUPLE:{
+      List* ls=(List*)(node->data);
+      for(int a=0;a<ls->n;a++){
+        if(!compound_type_exists((AstNode*)get_from_list(ls,a))) return 0;
+      }
+      return 1;
+    }
+    case AST_TYPE_FUNC:{
+      // TODO implement function type
+    }
+    default: return 0;
+  }
+}
+
 // Type equivalence graph
-void init_type_equivalence(){
-  types_graph=new_default_list();
-}
-void dealloc_type_equivalence(){
-  dealloc_list(types_graph);
-}
-void add_type_equivalence(char* name,AstNode* type,int unique){
-  // TODO implement type collision (if unique)
+void add_type_equivalence(char* name,AstNode* type){
   // TODO prevent graph cycles
   add_to_list(types_graph,new_string_ast_node(name,type));
 }

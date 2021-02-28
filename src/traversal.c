@@ -9,18 +9,21 @@ static AstNode* error(AstNode* node,const char* msg){
   char* e=(char*)malloc(sizeof(char)*256);
   sprintf(e,"ERROR %s",msg);
   add_to_list(error_msgs,e);
+  printf("ERROR %s\n",msg);
   return NULL;
 }
 
 // Traversal interface
 void traverse(AstNode* root){
-  init_type_equivalence();
+  error_msgs=new_default_list();
+  init_types();
   init_scopes();
   push_scope();
   process_stmt(root);
   pop_scope();
   dealloc_scopes();
-  dealloc_type_equivalence();
+  dealloc_types();
+  dealloc_list(error_msgs);
 }
 List* get_traversal_errors(){
   return error_msgs;
@@ -93,16 +96,19 @@ void* process_type(AstNode* node){
 }
 void* process_define(AstNode* node){
   BinaryNode* data=(BinaryNode*)(node->data);
-  AstNode* tr=get_type(data->r);
-  if(!typed_match(data->l,tr)){
-    printf("Error invalid expression type ");
-    process_type(tr);
-    printf(" for variable of type ");
-    process_type(data->l);
-    printf("\n");
-    return NULL;
+  if(!compound_type_exists(data->l)) return error(node,"cannot define a variable with nonexistent type");
+  if(data->r){
+    AstNode* tr=get_type(data->r);
+    if(!typed_match(data->l,tr)){
+      printf("Error invalid expression type ");
+      process_type(tr);
+      printf(" for variable of type ");
+      process_type(data->l);
+      printf("\n");
+      return NULL;
+    }
   }
-  add_scoped_var(data);
+  if(!add_scoped_var(data)) return error(node,"variable was already declared in this scope");
   printf("local %s=",data->text);
   if(data->r){
     process_node(data->r);
@@ -114,10 +120,13 @@ void* process_define(AstNode* node){
 }
 void* process_typedef(AstNode* node){
   StringAstNode* data=(StringAstNode*)(node->data);
-  printf("typedef %s -> ",data->text);
+  if(!compound_type_exists(data->node)) return error(node,"equivalent type does not exist");
+  if(type_exists(data->text)) return error(node,"type is already declared");
+  register_type(data->text);
+  printf("-- typedef %s -> ",data->text);
   process_type(data->node);
   printf("\n");
-  add_type_equivalence(data->text,data->node,1);
+  add_type_equivalence(data->text,data->node);
   return NULL;
 }
 void* process_interface(AstNode* node){

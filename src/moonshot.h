@@ -183,15 +183,19 @@ void init_scopes();
 void dealloc_scopes();
 void push_scope();
 void pop_scope();
-void add_scoped_var(BinaryNode* node);
+int add_scoped_var(BinaryNode* node);
 BinaryNode* get_scoped_var(char* name);
 
 // types.c
+void init_types();
+void dealloc_types();
 AstNode* get_type(AstNode* node);
 int typed_match(AstNode* l,AstNode* r);
-void init_type_equivalence();
-void dealloc_type_equivalence();
-void add_type_equivalence(char* name,AstNode* type,int unique);
+void register_type(char* name);
+void register_primitive(const char* name);
+int type_exists(char* name);
+int compound_type_exists(AstNode* node);
+void add_type_equivalence(char* name,AstNode* type);
 List* get_equivalent_types(char* name);
 int types_equivalent(char* name,AstNode* type);
 
