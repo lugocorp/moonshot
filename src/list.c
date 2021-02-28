@@ -31,6 +31,15 @@ void* get_from_list(List* ls,int i){
   return NULL;
 }
 
+void* remove_from_list(List* ls,int i){
+  void* e=get_from_list(ls,i);
+  if(e){
+    for(int a=i+1;a<ls->n;a++) ls->items[a-1]=ls->items[a];
+    ls->items[--(ls->n)]=NULL;
+  }
+  return e;
+}
+
 /*
   Appends an item to a list
   Doubles the list's capacity if it's already full

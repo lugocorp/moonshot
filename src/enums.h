@@ -46,10 +46,10 @@ enum RULES{
   // AstListNode*
   AST_REPEAT, AST_WHILE, AST_IF, AST_TYPE_FUNC,
 
-  // ValueNode*
-  AST_PRIMITIVE,
+  // ClassNode*
+  AST_CLASS,
 
-  // FunctionNode*
+  // InterfaceNode*
   AST_INTERFACE,
 
   // FunctionNode*
@@ -68,7 +68,7 @@ enum RULES{
   AST_RETURN, AST_PAREN,
 
   // StringAstNode*
-  AST_FIELD, AST_LOCAL, AST_UNARY, AST_TYPEDEF,
+  AST_FIELD, AST_LOCAL, AST_UNARY, AST_TYPEDEF, AST_PRIMITIVE,
 
   // FornumNode*
   AST_FORNUM,
@@ -77,5 +77,5 @@ enum RULES{
   AST_FORIN,
 
   // Miscellaneous
-  AST_UNKNOWN, AST_CLASS
+  AST_UNKNOWN
 };

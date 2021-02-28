@@ -1,6 +1,8 @@
 #include "./enums.h"
 #include "./types.h"
+#include <string.h>
 #include <stdio.h>
+static List* scopes;
 
 // Preemptive function declarations
 static void* process_stmt(AstNode* node);
@@ -34,9 +36,81 @@ static void* process_if(AstNode* node);
 static void* process_do(AstNode* node);
 static void* process_id(AstNode* node);
 
+// Variable scope tracking
+static void push_scope(){
+  add_to_list(scopes,new_default_list());
+}
+static void pop_scope(){
+  List* ls=remove_from_list(scopes,scopes->n-1);
+  dealloc_list(ls);
+}
+static void add_scoped_var(BinaryNode* node){
+  List* scope=get_from_list(scopes,scopes->n-1);
+  // TODO name collisions
+  add_to_list(scope,node);
+}
+static BinaryNode* get_scoped_var(char* name){
+  for(int a=(scopes->n)-1;a>=0;a--){
+    List* scope=(List*)get_from_list(scopes,a);
+    for(int b=0;b<scope->n;b++){
+      BinaryNode* n=(BinaryNode*)get_from_list(scope,b);
+      if(!strcmp(n->text,name)) return n;
+    }
+  }
+  return NULL;
+}
+static AstNode* get_type(AstNode* node){ // TODO implement the commented branches
+  int type=node->type;
+  switch(node->type){
+    case AST_PRIMITIVE: return ((StringAstNode*)(node->data))->node;
+    //case AST_FUNCTION: return process_function(node);
+    //case AST_BINARY: return process_binary(node);
+    case AST_PAREN: return get_type((AstNode*)(node->data));
+    //case AST_UNARY: return process_unary(node);
+    case AST_TUPLE: return node;
+    //case AST_FIELD: return process_field(node);
+    //case AST_CALL: return process_call(node);
+    //case AST_SUB: return process_sub(node);
+    case AST_ID:{
+      char* name=(char*)(node->data);
+      BinaryNode* var=get_scoped_var(name);
+      return var?(var->l):NULL;
+    };
+    default: return NULL;
+  }
+}
+static int typed_match(AstNode* l,AstNode* r){ // TODO implement function types
+  // FUNC
+  if(l->type==AST_TYPE_ANY) return 1;
+  if(!r) return 0;
+  if(r->type==AST_TYPE_BASIC){
+    if(!strcmp((char*)(r->data),"nil")) return 1;
+  }
+  if(l->type==AST_TYPE_BASIC && r->type==AST_TYPE_BASIC){
+    return !strcmp((char*)(l->data),(char*)(r->data));
+  }
+  if(l->type==AST_TYPE_TUPLE && r->type==AST_TUPLE){
+    List* lls=(List*)(l->data);
+    List* rls=(List*)(r->data);
+    if(lls->n!=rls->n) return 0;
+    for(int a=0;a<lls->n;a++){
+      AstNode* nl=(AstNode*)get_from_list(lls,a);
+      AstNode* nr=(AstNode*)get_from_list(rls,a);
+      int match=typed_match(nl,get_type(nr));
+      if(!match) return 0;
+    }
+    return 1;
+  }
+  return 0;
+}
+
 // Public interface
 void traverse(AstNode* root){
+  scopes=new_default_list();
+  push_scope();
   process_stmt(root);
+  pop_scope();
+  dealloc_list(scopes);
 }
 
 // Node to function switch
@@ -79,7 +153,7 @@ void* process_node(AstNode* node){
 
 // Extended grammar
 static void* process_type(AstNode* node){
-  if(node->type==AST_TYPE_ANY){
+  if(!node || node->type==AST_TYPE_ANY){
     printf("var");
   }else if(node->type==AST_TYPE_BASIC){
     char* name=(char*)(node->data);
@@ -90,6 +164,14 @@ static void* process_type(AstNode* node){
     for(int a=0;a<ls->n;a++){
       if(a) printf(",");
       process_type((AstNode*)get_from_list(ls,a));
+    }
+    printf(")");
+  }else if(node->type==AST_TUPLE){
+    List* ls=(List*)(node->data);
+    printf("(");
+    for(int a=0;a<ls->n;a++){
+      if(a) printf(",");
+      process_type(get_type((AstNode*)get_from_list(ls,a)));
     }
     printf(")");
   }else if(node->type==AST_TYPE_FUNC){
@@ -106,11 +188,21 @@ static void* process_type(AstNode* node){
 }
 static void* process_define(AstNode* node){
   BinaryNode* data=(BinaryNode*)(node->data);
-  process_type(data->l);
-  printf(" %s",data->text);
+  AstNode* tr=get_type(data->r);
+  if(!typed_match(data->l,tr)){
+    printf("Error invalid expression type ");
+    process_type(tr);
+    printf(" for variable of type ");
+    process_type(data->l);
+    printf("\n");
+    return NULL;
+  }
+  add_scoped_var(data);
+  printf("local %s=",data->text);
   if(data->r){
-    printf("=");
     process_node(data->r);
+  }else{
+    printf("nil");
   }
   printf("\n");
   return NULL;
@@ -234,10 +326,10 @@ static void* process_local(AstNode* node){
 // Control
 static void* process_function(AstNode* node){
   FunctionNode* data=(FunctionNode*)(node->data);
-  if(data->type->type!=AST_TYPE_ANY){
+  /*if(data->type->type!=AST_TYPE_ANY){
     process_type(data->type);
     printf(" ");
-  }
+  }*/
   printf("function");
   if(data->name[0]) printf(" %s",data->name);
   printf("(");
@@ -332,7 +424,7 @@ static void* process_goto(AstNode* node){
 
 // Primitives
 static void* process_primitive(AstNode* node){
-  ValueNode* data=(ValueNode*)(node->data);
+  StringAstNode* data=(StringAstNode*)(node->data);
   printf("%s",data->text);
   return NULL;
 }

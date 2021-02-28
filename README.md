@@ -104,7 +104,7 @@ Lua Grammar (Simplified)
     fornum -> `for `name `equal expr `comma expr (`comma expr)? `do stmt `end
     forin -> `for `name (`comma `name)+ `in expr (`comma expr)+ `do stmt `end
 
-Moonshot Grammar (Simplified)
+Moonshot Grammar
 ----------
     stmt -> (function | if | set | call | while | repeat | local | goto | label | return | `break | do | fornum | forin | typedef | define)*
 

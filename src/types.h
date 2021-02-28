@@ -14,6 +14,7 @@ typedef struct{
 List* new_list(int max);
 List* new_default_list();
 void* get_from_list(List* ls,int i);
+void* remove_from_list(List* ls,int i);
 int add_to_list(List* ls,void* e);
 void dealloc_list(List* ls);
 
@@ -38,11 +39,6 @@ typedef struct{
   AstNode* node;
   List* list;
 } AstListNode;
-
-typedef struct{
-  char text[256];
-  char type[256];
-} ValueNode;
 
 typedef struct{
   char name[256];

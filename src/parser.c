@@ -76,12 +76,6 @@ static AstNode* new_node(int type,void* data){
   node->data=data;
   return node;
 }
-static ValueNode* new_value_node(char* type,char* text){
-  ValueNode* node=(ValueNode*)malloc(sizeof(ValueNode));
-  strcpy(node->text,text);
-  strcpy(node->type,type);
-  return node;
-}
 static FunctionNode* new_function_node(char* name,AstNode* type,List* args,List* body){
   FunctionNode* node=(FunctionNode*)malloc(sizeof(FunctionNode));
   strcpy(node->name,name);
@@ -113,6 +107,13 @@ static StringAstNode* new_string_ast_node(char* text,AstNode* ast){
   node->text=text;
   node->node=ast;
   return node;
+}
+static StringAstNode* new_primitive_node(char* text,const char* type){
+  char* stype=(char*)malloc(strlen(type)+1);
+  strcpy(stype,type);
+  char* stext=(char*)malloc(strlen(text)+1);
+  strcpy(stext,text);
+  return new_string_ast_node(stext,new_node(AST_TYPE_BASIC,stype));
 }
 static FornumNode* new_fornum_node(char* name,AstNode* num1,AstNode* num2,AstNode* num3,List* body){
   FornumNode* node=(FornumNode*)malloc(sizeof(FornumNode));
@@ -737,26 +738,24 @@ static AstNode* parse_string(){
   if(tk) strcat(text,quote);
   else return line_error(line,"unclosed string");
   DEBUG("string %s\n",text);
-  return new_node(AST_PRIMITIVE,new_value_node("string",text));
+  return new_node(AST_PRIMITIVE,new_primitive_node(text,"string"));
 }
 static AstNode* parse_number(){
-  char type[256];
   char text[256];
   Token* tk=consume();
   if(!expect(tk,TK_INT)) return error(tk,"invalid number");
   strcpy(text,tk->text);
-  sprintf(type,"int");
   tk=check_next();
   if(specific(tk,TK_MISC,".")){
-    sprintf(type,"float");
     consume();
     tk=consume();
     if(!expect(tk,TK_INT)) return error(tk,"invalid number");
     strcat(text,".");
     strcat(text,tk->text);
+    return new_node(AST_PRIMITIVE,new_primitive_node(text,"float"));
   }
   DEBUG("%s %s\n",type,text);
-  return new_node(AST_PRIMITIVE,new_value_node(type,text));
+  return new_node(AST_PRIMITIVE,new_primitive_node(text,"int"));
 }
 static AstNode* parse_boolean(){
   char text[6];
@@ -764,14 +763,14 @@ static AstNode* parse_boolean(){
   if(!expect(tk,TK_TRUE) && !expect(tk,TK_FALSE)) return error(tk,"invalid boolean");
   strcpy(text,tk->text);
   DEBUG("boolean %s\n",text);
-  return new_node(AST_PRIMITIVE,new_value_node("boolean",text));
+  return new_node(AST_PRIMITIVE,new_primitive_node(text,"boolean"));
 }
 static AstNode* parse_nil(){
   char text[4];
   Token* tk=consume();
   if(!expect(tk,TK_NIL)) return error(tk,"invalid nil");
   DEBUG("nil\n");
-  return new_node(AST_PRIMITIVE,new_value_node("boolean","nil"));
+  return new_node(AST_PRIMITIVE,new_primitive_node("nil","nil"));
 }
 static AstNode* parse_table(){
   Token* tk=consume();
@@ -834,7 +833,7 @@ static AstNode* parse_expr(){
     node=parse_table();
   }else if(specific(tk,TK_PAREN,"(")){
     tk=consume();
-    node=parse_expr();
+    node=parse_tuple();
     if(!node) return NULL;
     tk=consume();
     if(!specific(tk,TK_PAREN,")")) return error(tk,"unclosed expression");

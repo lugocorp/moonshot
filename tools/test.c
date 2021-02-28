@@ -9,7 +9,8 @@ char* get_parse_error();
 List* tokenize(FILE* f);
 
 int main(int argc,char** argv){
-  const char* code="class hello extends hi where function yo() end (int,string,int) msg end";
+  //const char* code="class hello extends hi where function yo() end (int,string,int) msg end";
+  const char* code="(string,int) hello=(\"hi\",1)";
   FILE* f=fmemopen((char*)code,strlen(code),"r");
   List* ls=tokenize(f);
   fclose(f);
