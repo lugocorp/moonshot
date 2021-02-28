@@ -2,7 +2,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
-#define DEBUG(...) //printf(__VA_ARGS__)
+// #define DEBUG(...) printf(__VA_ARGS__)
 static char error_msg[256];
 static List* tokens;
 static int _i;
@@ -24,7 +24,7 @@ AstNode* parse(List* ls){
     while(_i<tokens->n){
       if(((Token*)get_from_list(tokens,_i++))->type!=TK_SPACE){
         error(NULL,"unparsed tokens");
-        // deallocate root somehow
+        // TODO deallocate root somehow
         return NULL;
       }
     }
@@ -329,7 +329,7 @@ AstNode* parse_call(){
   }
   tk=consume();
   if(!specific(tk,TK_PAREN,")")) return error(tk,"invalid function call");
-  DEBUG("call node\n");
+  // DEBUG("call node\n");
   return new_node(AST_CALL,new_ast_ast_node(lhs,args));
 }
 AstNode* parse_set(){
@@ -340,7 +340,7 @@ AstNode* parse_set(){
   if(!specific(tk,TK_MISC,"=")) return error(tk,"invalid statement");
   expr=parse_expr();
   if(!expr) return NULL;
-  DEBUG("set node\n");
+  // DEBUG("set node\n");
   return new_node(AST_SET,new_ast_ast_node(lhs,expr));
 }
 AstNode* parse_do(){
@@ -350,7 +350,7 @@ AstNode* parse_do(){
   if(!node) return NULL;
   tk=consume();
   if(!expect(tk,TK_END)) return error(tk,"invalid do block");
-  DEBUG("do stmt\n");
+  // DEBUG("do stmt\n");
   return new_node(AST_DO,(List*)(node->data));
 }
 
@@ -365,7 +365,7 @@ AstNode* parse_return(){
 AstNode* parse_lhs(){
   Token* tk=consume();
   if(!expect(tk,TK_NAME)) return error(tk,"invalid left-hand side of statement");
-  DEBUG("lhs: %s\n",tk->text);
+  // DEBUG("lhs: %s\n",tk->text);
   char* first=tk->text;
   tk=check();
   if(specific(tk,TK_MISC,",")){
@@ -375,7 +375,7 @@ AstNode* parse_lhs(){
       consume();
       tk=consume();
       if(!expect(tk,TK_NAME)) return error(tk,"invalid left-hand tuple");
-      DEBUG(",%s\n",tk->text);
+      // DEBUG(",%s\n",tk->text);
       add_to_list(ls,tk->text);
       tk=check();
     }
@@ -388,7 +388,7 @@ AstNode* parse_lhs(){
   while(attempt){
     if(specific(tk,TK_SQUARE,"[")){
       consume();
-      DEBUG("square bracket\n");
+      // DEBUG("square bracket\n");
       AstNode* r=parse_expr();
       if(!r) return NULL;
       tmp=node;
@@ -399,7 +399,7 @@ AstNode* parse_lhs(){
     if(specific(tk,TK_MISC,".")){
       consume();
       tk=consume();
-      DEBUG(".%s\n",tk->text);
+      // DEBUG(".%s\n",tk->text);
       if(!expect(tk,TK_NAME)) return error(tk,"invalid field");
       tmp=node;
       node=new_node(AST_FIELD,new_string_ast_node(tk->text,tmp));
@@ -423,7 +423,7 @@ AstNode* parse_local(){
     node=parse_expr();
     if(!node) return NULL;
   }
-  DEBUG("local\n");
+  // DEBUG("local\n");
   return new_node(AST_LOCAL,new_string_ast_node(name,node));
 }
 
@@ -461,7 +461,7 @@ AstNode* parse_function(AstNode* type,int include_body){
     if(!expect(tk,TK_END)) return error(tk,"invalid function");
     ls=(List*)(node->data);
   }
-  DEBUG("Function %s (%i args) (%i stmts)\n",name,args->n,ls?ls->n:0);
+  // DEBUG("Function %s (%i args) (%i stmts)\n",name,args->n,ls?ls->n:0);
   return new_node(AST_FUNCTION,new_function_node(name,type,args,ls));
 }
 AstNode* parse_repeat(){
@@ -473,7 +473,7 @@ AstNode* parse_repeat(){
   if(!expect(tk,TK_UNTIL)) return error(tk,"invalid repeat statement");
   AstNode* expr=parse_expr();
   if(!expr) return NULL;
-  DEBUG("repeat\n");
+  // DEBUG("repeat\n");
   return new_node(AST_REPEAT,new_ast_list_node(expr,(List*)(body->data)));
 }
 AstNode* parse_while(){
@@ -487,7 +487,7 @@ AstNode* parse_while(){
   if(!body) return NULL;
   tk=consume();
   if(!expect(tk,TK_END)) return error(tk,"invalid while statement");
-  DEBUG("while\n");
+  // DEBUG("while\n");
   return new_node(AST_WHILE,new_ast_list_node(expr,(List*)(body->data)));
 }
 AstNode* parse_if(){
@@ -501,7 +501,7 @@ AstNode* parse_if(){
   if(!body) return NULL;
   tk=consume();
   if(!expect(tk,TK_END)) return error(tk,"invalid if statement");
-  DEBUG("if\n");
+  // DEBUG("if\n");
   return new_node(AST_IF,new_ast_list_node(expr,(List*)(body->data)));
 }
 AstNode* parse_fornum(){
@@ -532,7 +532,7 @@ AstNode* parse_fornum(){
   if(!body) return NULL;
   tk=consume();
   if(!expect(tk,TK_END)) return error(tk,"invalid for loop");
-  DEBUG("for num\n");
+  // DEBUG("for num\n");
   return new_node(AST_FORNUM,new_fornum_node(name,num1,num2,num3,(List*)(body->data)));
 }
 AstNode* parse_forin(){
@@ -561,7 +561,7 @@ AstNode* parse_forin(){
   tk=consume();
   if(!expect(tk,TK_END)) return error(tk,"invalid for loop");
   AstNode* lhs_node=new_node(AST_LTUPLE,lhs);
-  DEBUG("for in\n");
+  // DEBUG("for in\n");
   return new_node(AST_FORIN,new_forin_node(lhs_node,tuple,(List*)(body->data)));
 }
 AstNode* parse_break(){
@@ -578,7 +578,7 @@ AstNode* parse_label(){
   strcpy(text,tk->text);
   tk=consume();
   if(!expect(tk,TK_DBCOLON)) return error(tk,"invalid label");
-  DEBUG("label %s\n",text);
+  // DEBUG("label %s\n",text);
   return new_node(AST_LABEL,new_string_node(text));
 }
 AstNode* parse_goto(){
@@ -588,7 +588,7 @@ AstNode* parse_goto(){
   tk=consume();
   if(!expect(tk,TK_NAME)) return error(tk,"invalid goto statement");
   strcpy(text,tk->text);
-  DEBUG("goto %s\n",text);
+  // DEBUG("goto %s\n",text);
   return new_node(AST_GOTO,new_string_node(text));
 }
 
@@ -607,8 +607,8 @@ AstNode* parse_string(){
   }
   if(tk) strcat(text,begin->text);
   else return error(begin,"unclosed string");
-  DEBUG("string %s\n",text);
-  return new_node(AST_PRIMITIVE,new_primitive_node(text,"string"));
+  // DEBUG("string %s\n",text);
+  return new_node(AST_PRIMITIVE,new_primitive_node(text,PRIMITIVE_STRING));
 }
 AstNode* parse_number(){
   char text[256];
@@ -622,25 +622,24 @@ AstNode* parse_number(){
     if(!expect(tk,TK_INT)) return error(tk,"invalid number");
     strcat(text,".");
     strcat(text,tk->text);
-    return new_node(AST_PRIMITIVE,new_primitive_node(text,"float"));
+    return new_node(AST_PRIMITIVE,new_primitive_node(text,PRIMITIVE_FLOAT));
   }
-  DEBUG("%s %s\n",type,text);
-  return new_node(AST_PRIMITIVE,new_primitive_node(text,"int"));
+  // DEBUG("%s %s\n",type,text);
+  return new_node(AST_PRIMITIVE,new_primitive_node(text,PRIMITIVE_INT));
 }
 AstNode* parse_boolean(){
   char text[6];
   Token* tk=consume();
   if(!expect(tk,TK_TRUE) && !expect(tk,TK_FALSE)) return error(tk,"invalid boolean");
   strcpy(text,tk->text);
-  DEBUG("boolean %s\n",text);
-  return new_node(AST_PRIMITIVE,new_primitive_node(text,"boolean"));
+  // DEBUG("boolean %s\n",text);
+  return new_node(AST_PRIMITIVE,new_primitive_node(text,PRIMITIVE_BOOL));
 }
 AstNode* parse_nil(){
-  char text[4];
   Token* tk=consume();
   if(!expect(tk,TK_NIL)) return error(tk,"invalid nil");
-  DEBUG("nil\n");
-  return new_node(AST_PRIMITIVE,new_primitive_node("nil","nil"));
+  // DEBUG("nil\n");
+  return new_node(AST_PRIMITIVE,new_primitive_node("nil",PRIMITIVE_NIL));
 }
 AstNode* parse_table(){
   Token* tk=consume();
@@ -651,7 +650,7 @@ AstNode* parse_table(){
   while(tk && !specific(tk,TK_CURLY,"}")){
     if(!expect(tk,TK_NAME)) return error(tk,"invalid table");
     add_to_list(keys,tk->text);
-    DEBUG("key: %s\n",tk->text);
+    // DEBUG("key: %s\n",tk->text);
     tk=consume();
     if(!specific(tk,TK_MISC,"=")) return error(tk,"invalid table");
     AstNode* node=parse_expr();
@@ -664,7 +663,7 @@ AstNode* parse_table(){
     }
   }
   if(!tk) return error(tk,"unclosed table");
-  DEBUG("table\n");
+  // DEBUG("table\n");
   return new_node(AST_TABLE,new_table_node(keys,vals));
 }
 
@@ -685,7 +684,7 @@ AstNode* parse_tuple(){
     add_to_list(types,get_type(node));
     tk=check();
   }
-  DEBUG("tuple\n");
+  // DEBUG("tuple\n");
   AstNode* type_node=new_node(AST_TYPE_TUPLE,types);
   return new_node(AST_TUPLE,new_ast_list_node(type_node,ls));
 }
@@ -721,7 +720,7 @@ AstNode* parse_expr(){
       if(!specific(tk,TK_PAREN,")")) node=parse_tuple();
       tk=consume();
       if(!specific(tk,TK_PAREN,")")) return error(tk,"invalid function invocation");
-      DEBUG("function call\n");
+      // DEBUG("function call\n");
       node=new_node(AST_CALL,new_ast_ast_node(lhs,node));
     }else{
       node=lhs;
@@ -734,12 +733,12 @@ AstNode* parse_expr(){
       BinaryNode* data=(BinaryNode*)(node->data);
       if(strcmp(data->text,"^")){
         while(data->l->type==AST_BINARY) data=(BinaryNode*)(data->l->data);
-        data->l=new_node(AST_UNARY,new_string_ast_node(text,data->l));
+        data->l=new_node(AST_UNARY,new_unary_node(text,data->l));
       }else{
-        node=new_node(AST_UNARY,new_string_ast_node(text,node));
+        node=new_node(AST_UNARY,new_unary_node(text,node));
       }
     }else{
-      node=new_node(AST_UNARY,new_string_ast_node(text,node));
+      node=new_node(AST_UNARY,new_unary_node(text,node));
     }
   }
   tk=check();

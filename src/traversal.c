@@ -353,9 +353,9 @@ void* process_tuple(AstNode* node){
 
 // Expressions
 void* process_unary(AstNode* node){
-  StringAstNode* data=(StringAstNode*)(node->data);
+  BinaryNode* data=(BinaryNode*)(node->data);
   printf("(%s ",data->text);
-  process_node(data->node);
+  process_node(data->l);
   printf(")");
   return NULL;
 }

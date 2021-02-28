@@ -1,3 +1,8 @@
+#define PRIMITIVE_STRING "string"
+#define PRIMITIVE_FLOAT "float"
+#define PRIMITIVE_BOOL "bool"
+#define PRIMITIVE_INT "int"
+#define PRIMITIVE_NIL "nil"
 
 /*
   List: a dynamic-length array
@@ -155,13 +160,13 @@ enum RULES{
   AST_SET, AST_CALL, AST_SUB,
 
   // Binary node
-  AST_BINARY, AST_DEFINE,
+  AST_BINARY, AST_UNARY, AST_DEFINE,
 
   // AstNode*
   AST_RETURN, AST_PAREN,
 
   // StringAstNode*
-  AST_FIELD, AST_LOCAL, AST_UNARY, AST_TYPEDEF, AST_PRIMITIVE,
+  AST_FIELD, AST_LOCAL, AST_TYPEDEF, AST_PRIMITIVE,
 
   // FornumNode*
   AST_FORNUM,
@@ -173,7 +178,7 @@ enum RULES{
   AST_UNKNOWN
 };
 
-// Variable scope tracking
+// scopes.c
 void init_scopes();
 void dealloc_scopes();
 void push_scope();
@@ -181,11 +186,11 @@ void pop_scope();
 void add_scoped_var(BinaryNode* node);
 BinaryNode* get_scoped_var(char* name);
 
-// Type nodes
+// types.c
 AstNode* get_type(AstNode* node);
 int typed_match(AstNode* l,AstNode* r);
 
-// Node constructors
+// nodes.c
 AstNode* new_node(int type,void* data);
 FunctionNode* new_function_node(char* name,AstNode* type,List* args,List* body);
 AstListNode* new_ast_list_node(AstNode* ast,List* list);
@@ -199,12 +204,11 @@ BinaryNode* new_binary_node(char* text,AstNode* l,AstNode* r);
 InterfaceNode* new_interface_node(char* name,char* parent,List* ls);
 ClassNode* new_class_node(char* name,char* parent,List* interfaces,List* ls);
 char* new_string_node(char* msg);
+BinaryNode* new_unary_node(char* op,AstNode* e);
 
-// Parsing interface
+// parser.c
 AstNode* parse(List* ls);
 char* get_parse_error();
-
-// Parser functions
 AstNode* parse_interface();
 AstNode* parse_typedef();
 AstNode* parse_define(AstNode* type);
@@ -233,11 +237,9 @@ AstNode* parse_lhs();
 AstNode* parse_if();
 AstNode* parse_do();
 
-// Traversal interface
+// traversal.c
 void traverse(AstNode* root);
 List* get_traversal_errors();
-
-// Traversal functions
 void* process_stmt(AstNode* node);
 void* process_type(AstNode* node);
 void* process_define(AstNode* node);
