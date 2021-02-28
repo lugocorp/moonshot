@@ -1,8 +1,9 @@
 #include "./moonshot.h"
 #include <stdlib.h>
 #include <string.h>
+static List* types_graph;
 
-// TODO implement subtype graph for classes, interfaces and typedefs
+// TODO implement nonexistent type checking
 // TODO implement function parameter types (also function types in general)
 
 // Type nodes
@@ -49,8 +50,7 @@ AstNode* get_type(AstNode* node){ // TODO implement the commented branches
     default: return NULL;
   }
 }
-int typed_match(AstNode* l,AstNode* r){ // TODO implement function types
-  // FUNC
+static int typed_match_no_equivalence(AstNode* l,AstNode* r){ // TODO implement function types
   if(l->type==AST_TYPE_ANY) return 1;
   if(!r) return 0;
   if(is_primitive(r,PRIMITIVE_NIL)) return 1;
@@ -70,5 +70,50 @@ int typed_match(AstNode* l,AstNode* r){ // TODO implement function types
     }
     return 1;
   }
+  return 0;
+}
+int typed_match(AstNode* l,AstNode* r){
+  if(r && l->type==AST_TYPE_BASIC && types_equivalent((char*)(l->data),r)) return 1;
+  return typed_match_no_equivalence(l,r);
+}
+
+// Type equivalence graph
+void init_type_equivalence(){
+  types_graph=new_default_list();
+}
+void dealloc_type_equivalence(){
+  dealloc_list(types_graph);
+}
+void add_type_equivalence(char* name,AstNode* type,int unique){
+  // TODO implement type collision (if unique)
+  // TODO prevent graph cycles
+  add_to_list(types_graph,new_string_ast_node(name,type));
+}
+List* get_equivalent_types(char* name){
+  List* ls=new_default_list();
+  for(int a=0;a<types_graph->n;a++){
+    StringAstNode* node=(StringAstNode*)get_from_list(types_graph,a);
+    if(!strcmp(node->text,name)) add_to_list(ls,node->node);
+  }
+  return ls;
+}
+int types_equivalent(char* name,AstNode* type){
+  if(type->type==AST_TYPE_BASIC && !strcmp(name,(char*)(type->data))) return 1;
+  List* ls=get_equivalent_types(name);
+  int a=0;
+  while(a<ls->n){
+    AstNode* node=get_from_list(ls,a);
+    if(typed_match_no_equivalence(node,type)){
+      dealloc_list(ls);
+      return 1;
+    }
+    if(node->type==AST_TYPE_BASIC){
+      List* ls1=get_equivalent_types((char*)(node->data));
+      for(int b=0;b<ls1->n;b++) add_to_list(ls,get_from_list(ls1,b));
+      dealloc_list(ls1);
+    }
+    a++;
+  }
+  dealloc_list(ls);
   return 0;
 }

@@ -9,7 +9,7 @@ List* tokenize(FILE* f);
 
 int main(int argc,char** argv){
   //const char* code="class hello extends hi where function yo() end (int,string,int) msg end";
-  const char* code="int hello={}";
+  const char* code="typedef response (bool,string) response hello=(true,\"hi\")";
   FILE* f=fmemopen((char*)code,strlen(code),"r");
   List* ls=tokenize(f);
   fclose(f);

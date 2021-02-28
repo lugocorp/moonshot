@@ -189,6 +189,11 @@ BinaryNode* get_scoped_var(char* name);
 // types.c
 AstNode* get_type(AstNode* node);
 int typed_match(AstNode* l,AstNode* r);
+void init_type_equivalence();
+void dealloc_type_equivalence();
+void add_type_equivalence(char* name,AstNode* type,int unique);
+List* get_equivalent_types(char* name);
+int types_equivalent(char* name,AstNode* type);
 
 // nodes.c
 AstNode* new_node(int type,void* data);

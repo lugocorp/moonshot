@@ -21,9 +21,10 @@ AstNode* parse(List* ls){
   error_msg[0]=0;
   AstNode* root=parse_stmt();
   if(root){
+    Token* tk;
     while(_i<tokens->n){
-      if(((Token*)get_from_list(tokens,_i++))->type!=TK_SPACE){
-        error(NULL,"unparsed tokens");
+      if((tk=(Token*)get_from_list(tokens,_i++))->type!=TK_SPACE){
+        error(tk,"unparsed tokens");
         // TODO deallocate root somehow
         return NULL;
       }

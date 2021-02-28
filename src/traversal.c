@@ -14,11 +14,13 @@ static AstNode* error(AstNode* node,const char* msg){
 
 // Traversal interface
 void traverse(AstNode* root){
+  init_type_equivalence();
   init_scopes();
   push_scope();
   process_stmt(root);
   pop_scope();
   dealloc_scopes();
+  dealloc_type_equivalence();
 }
 List* get_traversal_errors(){
   return error_msgs;
@@ -115,6 +117,7 @@ void* process_typedef(AstNode* node){
   printf("typedef %s -> ",data->text);
   process_type(data->node);
   printf("\n");
+  add_type_equivalence(data->text,data->node,1);
   return NULL;
 }
 void* process_interface(AstNode* node){
