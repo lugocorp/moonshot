@@ -124,44 +124,46 @@ void process_define(AstNode* node){
 void process_typedef(AstNode* node){
   StringAstNode* data=(StringAstNode*)(node->data);
   if(validate){
-    if(!compound_type_exists(data->node)) return error(node,"type %t does not exist",data->node);
-    if(type_exists(data->text)) return error(node,"type %s is already declared",data->text);
+    ERROR(type_exists(data->text),"type %s is already declared",data->text);
+    ERROR(!compound_type_exists(data->node),"type %t does not exist",data->node);
+    ERROR(!add_type_equivalence(data->text,data->node),"co-dependent typedef %s detected",data->text);
+    register_type(data->text);
   }
   char* type1=stringify_type(data->node);
   write("-- typedef %s -> %s\n",data->text,type1);
   free(type1);
-  register_type(data->text);
-  add_type_equivalence(data->text,data->node);
 }
 void process_interface(AstNode* node){
-  // TODO implement this
   InterfaceNode* data=(InterfaceNode*)(node->data);
-  printf("interface %s ",data->name);
-  if(data->parent[0]) printf("extends %s ",data->parent);
-  printf("where\n");
-  for(int a=0;a<data->ls->n;a++){
-    process_node((AstNode*)get_from_list(data->ls,a));
+  if(validate){
+    if(strlen(data->parent)>0){
+      ERROR(!interface_exists(data->parent),"parent interface %s does not exist",data->parent);
+      ERROR(!add_child_type(data->name,data->parent),"co-dependent interface %s detected",data->name);
+    }
+    ERROR(type_exists(data->name),"type %s is already declared",data->name);
+    register_interface(data->name);
+    register_type(data->name);
   }
-  printf("end\n");
 }
 void process_class(AstNode* node){
-  // TODO implement this
   ClassNode* data=(ClassNode*)(node->data);
-  printf("class %s ",data->name);
-  if(data->parent[0]) printf("extends %s ",data->parent);
-  if(data->interfaces->n){
-    printf("implements ");
-    for(int a=0;a<data->interfaces->n;a++){
-      if(a) printf(",");
-      printf("%s",(char*)get_from_list(data->interfaces,a));
+  if(validate){
+    if(strlen(data->parent)>0){
+      ERROR(!class_exists(data->parent),"parent class %s does not exist",data->parent);
+      ERROR(!add_child_type(data->name,data->parent),"co-dependent class %s detected",data->name);
     }
-    printf(" ");
+    for(int a=0;a<data->interfaces->n;a++){
+      char* interface=(char*)get_from_list(data->interfaces,a);
+      ERROR(!interface_exists(data->parent),"interface %s does not exist",interface);
+      add_child_type(data->name,interface);
+    }
+    ERROR(type_exists(data->name),"type %s is already declared",data->name);
+    register_class(data->name);
+    register_type(data->name);
   }
-  printf("where\n");
   for(int a=0;a<data->ls->n;a++){
     process_node((AstNode*)get_from_list(data->ls,a));
   }
-  printf("end\n");
 }
 
 // Statement group

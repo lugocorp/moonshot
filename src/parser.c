@@ -183,7 +183,7 @@ static AstNode* parse_basic_type(){
   }else if(expect(tk,TK_NAME)){
     consume();
     return new_node(AST_TYPE_BASIC,tk->text);
-  }else if(specific(tk,TK_MISC,"*")){
+  }else if(specific(tk,TK_BINARY,"*")){
     consume();
     AstNode* node=parse_type();
     if(!node) return NULL;
@@ -258,7 +258,7 @@ AstNode* parse_stmt(){
     else if(expect(tk,TK_WHILE)) node=parse_while();
     else if(expect(tk,TK_GOTO)) node=parse_goto();
     else if(expect(tk,TK_DO)) node=parse_do();
-    else if(specific(tk,TK_MISC,"*")) node=parse_function_or_define();
+    else if(specific(tk,TK_BINARY,"*")) node=parse_function_or_define();
     else if(specific(tk,TK_PAREN,"(")){
       AstNode* type=parse_type();
       if(type) node=parse_function(type,1);
@@ -289,8 +289,6 @@ AstNode* parse_stmt(){
 }
 AstNode* parse_call(AstNode* lhs){
   AstNode* args=NULL;
-  /*AstNode* lhs=parse_lhs();
-  if(!lhs) return NULL;*/
   Token* tk=consume_next();
   if(!specific(tk,TK_PAREN,"(")) return error(tk,"invalid function call");
   tk=check();
@@ -691,7 +689,7 @@ AstNode* parse_tuple(){
 }
 AstNode* parse_paren_or_tuple_function(){
   Token* tk=check_ahead(2);
-  if(specific(tk,TK_MISC,"*")){
+  if(specific(tk,TK_BINARY,"*")){
     AstNode* type=parse_type();
     if(!type) return NULL;
     return parse_function(type,1);
@@ -725,7 +723,7 @@ AstNode* parse_expr(){
     node=parse_string();
   }else if(expect(tk,TK_FUNCTION)){
     node=parse_function(NULL,1);
-  }else if(specific(tk,TK_MISC,"*")){
+  }else if(specific(tk,TK_BINARY,"*")){
     AstNode* type=parse_type();
     if(!type) return NULL;
     node=parse_function(type,1);
@@ -734,11 +732,18 @@ AstNode* parse_expr(){
   }else if(specific(tk,TK_PAREN,"(")){
     node=parse_paren_or_tuple_function();
   }else if(tk->type==TK_NAME){
-    AstNode* lhs=parse_lhs();
-    tk=check_next();
-    DEBUG("lhs or function call\n");
-    if(specific(tk,TK_PAREN,"(")) node=parse_call(lhs);
-    else node=lhs;
+    tk=check_ahead(2);
+    if(expect(tk,TK_FUNCTION)){
+      AstNode* type=parse_type();
+      if(!type) return NULL;
+      node=parse_function(type,1);
+    }else{
+      AstNode* lhs=parse_lhs();
+      tk=check_next();
+      DEBUG("lhs or function call\n");
+      if(specific(tk,TK_PAREN,"(")) node=parse_call(lhs);
+      else node=lhs;
+    }
   }else if(expect(tk,TK_UNARY) || specific(tk,TK_MISC,"-")){
     char* text=consume()->text;
     node=parse_expr();

@@ -12,10 +12,7 @@ An optionally-typed object-oriented language that extends Lua. This project allo
 - [x] Extend the Lua grammar for the new language
 - [x] Add new language features to tokenizer, parser and traverser
 - [ ] Implement a type checker
-- [ ] Solidify function, class, interface implementation
-- [ ] Refactor tuples to be more like vanilla Lua
-- [ ] Double check parser rules
-- [ ] Split traversal into error checking and output phases
+- [ ] Implement streamed tokenization, combine with parsing step
 - [ ] Ensure that strings work in all scenarios, double check memory deallocation
 - [ ] Integrate library into command line tool
 - [ ] Double check the commenting
