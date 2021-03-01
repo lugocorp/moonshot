@@ -181,11 +181,12 @@ enum RULES{
 
 // Global functions
 void add_error(char* msg);
-void traverse(AstNode* node);
+void traverse(AstNode* node,int validate);
 AstNode* parse(List* ls);
 List* tokenize(FILE* f);
 
 // scopes.c
+void preempt_scopes();
 void init_scopes();
 void dealloc_scopes();
 void push_scope();
@@ -196,6 +197,7 @@ BinaryNode* get_scoped_var(char* name);
 // types.c
 void init_types();
 void dealloc_types();
+//int is_primitive(AstNode* node,const char* type);
 AstNode* get_type(AstNode* node);
 int typed_match(AstNode* l,AstNode* r);
 void register_type(char* name);
@@ -205,6 +207,7 @@ int compound_type_exists(AstNode* node);
 void add_type_equivalence(char* name,AstNode* type);
 List* get_equivalent_types(char* name);
 int types_equivalent(char* name,AstNode* type);
+char* stringify_type(AstNode* node);
 
 // nodes.c
 AstNode* new_node(int type,void* data);
@@ -223,7 +226,6 @@ char* new_string_node(char* msg);
 BinaryNode* new_unary_node(char* op,AstNode* e);
 
 // parser.c
-AstNode* parse(List* ls);
 AstNode* parse_interface();
 AstNode* parse_typedef();
 AstNode* parse_define(AstNode* type);
@@ -253,34 +255,32 @@ AstNode* parse_if();
 AstNode* parse_do();
 
 // traversal.c
-void traverse(AstNode* root);
-List* get_traversal_errors();
-void* process_stmt(AstNode* node);
-void* process_define(AstNode* node);
-void* process_typedef(AstNode* node);
-void* process_primitive(AstNode* node);
-void* process_interface(AstNode* node);
-void* process_class(AstNode* node);
-void* process_function(AstNode* node);
-void* process_repeat(AstNode* node);
-void* process_ltuple(AstNode* node);
-void* process_return(AstNode* node);
-void* process_binary(AstNode* node);
-void* process_fornum(AstNode* node);
-void* process_break(AstNode* node);
-void* process_paren(AstNode* node);
-void* process_forin(AstNode* node);
-void* process_unary(AstNode* node);
-void* process_tuple(AstNode* node);
-void* process_table(AstNode* node);
-void* process_local(AstNode* node);
-void* process_while(AstNode* node);
-void* process_field(AstNode* node);
-void* process_label(AstNode* node);
-void* process_goto(AstNode* node);
-void* process_call(AstNode* node);
-void* process_set(AstNode* node);
-void* process_sub(AstNode* node);
-void* process_if(AstNode* node);
-void* process_do(AstNode* node);
-void* process_id(AstNode* node);
+void process_stmt(AstNode* node);
+void process_define(AstNode* node);
+void process_typedef(AstNode* node);
+void process_primitive(AstNode* node);
+void process_interface(AstNode* node);
+void process_class(AstNode* node);
+void process_function(AstNode* node);
+void process_repeat(AstNode* node);
+void process_ltuple(AstNode* node);
+void process_return(AstNode* node);
+void process_binary(AstNode* node);
+void process_fornum(AstNode* node);
+void process_break(AstNode* node);
+void process_paren(AstNode* node);
+void process_forin(AstNode* node);
+void process_unary(AstNode* node);
+void process_tuple(AstNode* node);
+void process_table(AstNode* node);
+void process_local(AstNode* node);
+void process_while(AstNode* node);
+void process_field(AstNode* node);
+void process_label(AstNode* node);
+void process_goto(AstNode* node);
+void process_call(AstNode* node);
+void process_set(AstNode* node);
+void process_sub(AstNode* node);
+void process_if(AstNode* node);
+void process_do(AstNode* node);
+void process_id(AstNode* node);

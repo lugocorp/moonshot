@@ -1,7 +1,7 @@
 BUILD:=bin
 SRC:=$(shell find src | grep -e "\.c")
 OBJ:=$(patsubst src/%.c,$(BUILD)/%.o,$(SRC))
-LIBNAME:=$(BUILD)/liblang.so
+LIBNAME:=$(BUILD)/libmoonshot.so
 
 all: clean $(LIBNAME)
 

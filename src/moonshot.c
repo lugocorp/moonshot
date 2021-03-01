@@ -48,8 +48,9 @@ int moonshot(FILE* f){
   }
 
   // AST traversal
-  traverse(root);
+  traverse(root,1);
+  if(!errors->n) traverse(root,0);
   // TODO dealloc root
   dealloc_deep(ls);
-  return errors->n?0:1;
+  return (errors->n)?0:1;
 }

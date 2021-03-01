@@ -88,6 +88,7 @@ static int typed_match_no_equivalence(AstNode* l,AstNode* r){ // TODO implement 
   return 0;
 }
 int typed_match(AstNode* l,AstNode* r){
+  if(!l) return 1;
   if(r && l->type==AST_TYPE_BASIC && types_equivalent((char*)(l->data),r)) return 1;
   return typed_match_no_equivalence(l,r);
 }
@@ -157,4 +158,41 @@ int types_equivalent(char* name,AstNode* type){
   }
   dealloc_list(ls);
   return 0;
+}
+
+// Type stringification
+static void stringify_type_internal(List* ls,AstNode* node){
+  if(!node || node->type==AST_TYPE_ANY){
+    add_to_list(ls,"var");
+  }else if(node->type==AST_TYPE_BASIC){
+    add_to_list(ls,node->data);
+  }else if(node->type==AST_TYPE_TUPLE){
+    List* tls=(List*)(node->data);
+    add_to_list(ls,"(");
+    for(int a=0;a<tls->n;a++){
+      if(a) add_to_list(ls,",");
+      stringify_type_internal(ls,(AstNode*)get_from_list(tls,a));
+    }
+    add_to_list(ls,")");
+  }else if(node->type==AST_TYPE_FUNC){
+    AstListNode* data=(AstListNode*)(node->data);
+    stringify_type_internal(ls,data->node);
+    add_to_list(ls,"(");
+    for(int a=0;a<data->list->n;a++){
+      if(a) add_to_list(ls,",");
+      stringify_type_internal(ls,(AstNode*)get_from_list(data->list,a));
+    }
+    add_to_list(ls,")");
+  }
+}
+char* stringify_type(AstNode* node){
+  int len=1;
+  List* ls=new_default_list();
+  stringify_type_internal(ls,node);
+  for(int a=0;a<ls->n;a++) len+=strlen((char*)get_from_list(ls,a));
+  char* type=(char*)malloc(sizeof(char)+len);
+  type[0]=0;
+  for(int a=0;a<ls->n;a++) strcat(type,(char*)get_from_list(ls,a));
+  dealloc_list(ls);
+  return type;
 }

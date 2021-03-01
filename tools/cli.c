@@ -1,23 +1,14 @@
-#include "../src/internal.h"
+#include "../src/moonshot.h"
 #include <string.h>
 #include <stdio.h>
 
-void traverse(AstNode* root);
-AstNode* parse(List* ls);
-char* get_parse_error();
-List* tokenize(FILE* f);
-
 int main(int argc,char** argv){
-  // FILE* f=fmemopen((char*)code,strlen(code),"r");
-  FILE* f=stdin;
-  List* ls=tokenize(f);
-  AstNode* root=parse(ls);
-  if(root){
-    traverse(root);
-  }else{
-    printf("%s\n",get_parse_error());
+  init_moonshot();
+  moonshot(stdin);
+  for(int a=0;a<num_errors();a++){
+    char* e=next_error();
+    printf("ERROR %s\n",e);
   }
-  dealloc_list(ls);
-  fclose(f);
-  return root?0:1;
+  destroy_moonshot();
+  return 0;
 }

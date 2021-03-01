@@ -4,6 +4,9 @@
 static List* scopes;
 
 // Variable scope tracking
+void preempt_scopes(){
+  scopes=NULL;
+}
 void init_scopes(){
   scopes=new_default_list();
 }
@@ -28,11 +31,14 @@ int add_scoped_var(BinaryNode* node){
   return 1;
 }
 BinaryNode* get_scoped_var(char* name){
-  for(int a=(scopes->n)-1;a>=0;a--){
-    List* scope=(List*)get_from_list(scopes,a);
-    for(int b=0;b<scope->n;b++){
-      BinaryNode* n=(BinaryNode*)get_from_list(scope,b);
-      if(!strcmp(n->text,name)) return n;
+  if(scopes){
+    for(int a=(scopes->n)-1;a>=0;a--){
+      List* scope=(List*)get_from_list(scopes,a);
+      for(int b=0;b<scope->n;b++){
+        BinaryNode* n=(BinaryNode*)get_from_list(scope,b);
+        if(!strcmp(n->text,name)) return n;
+      }
+
     }
   }
   return NULL;
