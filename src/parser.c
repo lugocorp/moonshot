@@ -258,19 +258,19 @@ AstNode* parse_stmt(){
     else if(expect(tk,TK_WHILE)) node=parse_while();
     else if(expect(tk,TK_GOTO)) node=parse_goto();
     else if(expect(tk,TK_DO)) node=parse_do();
-    else if(expect(tk,TK_FOR)){
+    else if(specific(tk,TK_MISC,"*")) node=parse_function_or_define();
+    else if(specific(tk,TK_PAREN,"(")){
+      AstNode* type=parse_type();
+      if(type) node=parse_function(type,1);
+      else node=error(tk,"invalid statement");
+    }else if(expect(tk,TK_FOR)){
       tk=check_ahead(3);
       if(specific(tk,TK_MISC,",") || expect(tk,TK_IN)) node=parse_forin();
       else if(specific(tk,TK_MISC,"=")) node=parse_fornum();
       else return error(tk,"invalid loop");
-    }else if(specific(tk,TK_MISC,"*")) node=parse_function_or_define();
-    else if(specific(tk,TK_MISC,"(")){
-      AstNode* type=parse_type();
-      if(type) node=parse_function(type,1);
-      else node=error(tk,"invalid statement");
     }else if(expect(tk,TK_NAME) || expect(tk,TK_VAR)){
       tk=check_ahead(2);
-      if(specific(tk,TK_PAREN,"(") || specific(tk,TK_SQUARE,"[") || specific(tk,TK_MISC,"=") || specific(tk,TK_MISC,".")){
+      if(specific(tk,TK_PAREN,"(") || specific(tk,TK_SQUARE,"[") || specific(tk,TK_MISC,"=") || specific(tk,TK_MISC,".") || specific(tk,TK_MISC,",")){
         node=parse_set_or_call();
       }else if(expect(tk,TK_VAR) || expect(tk,TK_NAME)){
         node=parse_function_or_define();

@@ -35,6 +35,11 @@ AstNode* get_type(AstNode* node){ // TODO implement the commented branches
     case AST_UNARY: return ((BinaryNode*)(node->data))->r;
     case AST_TUPLE: return ((AstListNode*)(node->data))->node;
     case AST_SUB: return new_node(AST_TYPE_ANY,NULL);
+    case AST_ID:{
+      char* name=(char*)(node->data);
+      BinaryNode* var=get_scoped_var(name);
+      return var?(var->l):new_node(AST_TYPE_ANY,NULL);
+    }
     case AST_FIELD:{
       // Check if get_type((StringAtNode*)node->data->ast) is a class or interface
       return new_node(AST_TYPE_ANY,NULL);
@@ -57,12 +62,7 @@ AstNode* get_type(AstNode* node){ // TODO implement the commented branches
       }
       return new_node(AST_TYPE_BASIC,new_string_node(PRIMITIVE_BOOL));
     }
-    case AST_ID:{
-      char* name=(char*)(node->data);
-      BinaryNode* var=get_scoped_var(name);
-      return var?(var->l):NULL;
-    }
-    default: return NULL;
+    default: return new_node(AST_TYPE_ANY,NULL);
   }
 }
 static int typed_match_no_equivalence(AstNode* l,AstNode* r){ // TODO implement function types

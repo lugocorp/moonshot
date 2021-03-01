@@ -168,7 +168,9 @@ void process_class(AstNode* node){
 void process_stmt(AstNode* node){
   List* ls=(List*)(node->data);
   for(int a=0;a<ls->n;a++){
-    process_node((AstNode*)get_from_list(ls,a));
+    AstNode* e=(AstNode*)get_from_list(ls,a);
+    process_node(e);
+    if(e->type==AST_CALL) write("\n");
   }
 }
 void process_do(AstNode* node){
@@ -187,7 +189,7 @@ void process_call(AstNode* node){
   process_node(data->l);
   write("(");
   if(data->r) process_node(data->r);
-  write(")\n");
+  write(")");
 }
 void process_set(AstNode* node){
   AstAstNode* data=(AstAstNode*)(node->data);

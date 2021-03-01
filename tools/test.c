@@ -4,7 +4,7 @@
 
 int main(int argc,char** argv){
   //const char* code="class hello extends hi where function yo() end (int,string,int) msg end";
-  const char* code="function hello(code,string msg) print(msg) end";
+  const char* code="int number(int d) return d+5 end";
   FILE* f=fmemopen((char*)code,strlen(code),"r");
 
   // Compile
