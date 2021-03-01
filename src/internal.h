@@ -197,7 +197,6 @@ BinaryNode* get_scoped_var(char* name);
 // types.c
 void init_types();
 void dealloc_types();
-//int is_primitive(AstNode* node,const char* type);
 AstNode* get_type(AstNode* node);
 int typed_match(AstNode* l,AstNode* r);
 void register_type(char* name);

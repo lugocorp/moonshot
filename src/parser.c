@@ -9,8 +9,8 @@ static int _i;
 // Errors
 static AstNode* error(Token* tk,const char* msg){
   char* error_msg=(char*)malloc(sizeof(char)*256);
-  if(tk) sprintf(error_msg,"ERROR %s on line %i",msg,tk->line);
-  else sprintf(error_msg,"ERROR %s",msg);
+  if(tk) sprintf(error_msg,"%s on line %i",msg,tk->line);
+  else strcpy(error_msg,msg);
   add_error(error_msg);
   return NULL;
 }

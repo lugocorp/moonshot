@@ -8,10 +8,10 @@ static int error_i;
 void add_error(char* msg){
   add_to_list(errors,msg);
 }
-int num_errors(){
+int moonshot_num_errors(){
   return errors->n;
 }
-char* next_error(){
+char* moonshot_next_error(){
   if(errors && error_i<errors->n) return (char*)get_from_list(errors,error_i++);
   return NULL;
 }
@@ -25,14 +25,14 @@ static void dealloc_deep(List* ls){
 }
 
 // Main functions
-void init_moonshot(){
+void moonshot_init(){
   errors=NULL;
   error_i=0;
 }
-void destroy_moonshot(){
+void moonshot_destroy(){
   if(errors) dealloc_deep(errors);
 }
-int moonshot(FILE* f){
+int moonshot_compile(FILE* f){
   if(errors) dealloc_deep(errors);
   errors=new_default_list();
 

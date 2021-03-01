@@ -1,7 +1,7 @@
 #include <stdio.h>
 
-int num_errors();
-char* next_error();
-void init_moonshot();
-void destroy_moonshot();
-int moonshot(FILE* input);
+int moonshot_num_errors();
+char* moonshot_next_error();
+void moonshot_init();
+void moonshot_destroy();
+int moonshot_compile(FILE* input);

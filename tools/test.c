@@ -7,12 +7,13 @@ int main(int argc,char** argv){
   const char* code="typedef response (bool,string) response success=(true,\"Success!\")";
   FILE* f=fmemopen((char*)code,strlen(code),"r");
 
-  init_moonshot();
-  moonshot(f);
-  for(int a=0;a<num_errors();a++){
-    char* e=next_error();
-    printf("ERROR %s\n",e);
-  }
-  destroy_moonshot();
+  // Compile
+  moonshot_init();
+  moonshot_compile(f);
+  int n=moonshot_num_errors();
+  if(n==1) printf("Compilation returned 1 error\n");
+  if(n>1) printf("Compilation returned %i errors\n",n);
+  for(int a=0;a<n;a++) printf("ERROR %s\n",moonshot_next_error());
+  moonshot_destroy();
   return 0;
 }
