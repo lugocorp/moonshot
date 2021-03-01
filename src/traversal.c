@@ -161,9 +161,11 @@ void process_class(AstNode* node){
     register_class(data->name);
     register_type(data->name);
   }
+  push_scope();
   for(int a=0;a<data->ls->n;a++){
     process_node((AstNode*)get_from_list(data->ls,a));
   }
+  pop_scope();
 }
 
 // Statement group
@@ -173,15 +175,18 @@ void process_stmt(AstNode* node){
     AstNode* e=(AstNode*)get_from_list(ls,a);
     process_node(e);
     if(e->type==AST_CALL) write("\n");
+    if(e->type==AST_FUNCTION) write("\n");
   }
 }
 void process_do(AstNode* node){
   List* ls=(List*)(node->data);
   write("do\n");
+  push_scope();
   for(int a=0;a<ls->n;a++){
     process_node((AstNode*)get_from_list(ls,a));
   }
   write("end\n");
+  pop_scope();
 }
 
 // Statement
@@ -263,18 +268,22 @@ void process_function(AstNode* node){
   }
   write(")\n");
   if(data->body){
+    push_scope();
     for(int a=0;a<data->body->n;a++){
       process_node((AstNode*)get_from_list(data->body,a));
     }
-    write("end\n");
+    write("end");
+    pop_scope();
   }
 }
 void process_repeat(AstNode* node){
   AstListNode* data=(AstListNode*)(node->data);
   write("repeat\n");
+  push_scope();
   for(int a=0;a<data->list->n;a++){
     process_node((AstNode*)get_from_list(data->list,a));
   }
+  pop_scope();
   write("until ");
   process_node(data->node);
   write("\n");
@@ -284,9 +293,11 @@ void process_while(AstNode* node){
   write("while ");
   process_node(data->node);
   write(" do\n");
+  push_scope();
   for(int a=0;a<data->list->n;a++){
     process_node((AstNode*)get_from_list(data->list,a));
   }
+  pop_scope();
   write("end\n");
 }
 void process_if(AstNode* node){
@@ -294,9 +305,11 @@ void process_if(AstNode* node){
   write("if ");
   process_node(data->node);
   write(" then\n");
+  push_scope();
   for(int a=0;a<data->list->n;a++){
     process_node((AstNode*)get_from_list(data->list,a));
   }
+  pop_scope();
   write("end\n");
 }
 void process_fornum(AstNode* node){
@@ -309,11 +322,13 @@ void process_fornum(AstNode* node){
     write(",");
     process_node(data->num3);
   }
+  push_scope();
   write(" do\n");
   for(int a=0;a<data->body->n;a++){
     process_node((AstNode*)get_from_list(data->body,a));
   }
   write("end\n");
+  pop_scope();
 }
 void process_forin(AstNode* node){
   ForinNode* data=(ForinNode*)(node->data);
@@ -322,10 +337,12 @@ void process_forin(AstNode* node){
   write(" in ");
   process_node(data->tuple);
   write(" do\n");
+  push_scope();
   for(int a=0;a<data->body->n;a++){
     process_node((AstNode*)get_from_list(data->body,a));
   }
   write("end\n");
+  pop_scope();
 }
 void process_break(AstNode* node){
   write("break\n");
