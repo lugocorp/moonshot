@@ -104,13 +104,13 @@ typedef struct{
 
 enum TOKENS{
 
-  // Lua reserved keywords
+  // Lua reserved keywords (starts with 0)
   TK_AND, TK_BREAK,
   TK_DO, TK_ELSE, TK_ELSEIF, TK_END, TK_FALSE, TK_FOR, TK_FUNCTION,
   TK_GOTO, TK_IF, TK_IN, TK_LOCAL, TK_NIL, TK_NOT, TK_OR, TK_REPEAT,
   TK_RETURN, TK_THEN, TK_TRUE, TK_UNTIL, TK_WHILE,
 
-  // Lua other terminal symbols
+  // Lua other terminal symbols (starts with 22)
   TK_IDIV, TK_CONCAT, TK_DOTS, TK_EQ, TK_GE, TK_LE, TK_NE,
   TK_SHL, TK_SHR,
   TK_DBCOLON, TK_EOS,
@@ -229,12 +229,13 @@ AstNode* parse_interface();
 AstNode* parse_typedef();
 AstNode* parse_define(AstNode* type);
 AstNode* parse_class();
-AstNode* parse_basic_type();
 AstNode* parse_type();
 AstNode* parse_stmt();
-AstNode* parse_call();
-AstNode* parse_set();
+AstNode* parse_call(AstNode* lhs);
+AstNode* parse_set_or_call();
+AstNode* parse_function_or_define();
 AstNode* parse_function(AstNode* type,int include_body);
+AstNode* parse_paren_or_tuple_function();
 AstNode* parse_repeat();
 AstNode* parse_string();
 AstNode* parse_number();

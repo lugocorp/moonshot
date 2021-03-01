@@ -254,7 +254,8 @@ void process_function(AstNode* node){
   write("(");
   for(int a=0;a<data->args->n;a++){
     if(a) write(",");
-    write("%s",(char*)get_from_list(data->args,a));
+    StringAstNode* arg=(StringAstNode*)get_from_list(data->args,a);
+    write("%s",arg->text);
   }
   write(")\n");
   if(data->body){

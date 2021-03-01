@@ -176,6 +176,9 @@ static void stringify_type_internal(List* ls,AstNode* node){
     add_to_list(ls,")");
   }else if(node->type==AST_TYPE_FUNC){
     AstListNode* data=(AstListNode*)(node->data);
+    if(ls->n==0 || strcmp((char*)get_from_list(ls,ls->n-1),"*")){
+      add_to_list(ls,"*");
+    }
     stringify_type_internal(ls,data->node);
     add_to_list(ls,"(");
     for(int a=0;a<data->list->n;a++){
