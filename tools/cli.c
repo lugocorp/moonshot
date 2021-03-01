@@ -1,4 +1,4 @@
-#include "../src/moonshot.h"
+#include "../src/internal.h"
 #include <string.h>
 #include <stdio.h>
 

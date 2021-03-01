@@ -1,16 +1,17 @@
-#include "./moonshot.h"
+#include "./internal.h"
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
 // #define DEBUG(...) printf(__VA_ARGS__)
-static char error_msg[256];
 static List* tokens;
 static int _i;
 
 // Errors
 static AstNode* error(Token* tk,const char* msg){
+  char* error_msg=(char*)malloc(sizeof(char)*256);
   if(tk) sprintf(error_msg,"ERROR %s on line %i",msg,tk->line);
   else sprintf(error_msg,"ERROR %s",msg);
+  add_error(error_msg);
   return NULL;
 }
 
@@ -18,7 +19,6 @@ static AstNode* error(Token* tk,const char* msg){
 AstNode* parse(List* ls){
   _i=0;
   tokens=ls;
-  error_msg[0]=0;
   AstNode* root=parse_stmt();
   if(root){
     Token* tk;
@@ -31,9 +31,6 @@ AstNode* parse(List* ls){
     }
   }
   return root;
-}
-char* get_parse_error(){
-  return error_msg;
 }
 
 // Token consumption functions

@@ -1,17 +1,9 @@
-#include "./moonshot.h"
-//#include <string.h>
+#include "./internal.h"
+#include <stdarg.h>
+#include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
 static List* error_msgs;
-
-// Errors
-static AstNode* error(AstNode* node,const char* msg){
-  char* e=(char*)malloc(sizeof(char)*256);
-  sprintf(e,"ERROR %s",msg);
-  add_to_list(error_msgs,e);
-  printf("ERROR %s\n",msg);
-  return NULL;
-}
 
 // Traversal interface
 void traverse(AstNode* root){
@@ -23,10 +15,76 @@ void traverse(AstNode* root){
   pop_scope();
   dealloc_scopes();
   dealloc_types();
-  dealloc_list(error_msgs);
 }
 List* get_traversal_errors(){
   return error_msgs;
+}
+
+// Errors
+static void process_type(List* ls,AstNode* node){
+  if(!node || node->type==AST_TYPE_ANY){
+    add_to_list(ls,"var");
+  }else if(node->type==AST_TYPE_BASIC){
+    add_to_list(ls,node->data);
+  }else if(node->type==AST_TYPE_TUPLE){
+    List* tls=(List*)(node->data);
+    add_to_list(ls,"(");
+    for(int a=0;a<tls->n;a++){
+      if(a) add_to_list(ls,",");
+      process_type(ls,(AstNode*)get_from_list(tls,a));
+    }
+    add_to_list(ls,")");
+  }else if(node->type==AST_TYPE_FUNC){
+    AstListNode* data=(AstListNode*)(node->data);
+    process_type(ls,data->node);
+    add_to_list(ls,"(");
+    for(int a=0;a<data->list->n;a++){
+      if(a) add_to_list(ls,",");
+      process_type(ls,(AstNode*)get_from_list(data->list,a));
+    }
+    add_to_list(ls,")");
+  }
+}
+static char* type_string(AstNode* node){
+  int len=1;
+  List* ls=new_default_list();
+  process_type(ls,node);
+  for(int a=0;a<ls->n;a++) len+=strlen((char*)get_from_list(ls,a));
+  char* type=(char*)malloc(sizeof(char)+len);
+  type[0]=0;
+  for(int a=0;a<ls->n;a++) strcat(type,(char*)get_from_list(ls,a));
+  dealloc_list(ls);
+  return type;
+}
+static void* error(AstNode* node,const char* msg,...){
+  char* e=(char*)malloc(sizeof(char)*256);
+  char symbol[2]={0,0};
+  int l=strlen(msg);
+  e[0]=0;
+  va_list args;
+  va_start(args,msg);
+  for(int a=0;a<l;a++){
+    if(a<l-1 && msg[a]=='%'){
+      if(msg[a+1]=='s'){
+        strcat(e,va_arg(args,char*));
+        a++;
+        continue;
+      }
+      if(msg[a+1]=='t'){
+        AstNode* type=(AstNode*)va_arg(args,AstNode*);
+        char* str=type_string(type);
+        strcat(e,str);
+        free(str);
+        a++;
+        continue;
+      }
+    }
+    symbol[0]=msg[a];
+    strcat(e,symbol);
+  }
+  va_end(args);
+  add_error(e);
+  return NULL;
 }
 
 // Node to function switch
@@ -68,47 +126,14 @@ void* process_node(AstNode* node){
 }
 
 // Extended grammar
-void* process_type(AstNode* node){
-  if(!node || node->type==AST_TYPE_ANY){
-    printf("var");
-  }else if(node->type==AST_TYPE_BASIC){
-    char* name=(char*)(node->data);
-    printf("%s",name);
-  }else if(node->type==AST_TYPE_TUPLE){
-    List* ls=(List*)(node->data);
-    printf("(");
-    for(int a=0;a<ls->n;a++){
-      if(a) printf(",");
-      process_type((AstNode*)get_from_list(ls,a));
-    }
-    printf(")");
-  }else if(node->type==AST_TYPE_FUNC){
-    AstListNode* data=(AstListNode*)(node->data);
-    process_type(data->node);
-    printf("(");
-    for(int a=0;a<data->list->n;a++){
-      if(a) printf(",");
-      process_type((AstNode*)get_from_list(data->list,a));
-    }
-    printf(")");
-  }
-  return NULL;
-}
 void* process_define(AstNode* node){
   BinaryNode* data=(BinaryNode*)(node->data);
-  if(!compound_type_exists(data->l)) return error(node,"cannot define a variable with nonexistent type");
+  if(!compound_type_exists(data->l)) return error(node,"reference to nonexistent type %t",data->l);
   if(data->r){
     AstNode* tr=get_type(data->r);
-    if(!typed_match(data->l,tr)){
-      printf("Error invalid expression type ");
-      process_type(tr);
-      printf(" for variable of type ");
-      process_type(data->l);
-      printf("\n");
-      return NULL;
-    }
+    if(!typed_match(data->l,tr)) return error(node,"expression of type %t cannot be assigned to variable of type %t",tr,data->l);
   }
-  if(!add_scoped_var(data)) return error(node,"variable was already declared in this scope");
+  if(!add_scoped_var(data)) return error(node,"variable %s was already declared in this scope",data->text);
   printf("local %s=",data->text);
   if(data->r){
     process_node(data->r);
@@ -120,12 +145,12 @@ void* process_define(AstNode* node){
 }
 void* process_typedef(AstNode* node){
   StringAstNode* data=(StringAstNode*)(node->data);
-  if(!compound_type_exists(data->node)) return error(node,"equivalent type does not exist");
-  if(type_exists(data->text)) return error(node,"type is already declared");
+  if(!compound_type_exists(data->node)) return error(node,"type %t does not exist",data->node);
+  if(type_exists(data->text)) return error(node,"type %s is already declared",data->text);
   register_type(data->text);
-  printf("-- typedef %s -> ",data->text);
-  process_type(data->node);
-  printf("\n");
+  char* type1=type_string(data->node);
+  printf("-- typedef %s -> %s\n",data->text,type1);
+  free(type1);
   add_type_equivalence(data->text,data->node);
   return NULL;
 }
