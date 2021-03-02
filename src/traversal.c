@@ -402,20 +402,19 @@ void process_tuple(AstNode* node){
 
 // Expressions
 void process_unary(AstNode* node){
-  // TODO test and then remove parenthesis
   BinaryNode* data=(BinaryNode*)(node->data);
-  write("(%s ",data->text);
+  // write("(");
+  write("%s ",data->text);
   process_node(data->l);
-  write(")");
+  // write(")");
 }
 void process_binary(AstNode* node){
-  // TODO test and then remove parenthesis
   BinaryNode* data=(BinaryNode*)(node->data);
-  write("(");
+  // write("(");
   process_node(data->l);
   write(" %s ",data->text);
   process_node(data->r);
-  write(")");
+  // write(")");
 }
 void process_paren(AstNode* node){
   write("(");

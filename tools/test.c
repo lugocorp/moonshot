@@ -3,7 +3,7 @@
 #include <stdio.h>
 
 int main(int argc,char** argv){
-  const char* code="class hi where string hello() return \"Hello\" end end";
+  const char* code="print( 2^4*5+3 )";
   FILE* f=fmemopen((char*)code,strlen(code),"r");
 
   // Compile

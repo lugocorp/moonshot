@@ -2,6 +2,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#define UNARY_PRECEDENCE 6
 #define DEBUG(...) //printf(__VA_ARGS__)
 static List* tokens;
 static int _i;
@@ -65,7 +66,7 @@ static int specific(Token* tk,int type,const char* val){
   return tk && tk->type==type && !strcmp(tk->text,val);
 }
 static int precedence(char* op){
-  if(!strcmp(op,"^")) return 6;
+  if(!strcmp(op,"^")) return 7;
   if(!strcmp(op,"*") || !strcmp(op,"/")) return 5;
   if(!strcmp(op,"+") || !strcmp(op,"-")) return 4;
   if(!strcmp(op,"..")) return 3;
@@ -702,6 +703,17 @@ AstNode* parse_paren_or_tuple_function(){
   if(!specific(tk,TK_PAREN,")")) return error(tk,"unclosed expression");
   return new_node(AST_PAREN,node);
 }
+static AstNode* precede_expr_tree(BinaryNode* data){
+  if(data->r->type!=AST_BINARY) return new_node(AST_BINARY,data);
+  BinaryNode* r=(BinaryNode*)(data->r->data);
+  int lp=precedence(data->text);
+  int rp=precedence(r->text);
+  if(lp>rp){
+    AstNode* l=precede_expr_tree(new_binary_node(data->text,data->l,r->l));
+    return new_node(AST_BINARY,new_binary_node(r->text,l,r->r));
+  }
+  return new_node(AST_BINARY,data);
+}
 AstNode* parse_expr(){
   Token* tk=check();
   AstNode* node=NULL;
@@ -743,15 +755,13 @@ AstNode* parse_expr(){
     if(!node) return NULL;
     if(node->type==AST_BINARY){
       BinaryNode* data=(BinaryNode*)(node->data);
-      if(strcmp(data->text,"^")){
-        while(data->l->type==AST_BINARY) data=(BinaryNode*)(data->l->data);
+      if(precedence(data->text)<UNARY_PRECEDENCE){
+        while(data->l->type==AST_BINARY && precedence(((BinaryNode*)(data->l->data))->text)<UNARY_PRECEDENCE){
+          data=(BinaryNode*)(data->l->data);
+        }
         data->l=new_node(AST_UNARY,new_unary_node(text,data->l));
-      }else{
-        node=new_node(AST_UNARY,new_unary_node(text,node));
-      }
-    }else{
-      node=new_node(AST_UNARY,new_unary_node(text,node));
-    }
+      }else node=new_node(AST_UNARY,new_unary_node(text,node));
+    }else node=new_node(AST_UNARY,new_unary_node(text,node));
   }
   tk=check();
   if(expect(tk,TK_BINARY) || specific(tk,TK_MISC,"-")){
@@ -759,19 +769,7 @@ AstNode* parse_expr(){
     consume();
     AstNode* r=parse_expr();
     if(!r) return NULL;
-    if(r->type==AST_BINARY){
-      BinaryNode* br=(BinaryNode*)(r->data);
-      int lp=precedence(op);
-      int rp=precedence(br->text);
-      if(lp>rp){
-        AstNode* l=new_node(AST_BINARY,new_binary_node(op,node,br->l));
-        node=new_node(AST_BINARY,new_binary_node(br->text,l,br->r));
-      }else{
-        node=new_node(AST_BINARY,new_binary_node(op,node,r));
-      }
-    }else{
-      node=new_node(AST_BINARY,new_binary_node(op,node,r));
-    }
+    node=precede_expr_tree(new_binary_node(op,node,r));
   }
   if(!node) error(tk,"unexpected expression");
   return node;
