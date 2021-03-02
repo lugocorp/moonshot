@@ -12,9 +12,9 @@ An optionally-typed object-oriented language that extends Lua. This project allo
 - [x] Extend the Lua grammar for the new language
 - [x] Add new language features to tokenizer, parser and traverser
 - [x] Implement a type checker
+- [x] Integrate library into command line tool
 - [ ] Implement streamed tokenization, combine with parsing step
 - [ ] Ensure that strings work in all scenarios, double check memory deallocation
-- [ ] Integrate library into command line tool
 - [ ] Double check the commenting
 - [ ] Add a permissive license
 - [ ] Package for deployment

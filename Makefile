@@ -6,7 +6,10 @@ LIBNAME:=$(BUILD)/libmoonshot.so
 all: clean $(LIBNAME)
 
 clean:
-	rm -rf $(BUILD)
+	rm -rf $(BUILD) moonshot
+
+moonshot: $(BUILD)/cli
+	mv bin/cli moonshot
 
 $(BUILD):
 	mkdir $(BUILD)
