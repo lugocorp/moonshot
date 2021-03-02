@@ -14,18 +14,18 @@ static int help(){
   indent(0,"Usage: moonshot [options]\n");
   indent(2,"options include:\n\n");
   indent(0,"Moonshot options\n");
-  indent(1,"-r");
-  indent(5," Execute Lua output after successful compilation\n");
-  indent(1,"-i");
-  indent(5," Read source code from stdin\n");
-  indent(1,"-p");
-  indent(5," Write Lua code to stdout\n");
   indent(1,"-f <file>");
   indent(2,"Compile source from <file>\n");
-  indent(1,"-v");
-  indent(5," Only validate and do not output code\n");
   indent(1,"-o <file>");
   indent(2,"Set output file\n");
+  indent(1,"-r");
+  indent(5," Execute Lua output after successful compilation\n");
+  indent(1,"-v");
+  indent(5," Only validate and do not output code\n");
+  indent(1,"--stdin");
+  indent(3,"Read source code from stdin\n");
+  indent(1,"--print");
+  indent(3,"Write Lua code to stdout\n");
   indent(1,"--help");
   indent(3," Print usage options\n");
   return 1;
@@ -41,14 +41,14 @@ int main(int argc,char** argv){
   for(int a=1;a<argc;a++){
     if(!strcmp(argv[a],"-r")) execute=1;
     else if(!strcmp(argv[a],"-v")) write=0;
-    else if(!strcmp(argv[a],"-i")){
+    else if(!strcmp(argv[a],"--stdin")){
       if(input){
         error();
         printf("input is already defined");
         return 1;
       }
       input=stdin;
-    }else if(!strcmp(argv[a],"-p")){
+    }else if(!strcmp(argv[a],"--print")){
       if(output){
         error();
         printf("output is already defined");
