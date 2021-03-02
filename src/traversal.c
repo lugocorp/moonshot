@@ -160,8 +160,37 @@ void process_do(AstNode* node){
 
 // Statement
 void process_call(AstNode* node){
-  // TODO implement arguments type check
   AstAstNode* data=(AstAstNode*)(node->data);
+  if(validate){
+    char* name=NULL;
+    AstNode* functype=NULL;
+    if(data->l->type==AST_ID){
+      name=(char*)(data->l->data);
+      FunctionNode* func=function_exists(name);
+      if(func){
+        AstNode* funcnode=new_node(AST_FUNCTION,func);
+        functype=get_type(funcnode);
+        free(funcnode);
+      }
+    }else if(data->l->type==AST_FIELD){
+      name=((StringAstNode*)(data->l->data))->text;
+      functype=get_type(data->l);
+    }
+    if(functype){
+      List* funcargs=((AstListNode*)(functype->data))->list;
+      if(data->r){
+        List* args=(List*)(data->r->data);
+        ERROR(funcargs->n!=args->n,"invalid number of arguments for function %s",name);
+        for(int a=0;a<args->n;a++){
+          AstNode* type1=get_type((AstNode*)get_from_list(args,a));
+          AstNode* type2=(AstNode*)get_from_list(funcargs,a);
+          ERROR(!typed_match(type1,type2),"invalid argument provided for function %s",name);
+        }
+      }else{
+        ERROR(funcargs->n!=0,"not enough arguments for function %s",name);
+      }
+    }
+  }
   process_node(data->l);
   write("(");
   if(data->r) process_node(data->r);

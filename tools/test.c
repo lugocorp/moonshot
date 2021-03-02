@@ -3,8 +3,7 @@
 #include <stdio.h>
 
 int main(int argc,char** argv){
-  //const char* code="class hello extends hi where function yo() end (int,string,int) msg end";
-  const char* code="class hello where string message end string yellow() return 5 end hello greeting greeting.message=yellow()";
+  const char* code="class hello where string message(bool hi) end end hello greeting greeting.message()";
   FILE* f=fmemopen((char*)code,strlen(code),"r");
 
   // Compile

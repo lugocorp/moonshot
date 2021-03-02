@@ -7,6 +7,13 @@ static List* errors;
 static int error_i;
 
 // Error functions
+int moonshot_num_errors(){
+  return errors->n;
+}
+char* moonshot_next_error(){
+  if(errors && error_i<errors->n) return (char*)get_from_list(errors,error_i++);
+  return NULL;
+}
 void add_error(int line,const char* msg,...){
   char* e=(char*)malloc(sizeof(char)*256);
   char symbol[2]={0,0};
@@ -33,15 +40,13 @@ void add_error(int line,const char* msg,...){
     symbol[0]=msg[a];
     strcat(e,symbol);
   }
+  if(line>=0){
+    char suffix[256];
+    sprintf(suffix," on line %i",line);
+    strcat(e,suffix);
+  }
   va_end(args);
   add_to_list(errors,e);
-}
-int moonshot_num_errors(){
-  return errors->n;
-}
-char* moonshot_next_error(){
-  if(errors && error_i<errors->n) return (char*)get_from_list(errors,error_i++);
-  return NULL;
 }
 
 // Deallocation
