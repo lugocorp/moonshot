@@ -2,16 +2,20 @@
 #include <stdlib.h>
 #include <string.h>
 static List* scopes;
+static List* funcs;
 
 // Variable scope tracking
 void preempt_scopes(){
   scopes=NULL;
+  funcs=NULL;
 }
 void init_scopes(){
   scopes=new_default_list();
+  funcs=new_default_list();
 }
 void dealloc_scopes(){
   dealloc_list(scopes);
+  dealloc_list(funcs);
 }
 void push_scope(){
   add_to_list(scopes,new_default_list());
@@ -20,6 +24,20 @@ void pop_scope(){
   List* ls=remove_from_list(scopes,scopes->n-1);
   dealloc_list(ls);
 }
+
+// Functions
+void push_function(FunctionNode* node){
+  add_to_list(funcs,node);
+}
+void pop_function(FunctionNode* node){
+  remove_from_list(funcs,funcs->n-1);
+}
+FunctionNode* get_function_scope(){
+  if(funcs->n) return (FunctionNode*)get_from_list(funcs,funcs->n-1);
+  return NULL;
+}
+
+// Variables
 int add_scoped_var(BinaryNode* node){
   List* scope=get_from_list(scopes,scopes->n-1);
   for(int a=0;a<scope->n;a++){

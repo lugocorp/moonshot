@@ -3,7 +3,7 @@
 #include <stdio.h>
 
 int main(int argc,char** argv){
-  const char* code="class hello where string message(bool hi) end end hello greeting greeting.message()";
+  const char* code="class hi where string hello() return \"Hello\" end end";
   FILE* f=fmemopen((char*)code,strlen(code),"r");
 
   // Compile

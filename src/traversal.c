@@ -132,7 +132,9 @@ void process_class(AstNode* node){
   }
   push_scope();
   for(int a=0;a<data->ls->n;a++){
-    process_node((AstNode*)get_from_list(data->ls,a));
+    AstNode* child=(AstNode*)get_from_list(data->ls,a);
+    process_node(child);
+    if(child->type==AST_FUNCTION) write("\n");
   }
   pop_scope();
 }
@@ -213,6 +215,20 @@ void process_set(AstNode* node){
   write("\n");
 }
 void process_return(AstNode* node){
+  if(validate){
+    FunctionNode* func=get_function_scope();
+    if(func){
+      AstNode* type1=func->type;
+      AstNode* type2=node->data?get_type(node->data):new_node(AST_TYPE_ANY,NULL);
+      if(type2->type==AST_TYPE_TUPLE){
+        List* ls=(List*)(type2->data);
+        if(ls->n==1){
+          type2=(AstNode*)get_from_list(ls,0);
+        }
+      }
+      ERROR(!typed_match(type1,type2),"function of type %t cannot return type %t",type1,type2);
+    }
+  }
   write("return");
   if(node->data){
     write(" ");
@@ -254,7 +270,6 @@ void process_local(AstNode* node){
 
 // Control
 void process_function(AstNode* node){
-  // TODO implement return statement type check
   FunctionNode* data=(FunctionNode*)(node->data);
   write("function");
   if(data->name[0]){
@@ -270,9 +285,17 @@ void process_function(AstNode* node){
   write(")\n");
   if(data->body){
     push_scope();
+    push_function(data);
+    int num_returns=0;
     for(int a=0;a<data->body->n;a++){
-      process_node((AstNode*)get_from_list(data->body,a));
+      AstNode* child=(AstNode*)get_from_list(data->body,a);
+      if(child->type==AST_RETURN) num_returns++;
+      process_node(child);
     }
+    if(!is_primitive(data->type,PRIMITIVE_NIL) && data->type->type!=AST_TYPE_ANY){
+      ERROR(!num_returns,"function of type %t cannot return nil",data->type);
+    }
+    pop_function(data);
     write("end");
     pop_scope();
   }

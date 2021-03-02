@@ -29,7 +29,7 @@ void dealloc_types(){
 }
 
 // Type matching for AST traversal
-static int is_primitive(AstNode* node,const char* type){
+int is_primitive(AstNode* node,const char* type){
   return node->type==AST_TYPE_BASIC && !strcmp((char*)(node->data),type);
 }
 static AstNode* get_type_of_field(char* name,void* node,int is_interface){
@@ -67,8 +67,12 @@ AstNode* get_type(AstNode* node){
     case AST_CALL:{
       AstNode* l=((AstAstNode*)(node->data))->l;
       if(l->type==AST_ID){
-        FunctionNode* func=function_exists((char*)(l->data));
+        char* name=(char*)(l->data);
+        FunctionNode* func=function_exists(name);
         if(func) return func->type;
+        if(class_exists(name) || interface_exists(name)){
+          return new_node(AST_TYPE_BASIC,name);
+        }
         return new_node(AST_TYPE_ANY,NULL);
       }
       return get_type(((StringAstNode*)(l->data))->node);
@@ -256,8 +260,8 @@ static int path_exists(char* name,AstNode* type){
   return 0;
 }
 int add_child_type(char* child,char* parent){
-  AstNode* r=new_node(AST_TYPE_BASIC,parent);
-  int cycle=add_type_equivalence(child,r);
+  AstNode* r=new_node(AST_TYPE_BASIC,child);
+  int cycle=add_type_equivalence(parent,r);
   free(r);
   return cycle;
 }

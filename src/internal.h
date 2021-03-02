@@ -191,12 +191,16 @@ void init_scopes();
 void dealloc_scopes();
 void push_scope();
 void pop_scope();
+void push_function();
+void pop_function();
+FunctionNode* get_function_scope();
 int add_scoped_var(BinaryNode* node);
 BinaryNode* get_scoped_var(char* name);
 
 // types.c
 void init_types();
 void dealloc_types();
+int is_primitive(AstNode* node,const char* type);
 AstNode* get_type(AstNode* node);
 int typed_match(AstNode* l,AstNode* r);
 void register_type(char* name);
