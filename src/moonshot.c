@@ -1,12 +1,40 @@
 #include "./moonshot.h"
 #include "./internal.h"
+#include <stdarg.h>
 #include <stdlib.h>
+#include <string.h>
 static List* errors;
 static int error_i;
 
 // Error functions
-void add_error(char* msg){
-  add_to_list(errors,msg);
+void add_error(int line,const char* msg,...){
+  char* e=(char*)malloc(sizeof(char)*256);
+  char symbol[2]={0,0};
+  int n=strlen(msg);
+  e[0]=0;
+  va_list args;
+  va_start(args,msg);
+  for(int a=0;a<n;a++){
+    if(a<n-1 && msg[a]=='%'){
+      if(msg[a+1]=='s'){
+        strcat(e,va_arg(args,char*));
+        a++;
+        continue;
+      }
+      if(msg[a+1]=='t'){
+        AstNode* type=(AstNode*)va_arg(args,AstNode*);
+        char* str=stringify_type(type);
+        strcat(e,str);
+        free(str);
+        a++;
+        continue;
+      }
+    }
+    symbol[0]=msg[a];
+    strcat(e,symbol);
+  }
+  va_end(args);
+  add_to_list(errors,e);
 }
 int moonshot_num_errors(){
   return errors->n;

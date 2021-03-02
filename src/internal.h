@@ -140,10 +140,10 @@ enum RULES{
   AST_LABEL, AST_GOTO, AST_ID, AST_TYPE_BASIC,
 
   // List*
-  AST_STMT, AST_DO, AST_LTUPLE, AST_TYPE_TUPLE,
+  AST_STMT, AST_DO, AST_LTUPLE, AST_TYPE_TUPLE, AST_TUPLE,
 
   // AstListNode*
-  AST_REPEAT, AST_WHILE, AST_IF, AST_TYPE_FUNC, AST_TUPLE,
+  AST_REPEAT, AST_WHILE, AST_IF, AST_TYPE_FUNC,
 
   // ClassNode*
   AST_CLASS,
@@ -180,7 +180,7 @@ enum RULES{
 };
 
 // Global functions
-void add_error(char* msg);
+void add_error(int line,const char* msg,...);
 void traverse(AstNode* node,int validate);
 AstNode* parse(List* ls);
 List* tokenize(FILE* f);
@@ -200,12 +200,14 @@ void dealloc_types();
 AstNode* get_type(AstNode* node);
 int typed_match(AstNode* l,AstNode* r);
 void register_type(char* name);
-void register_class(char* name);
-void register_interface(char* name);
+void register_class(ClassNode* node);
+void register_function(FunctionNode* node);
+void register_interface(InterfaceNode* node);
 void register_primitive(const char* name);
 int type_exists(char* name);
-int class_exists(char* name);
-int interface_exists(char* name);
+ClassNode* class_exists(char* name);
+FunctionNode* function_exists(char* name);
+InterfaceNode* interface_exists(char* name);
 int compound_type_exists(AstNode* node);
 int add_child_type(char* child,char* parent);
 int add_type_equivalence(char* name,AstNode* type);
@@ -247,6 +249,7 @@ AstNode* parse_number();
 AstNode* parse_return();
 AstNode* parse_fornum();
 AstNode* parse_tuple();
+AstNode* parse_list();
 AstNode* parse_while();
 AstNode* parse_local();
 AstNode* parse_table();

@@ -4,7 +4,7 @@
 
 int main(int argc,char** argv){
   //const char* code="class hello extends hi where function yo() end (int,string,int) msg end";
-  const char* code="*string(int) yo=string function(int a) return \"Hi\" end";
+  const char* code="class hello where string message end string yellow() return 5 end hello greeting greeting.message=yellow()";
   FILE* f=fmemopen((char*)code,strlen(code),"r");
 
   // Compile

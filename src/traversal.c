@@ -3,7 +3,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
-#define ERROR(cond,msg,...) if(cond){error(node,msg,__VA_ARGS__);return;}
+#define ERROR(cond,msg,...) if(cond){add_error(-1,msg,__VA_ARGS__);return;}
 static int validate;
 
 // Traversal interface
@@ -35,37 +35,6 @@ static void write(const char* msg,...){
     printf("%c",msg[a]);
   }
   va_end(args);
-}
-
-// Errors
-static void error(AstNode* node,const char* msg,...){
-  char* e=(char*)malloc(sizeof(char)*256);
-  char symbol[2]={0,0};
-  int n=strlen(msg);
-  e[0]=0;
-  va_list args;
-  va_start(args,msg);
-  for(int a=0;a<n;a++){
-    if(a<n-1 && msg[a]=='%'){
-      if(msg[a+1]=='s'){
-        strcat(e,va_arg(args,char*));
-        a++;
-        continue;
-      }
-      if(msg[a+1]=='t'){
-        AstNode* type=(AstNode*)va_arg(args,AstNode*);
-        char* str=stringify_type(type);
-        strcat(e,str);
-        free(str);
-        a++;
-        continue;
-      }
-    }
-    symbol[0]=msg[a];
-    strcat(e,symbol);
-  }
-  va_end(args);
-  add_error(e);
 }
 
 // Node to function switch
@@ -141,8 +110,8 @@ void process_interface(AstNode* node){
       ERROR(!add_child_type(data->name,data->parent),"co-dependent interface %s detected",data->name);
     }
     ERROR(type_exists(data->name),"type %s is already declared",data->name);
-    register_interface(data->name);
     register_type(data->name);
+    register_interface(data);
   }
 }
 void process_class(AstNode* node){
@@ -158,8 +127,8 @@ void process_class(AstNode* node){
       add_child_type(data->name,interface);
     }
     ERROR(type_exists(data->name),"type %s is already declared",data->name);
-    register_class(data->name);
     register_type(data->name);
+    register_class(data);
   }
   push_scope();
   for(int a=0;a<data->ls->n;a++){
@@ -203,6 +172,10 @@ void process_set(AstNode* node){
   if(validate){
     AstNode* tl=get_type(data->l);
     AstNode* tr=get_type(data->r);
+    if(tr->type==AST_TYPE_TUPLE){
+      List* ls=(List*)(tr->data);
+      if(ls->n==1) tr=(AstNode*)get_from_list(ls,0);
+    }
     ERROR(!typed_match(tl,tr),"expression of type %t cannot be assigned to variable of type %t",tr,tl);
   }
   process_node(data->l);
@@ -254,12 +227,11 @@ void process_local(AstNode* node){
 void process_function(AstNode* node){
   // TODO implement return statement type check
   FunctionNode* data=(FunctionNode*)(node->data);
-  /*if(data->type->type!=AST_TYPE_ANY){
-    process_type(data->type);
-    printf(" ");
-  }*/
   write("function");
-  if(data->name[0]) write(" %s",data->name);
+  if(data->name[0]){
+    register_function(data);
+    write(" %s",data->name);
+  }
   write("(");
   for(int a=0;a<data->args->n;a++){
     if(a) write(",");
@@ -369,10 +341,10 @@ void process_table(AstNode* node){
   write("}");
 }
 void process_tuple(AstNode* node){
-  AstListNode* data=(AstListNode*)(node->data);
-  for(int a=0;a<data->list->n;a++){
+  List* ls=(List*)(node->data);
+  for(int a=0;a<ls->n;a++){
     if(a) write(",");
-    process_node((AstNode*)get_from_list(data->list,a));
+    process_node((AstNode*)get_from_list(ls,a));
   }
 }
 

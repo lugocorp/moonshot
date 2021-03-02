@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 static List* interfaces_registry;
+static List* functions_registry;
 static List* classes_registry;
 static List* types_registry;
 static List* types_graph;
@@ -11,6 +12,7 @@ void init_types(){
   types_graph=new_default_list();
   types_registry=new_default_list();
   classes_registry=new_default_list();
+  functions_registry=new_default_list();
   interfaces_registry=new_default_list();
   register_primitive(PRIMITIVE_STRING);
   register_primitive(PRIMITIVE_FLOAT);
@@ -20,6 +22,7 @@ void init_types(){
 }
 void dealloc_types(){
   dealloc_list(interfaces_registry);
+  dealloc_list(functions_registry);
   dealloc_list(classes_registry);
   dealloc_list(types_registry);
   dealloc_list(types_graph);
@@ -29,15 +32,47 @@ void dealloc_types(){
 static int is_primitive(AstNode* node,const char* type){
   return node->type==AST_TYPE_BASIC && !strcmp((char*)(node->data),type);
 }
-AstNode* get_type(AstNode* node){ // TODO implement AST_CALL
+static AstNode* get_type_of_field(char* name,void* node,int is_interface){
+  List* body=NULL;
+  if(is_interface) body=((InterfaceNode*)node)->ls;
+  else body=((ClassNode*)node)->ls;
+  for(int a=0;a<body->n;a++){
+    AstNode* e=(AstNode*)get_from_list(body,a);
+    if(e->type==AST_FUNCTION){
+      FunctionNode* func=(FunctionNode*)(e->data);
+      if(!strcmp(func->name,name)) return get_type(e);
+    }else{
+      BinaryNode* def=(BinaryNode*)(e->data);
+      if(!strcmp(def->text,name)) return def->l;
+    }
+  }
+  return NULL;
+}
+AstNode* get_type(AstNode* node){
   int type=node->type;
   switch(node->type){
-    //case AST_CALL: return process_call(node);
     case AST_PRIMITIVE: return ((StringAstNode*)(node->data))->node;
     case AST_PAREN: return get_type((AstNode*)(node->data));
     case AST_UNARY: return ((BinaryNode*)(node->data))->r;
-    case AST_TUPLE: return ((AstListNode*)(node->data))->node;
     case AST_SUB: return new_node(AST_TYPE_ANY,NULL);
+    case AST_TUPLE:{
+      List* ls=(List*)(node->data);
+      List* types=new_default_list();
+      for(int a=0;a<ls->n;a++){
+        AstNode* e=(AstNode*)get_from_list(ls,a);
+        add_to_list(types,get_type(e));
+      }
+      return new_node(AST_TYPE_TUPLE,types);
+    }
+    case AST_CALL:{
+      AstNode* l=((AstAstNode*)(node->data))->l;
+      if(l->type==AST_ID){
+        FunctionNode* func=function_exists((char*)(l->data));
+        if(func) return func->type;
+        return new_node(AST_TYPE_ANY,NULL);
+      }
+      return get_type(((StringAstNode*)(l->data))->node);
+    }
     case AST_FUNCTION:{
       FunctionNode* func=(FunctionNode*)(node->data);
       List* ls=new_default_list();
@@ -52,7 +87,25 @@ AstNode* get_type(AstNode* node){ // TODO implement AST_CALL
       return var?(var->l):new_node(AST_TYPE_ANY,NULL);
     }
     case AST_FIELD:{
-      // TODO check if get_type((StringAtNode*)node->data->ast) is a class or interface
+      StringAstNode* data=(StringAstNode*)(node->data);
+      AstNode* ltype=get_type(data->node);
+      if(ltype->type==AST_TYPE_BASIC){
+        char* name=(char*)(ltype->data);
+        InterfaceNode* inode=interface_exists(name);
+        if(inode){
+          AstNode* type=get_type_of_field(data->text,inode,1);
+          if(type) return type;
+          add_error(-1,"interface %s has no such field %s",inode->name,data->text);
+          return new_node(AST_TYPE_ANY,NULL);
+        }
+        ClassNode* cnode=class_exists(name);
+        if(cnode){
+          AstNode* type=get_type_of_field(data->text,cnode,0);
+          if(type) return type;
+          add_error(-1,"class %s has no such field %s",cnode->name,data->text);
+          return new_node(AST_TYPE_ANY,NULL);
+        }
+      }
       return new_node(AST_TYPE_ANY,NULL);
     }
     case AST_BINARY:{
@@ -118,11 +171,14 @@ int typed_match(AstNode* l,AstNode* r){
 void register_type(char* name){
   add_to_list(types_registry,name);
 }
-void register_class(char* name){
-  add_to_list(classes_registry,name);
+void register_class(ClassNode* node){
+  add_to_list(classes_registry,node);
 }
-void register_interface(char* name){
-  add_to_list(interfaces_registry,name);
+void register_function(FunctionNode* node){
+  add_to_list(functions_registry,node);
+}
+void register_interface(InterfaceNode* node){
+  add_to_list(interfaces_registry,node);
 }
 void register_primitive(const char* name){
   char* type=(char*)malloc(sizeof(char)*(strlen(name)+1));
@@ -135,17 +191,26 @@ int type_exists(char* name){
   }
   return 0;
 }
-int class_exists(char* name){
+ClassNode* class_exists(char* name){
   for(int a=0;a<classes_registry->n;a++){
-    if(!strcmp((char*)get_from_list(classes_registry,a),name)) return 1;
+    ClassNode* node=(ClassNode*)get_from_list(classes_registry,a);
+    if(!strcmp(node->name,name)) return node;
   }
-  return 0;
+  return NULL;
 }
-int interface_exists(char* name){
-  for(int a=0;a<interfaces_registry->n;a++){
-    if(!strcmp((char*)get_from_list(interfaces_registry,a),name)) return 1;
+FunctionNode* function_exists(char* name){
+  for(int a=0;a<functions_registry->n;a++){
+    FunctionNode* node=(FunctionNode*)get_from_list(functions_registry,a);
+    if(!strcmp(node->name,name)) return node;
   }
-  return 0;
+  return NULL;
+}
+InterfaceNode* interface_exists(char* name){
+  for(int a=0;a<interfaces_registry->n;a++){
+    InterfaceNode* node=(InterfaceNode*)get_from_list(interfaces_registry,a);
+    if(!strcmp(node->name,name)) return node;
+  }
+  return NULL;
 }
 int compound_type_exists(AstNode* node){
   switch(node->type){
