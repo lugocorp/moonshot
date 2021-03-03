@@ -7,6 +7,8 @@
 static char* error_error;
 static List* errors;
 static int error_i;
+static FILE* _input;
+static int _write;
 
 // Error functions
 int moonshot_num_errors(){
@@ -86,17 +88,24 @@ void moonshot_init(){
   error_error=(char*)malloc(sizeof(char)*22);
   sprintf(error_error,"error buffer overflow");
   errors=NULL;
+  _input=NULL;
+  _write=1;
   error_i=0;
 }
 void moonshot_destroy(){
   if(errors) dealloc_errors();
 }
-int moonshot_compile(FILE* f){
+void moonshot_configure(FILE* input,FILE* output,int write){
+  set_output(output);
+  _write=write;
+  _input=input;
+}
+int moonshot_compile(){
   if(errors) dealloc_errors();
   errors=new_default_list();
 
   // Tokenize
-  List* ls=tokenize(f);
+  List* ls=tokenize(_input);
   if(!ls){
     add_error(-1,"tokenization buffer overflow");
     return 0;
@@ -111,7 +120,7 @@ int moonshot_compile(FILE* f){
 
   // AST traversal
   traverse(root,1);
-  if(!errors->n) traverse(root,0);
+  if(_write && !errors->n) traverse(root,0);
   // TODO dealloc root
   dealloc_token_buffer(ls);
   return (errors->n)?0:1;

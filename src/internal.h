@@ -270,6 +270,7 @@ AstNode* parse_if();
 AstNode* parse_do();
 
 // traversal.c
+void set_output(FILE* output);
 void process_stmt(AstNode* node);
 void process_define(AstNode* node);
 void process_typedef(AstNode* node);

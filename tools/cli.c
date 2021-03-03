@@ -98,7 +98,8 @@ int main(int argc,char** argv){
 
   // Compile
   moonshot_init();
-  moonshot_compile(input);
+  moonshot_configure(input,output,write);
+  moonshot_compile();
   int n=moonshot_num_errors();
   if(n==1) printf("Moonshot compiler returned 1 error\n");
   if(n>1) printf("Moonshot compiler returned %i errors\n",n);

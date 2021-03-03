@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #define ERROR(cond,msg,...) if(cond){add_error(-1,msg,__VA_ARGS__);return;}
+static FILE* _output;
 static int validate;
 
 // Traversal interface
@@ -19,6 +20,9 @@ void traverse(AstNode* root,int valid){
 }
 
 // Output
+void set_output(FILE* output){
+  _output=output;
+}
 static void write(const char* msg,...){
   if(validate) return;
   va_list args;
@@ -27,12 +31,12 @@ static void write(const char* msg,...){
   for(int a=0;a<n;a++){
     if(a<n-1 && msg[a]=='%'){
       if(msg[a+1]=='s'){
-        printf("%s",va_arg(args,char*));
+        fprintf(_output,"%s",va_arg(args,char*));
         a++;
         continue;
       }
     }
-    printf("%c",msg[a]);
+    fprintf(_output,"%c",msg[a]);
   }
   va_end(args);
 }
