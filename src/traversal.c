@@ -44,7 +44,6 @@ static void write(const char* msg,...){
 // Node to function switch
 void process_node(AstNode* node){
   switch(node->type){
-    printf("processing %i\n",node->type);
     case AST_STMT: process_stmt(node); return;
     case AST_PRIMITIVE: process_primitive(node); return;
     case AST_INTERFACE: process_interface(node); return;
@@ -74,7 +73,7 @@ void process_node(AstNode* node){
     case AST_IF: process_if(node); return;
     case AST_DO: process_do(node); return;
     case AST_ID: process_id(node); return;
-    default: printf("Uh oh, you shouldn't be here (%i)\n",node->type);
+    default: add_error(-1,"invalid Moonshot AST detected (node ID %i)\n",node->type);
   }
 }
 
@@ -135,11 +134,41 @@ void process_class(AstNode* node){
     register_class(data);
   }
   push_scope();
+  write("function %s()\n",data->name);
+  write("local obj={}\n");
   for(int a=0;a<data->ls->n;a++){
     AstNode* child=(AstNode*)get_from_list(data->ls,a);
-    process_node(child);
-    if(child->type==AST_FUNCTION) write("\n");
+    if(child->type==AST_FUNCTION){
+      FunctionNode* cdata=(FunctionNode*)(child->data);
+      write("obj.%s=function(",cdata->name);
+      if(cdata->args){
+        for(int a=0;a<cdata->args->n;a++){
+          if(a) write(",");
+          char* arg=((StringAstNode*)get_from_list(cdata->args,a))->text;
+          write("%s",arg);
+        }
+      }
+      write(")\n");
+      for(int a=0;a<cdata->body->n;a++){
+        AstNode* e=(AstNode*)get_from_list(cdata->body,a);
+        process_node(e);
+        if(e->type==AST_FUNCTION || e->type==AST_CALL) write("\n");
+      }
+      write("end\n");
+    }else if(child->type==AST_DEFINE){
+      BinaryNode* cdata=(BinaryNode*)(child->data);
+      if(!cdata->r) write("obj.%s=nil",cdata->text);
+      else{
+        write("obj.%s=",cdata->text);
+        process_node(cdata->r);
+      }
+    }else{
+      add_error(-1,"invalid child node in class %s",data->name);
+      break;
+    }
   }
+  write("return obj\n");
+  write("end\n");
   pop_scope();
 }
 

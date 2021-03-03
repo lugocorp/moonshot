@@ -54,6 +54,25 @@ void add_error(int line,const char* msg,...){
         a++;
         continue;
       }
+      if(msg[a+1]=='i'){
+        char str[4];
+        int v=va_arg(args,int);
+        if(v>=1000 || v<=-100){
+          add_to_list(errors,error_error);
+          free(err);
+          return;
+        }
+        sprintf(str,"%i",v);
+        total+=strlen(str);
+        if(total+1>ERROR_BUFFER_LENGTH){
+          add_to_list(errors,error_error);
+          free(err);
+          return;
+        }
+        strcat(err,str);
+        a++;
+        continue;
+      }
     }
     total++;
     if(total+1>ERROR_BUFFER_LENGTH){
