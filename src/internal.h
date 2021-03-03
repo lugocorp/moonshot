@@ -44,7 +44,7 @@ typedef struct{
 } AstListNode;
 
 typedef struct{
-  char name[256];
+  AstNode* name;
   AstNode* type;
   List* body;
   List* args;
@@ -66,10 +66,10 @@ typedef struct{
 } StringAstNode;
 
 typedef struct{
-  char name[256];
   AstNode* num1;
   AstNode* num2;
   AstNode* num3;
+  char* name;
   List* body;
 } FornumNode;
 
@@ -80,21 +80,21 @@ typedef struct{
 } ForinNode;
 
 typedef struct{
-  char text[256];
   AstNode* l;
   AstNode* r;
+  char* text;
 } BinaryNode;
 
 typedef struct{
-  char parent[256];
-  char name[256];
+  char* parent;
+  char* name;
   List* ls;
 } InterfaceNode;
 
 typedef struct{
   List* interfaces;
-  char parent[256];
-  char name[256];
+  char* parent;
+  char* name;
   List* ls;
 } ClassNode;
 
@@ -224,7 +224,7 @@ char* stringify_type(AstNode* node);
 
 // nodes.c
 AstNode* new_node(int type,void* data);
-FunctionNode* new_function_node(char* name,AstNode* type,List* args,List* body);
+FunctionNode* new_function_node(AstNode* name,AstNode* type,List* args,List* body);
 AstListNode* new_ast_list_node(AstNode* ast,List* list);
 TableNode* new_table_node(List* keys,List* vals);
 AstAstNode* new_ast_ast_node(AstNode* l,AstNode* r);

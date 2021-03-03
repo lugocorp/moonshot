@@ -10,9 +10,9 @@ AstNode* new_node(int type,void* data){
   return node;
 }
 
-FunctionNode* new_function_node(char* name,AstNode* type,List* args,List* body){
+FunctionNode* new_function_node(AstNode* name,AstNode* type,List* args,List* body){
   FunctionNode* node=(FunctionNode*)malloc(sizeof(FunctionNode));
-  strcpy(node->name,name);
+  node->name=name;
   node->args=args;
   node->type=type;
   node->body=body;
@@ -57,7 +57,7 @@ StringAstNode* new_primitive_node(char* text,const char* type){
 
 FornumNode* new_fornum_node(char* name,AstNode* num1,AstNode* num2,AstNode* num3,List* body){
   FornumNode* node=(FornumNode*)malloc(sizeof(FornumNode));
-  strcpy(node->name,name);
+  node->name=name;
   node->num1=num1;
   node->num2=num2;
   node->num3=num3;
@@ -75,7 +75,7 @@ ForinNode* new_forin_node(AstNode* lhs,AstNode* tuple,List* body){
 
 BinaryNode* new_binary_node(char* text,AstNode* l,AstNode* r){
   BinaryNode* node=(BinaryNode*)malloc(sizeof(BinaryNode));
-  strcpy(node->text,text);
+  node->text=text;
   node->r=r;
   node->l=l;
   return node;
@@ -83,19 +83,17 @@ BinaryNode* new_binary_node(char* text,AstNode* l,AstNode* r){
 
 InterfaceNode* new_interface_node(char* name,char* parent,List* ls){
   InterfaceNode* node=(InterfaceNode*)malloc(sizeof(InterfaceNode));
-  if(parent) strcpy(node->parent,parent);
-  else node->parent[0]=0;
-  strcpy(node->name,name);
+  node->parent=parent;
+  node->name=name;
   node->ls=ls;
   return node;
 }
 
 ClassNode* new_class_node(char* name,char* parent,List* interfaces,List* ls){
   ClassNode* node=(ClassNode*)malloc(sizeof(ClassNode));
-  if(parent) strcpy(node->parent,parent);
-  else node->parent[0]=0;
-  strcpy(node->name,name);
   node->interfaces=interfaces;
+  node->parent=parent;
+  node->name=name;
   node->ls=ls;
   return node;
 }

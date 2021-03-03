@@ -40,7 +40,8 @@ static AstNode* get_type_of_field(char* name,void* node,int is_interface){
     AstNode* e=(AstNode*)get_from_list(body,a);
     if(e->type==AST_FUNCTION){
       FunctionNode* func=(FunctionNode*)(e->data);
-      if(!strcmp(func->name,name)) return get_type(e);
+      char* funcname=(char*)(func->name->data);
+      if(!strcmp(funcname,name)) return get_type(e);
     }else{
       BinaryNode* def=(BinaryNode*)(e->data);
       if(!strcmp(def->text,name)) return def->l;
@@ -218,8 +219,9 @@ ClassNode* class_exists(char* name){
 }
 FunctionNode* function_exists(char* name){
   for(int a=0;a<functions_registry->n;a++){
-    FunctionNode* node=(FunctionNode*)get_from_list(functions_registry,a);
-    if(!strcmp(node->name,name)) return node;
+    FunctionNode* func=(FunctionNode*)get_from_list(functions_registry,a);
+    char* funcname=(char*)(func->name->data);
+    if(!strcmp(funcname,name)) return func;
   }
   return NULL;
 }

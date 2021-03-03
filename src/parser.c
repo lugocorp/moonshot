@@ -410,27 +410,26 @@ AstNode* parse_local(){
 
 // Control parse functions
 AstNode* parse_function(AstNode* type,int include_body){
-  char name[256];
-  Token* tk=consume();
+  Token* tk;
   List* args=new_default_list();
   int typed=(type!=NULL);
   if(!typed){
+    tk=consume();
     type=new_node(AST_TYPE_ANY,NULL);
-    if(!expect(tk,TK_FUNCTION)) return error(tk,"invalid function 1");
-    tk=consume();
+    if(!expect(tk,TK_FUNCTION)) return error(tk,"invalid function");
   }
-  // TODO implement lhs names for vanilla functions
+  AstNode* name=NULL;
+  tk=check();
   if(expect(tk,TK_NAME)){
-    strcpy(name,tk->text);
-    tk=consume();
-  }else{
-    if(typed){
-      if(!expect(tk,TK_FUNCTION)) return error(tk,"invalid anonymous typed function");
-      tk=consume();
-    }
-    name[0]=0;
+    name=parse_lhs();
+    if(!name) return NULL;
+    if(typed && name->type!=AST_ID) return error(tk,"cannot define typed methods outside of a class or interface");
+  }else if(typed){
+    if(!expect(tk,TK_FUNCTION)) return error(tk,"invalid anonymous typed function");
+    consume();
   }
-  if(!specific(tk,TK_PAREN,"(")) return error(tk,"invalid function 2");
+  tk=consume();
+  if(!specific(tk,TK_PAREN,"(")) return error(tk,"invalid function");
   tk=check();
   while(tk && !specific(tk,TK_PAREN,")")){
     AstNode* arg_type=NULL;
@@ -448,17 +447,17 @@ AstNode* parse_function(AstNode* type,int include_body){
       tk=check();
     }
   }
-  if(!tk) return error(tk,"invalid function 3");
+  if(!tk) return error(tk,"invalid function");
   tk=consume();
   List* ls=NULL;
   if(include_body){
     AstNode* node=parse_stmt();
     if(!node) return NULL;
     tk=consume();
-    if(!expect(tk,TK_END)) return error(tk,"invalid function 4");
+    if(!expect(tk,TK_END)) return error(tk,"invalid function");
     ls=(List*)(node->data);
   }
-  DEBUG("Function %s (%i args) (%i stmts)\n",name,args->n,ls?ls->n:0);
+  DEBUG("Function (%i args) (%i stmts)\n",args->n,ls?ls->n:0);
   return new_node(AST_FUNCTION,new_function_node(name,type,args,ls));
 }
 AstNode* parse_repeat(){
@@ -502,13 +501,12 @@ AstNode* parse_if(){
   return new_node(AST_IF,new_ast_list_node(expr,(List*)(body->data)));
 }
 AstNode* parse_fornum(){
-  char name[256];
   Token* tk=consume();
   AstNode *num1,*num2,*num3=NULL;
   if(!expect(tk,TK_FOR)) return error(tk,"invalid for loop");
   tk=consume();
   if(!expect(tk,TK_NAME)) return error(tk,"invalid for loop");
-  strcpy(name,tk->text);
+  char* name=tk->text;
   tk=consume();
   if(!specific(tk,TK_MISC,"=")) return error(tk,"invalid for loop");
   num1=parse_number();

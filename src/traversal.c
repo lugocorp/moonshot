@@ -108,7 +108,7 @@ void process_typedef(AstNode* node){
 void process_interface(AstNode* node){
   InterfaceNode* data=(InterfaceNode*)(node->data);
   if(validate){
-    if(strlen(data->parent)>0){
+    if(data->parent){
       ERROR(!interface_exists(data->parent),"parent interface %s does not exist",data->parent);
       ERROR(!add_child_type(data->name,data->parent),"co-dependent interface %s detected",data->name);
     }
@@ -120,7 +120,7 @@ void process_interface(AstNode* node){
 void process_class(AstNode* node){
   ClassNode* data=(ClassNode*)(node->data);
   if(validate){
-    if(strlen(data->parent)>0){
+    if(data->parent){
       ERROR(!class_exists(data->parent),"parent class %s does not exist",data->parent);
       ERROR(!add_child_type(data->name,data->parent),"co-dependent class %s detected",data->name);
     }
@@ -140,7 +140,7 @@ void process_class(AstNode* node){
     AstNode* child=(AstNode*)get_from_list(data->ls,a);
     if(child->type==AST_FUNCTION){
       FunctionNode* cdata=(FunctionNode*)(child->data);
-      write("obj.%s=function(",cdata->name);
+      write("obj.%s=function(",(char*)(cdata->name->data));
       if(cdata->args){
         for(int a=0;a<cdata->args->n;a++){
           if(a) write(",");
@@ -309,8 +309,8 @@ void process_local(AstNode* node){
 void process_function(AstNode* node){
   FunctionNode* data=(FunctionNode*)(node->data);
   write("function");
-  if(data->name[0]){
-    register_function(data);
+  if(data->name){
+    if(data->type) register_function(data);
     write(" %s",data->name);
   }
   write("(");
