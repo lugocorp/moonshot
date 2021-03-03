@@ -311,7 +311,8 @@ void process_function(AstNode* node){
   write("function");
   if(data->name){
     if(data->type) register_function(data);
-    write(" %s",data->name);
+    write(" ");
+    process_node(data->name);
   }
   write("(");
   for(int a=0;a<data->args->n;a++){
