@@ -2,6 +2,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#define TOKEN_BUFFER_LENGTH 256
 #define KEY_TOKEN(s,t) else if(!strcmp(buffer,s)) tk->type=t;
 #define SPECIAL_TOKEN(s,l,t) else if(n-a>=l && !strncmp(buffer+a,s,l)){ \
     tk->text=(char*)malloc(sizeof(char)*(l+1)); \
@@ -9,22 +10,9 @@
     tk->type=t; \
     a+=l; \
   }
-
-// Character classes
 static int class_alphanumeric=0;
 static int class_whitespace=1;
 static int class_special=2;
-
-// Preemptive function definitions
-static void discover_tokens(List* ls,int line,char* buffer,int n,int char_class);
-
-/*
-  Deallocate a Token
-*/
-void dealloc_token(Token* tk){
-  if(tk->text) free(tk->text);
-  free(tk);
-}
 
 /*
   Get the character class for a char
@@ -37,32 +25,11 @@ static int get_char_class(char c){
 }
 
 /*
-  Stream some Lua code and tokenize it along the way
+  Deallocate a token
 */
-List* tokenize(FILE* f){
-  int line=1;
-  if(!f) return NULL;
-  int current_class=-1;
-  List* ls=new_list(100);
-  char buffer[100]; // TODO replace fixed length array with dynamic length array
-  int i=0;
-  while(1){
-    char c=fgetc(f);
-    if(feof(f)){
-      if(i) discover_tokens(ls,line,buffer,i,current_class);
-      break;
-    }
-    fflush(stdout);
-    int char_class=get_char_class(c);
-    if(current_class!=-1 && char_class!=current_class){
-      discover_tokens(ls,line,buffer,i,current_class);
-      i=0;
-    }
-    current_class=char_class;
-    if(c=='\n') line++;
-    buffer[i++]=c;
-  }
-  return ls;
+void dealloc_token(Token* tk){
+  free(tk->text);
+  free(tk);
 }
 
 /*
@@ -165,4 +132,37 @@ static void discover_tokens(List* ls,int line,char* buffer,int n,int char_class)
       add_to_list(ls,tk);
     }
   }
+}
+
+/*
+  Stream some Lua code and tokenize it along the way
+*/
+List* tokenize(FILE* f){
+  int line=1;
+  if(!f) return NULL;
+  int current_class=-1;
+  List* ls=new_list(100);
+  char buffer[TOKEN_BUFFER_LENGTH];
+  int i=0;
+  while(1){
+    char c=fgetc(f);
+    if(feof(f)){
+      if(i) discover_tokens(ls,line,buffer,i,current_class);
+      break;
+    }
+    int char_class=get_char_class(c);
+    if(current_class!=-1 && char_class!=current_class){
+      discover_tokens(ls,line,buffer,i,current_class);
+      i=0;
+    }
+    current_class=char_class;
+    if(c=='\n') line++;
+    if(i==TOKEN_BUFFER_LENGTH){
+      for(int a=0;a<ls->n;a++) dealloc_token((Token*)get_from_list(ls,a));
+      dealloc_list(ls);
+      return NULL;
+    }
+    buffer[i++]=c;
+  }
+  return ls;
 }

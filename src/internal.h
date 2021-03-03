@@ -185,6 +185,9 @@ void traverse(AstNode* node,int validate);
 AstNode* parse(List* ls);
 List* tokenize(FILE* f);
 
+// tokenizer.c
+void dealloc_token(Token* tk);
+
 // scopes.c
 void preempt_scopes();
 void init_scopes();
