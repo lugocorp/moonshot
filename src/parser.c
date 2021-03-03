@@ -391,13 +391,13 @@ AstNode* parse_lhs(){
   return node;
 }
 AstNode* parse_local(){
-  char name[256];
+  char* name;
   AstNode* node=NULL;
   Token* tk=consume();
   if(!expect(tk,TK_LOCAL)) return error(tk,"invalid local variable declaration");
   tk=consume();
   if(!expect(tk,TK_NAME)) return error(tk,"invalid local variable declaration");
-  strcpy(name,tk->text);
+  name=tk->text;
   tk=check();
   if(specific(tk,TK_MISC,"=")){
     consume();

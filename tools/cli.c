@@ -106,6 +106,8 @@ int main(int argc,char** argv){
     error();
     printf("%s\n",moonshot_next_error());
   }
+  if(output!=stdout) fclose(output);
+  if(input!=stdin) fclose(input);
   moonshot_destroy();
   return n;
 }

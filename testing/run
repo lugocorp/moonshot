@@ -2,7 +2,7 @@
 make bin/cli
 [ "$?" == 1 ] && exit 1
 
-tests=( $(ls testing/tests) )
+tests=( $(ls testing/tests | grep -e "\.lua$") )
 for test in "${tests[@]}"; do
   echo "Test: $test"
   cat "testing/tests/$test" | ./bin/cli | lua5.3 > bin/custom.txt

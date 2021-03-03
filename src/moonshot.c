@@ -97,7 +97,6 @@ int moonshot_compile(FILE* f){
 
   // Tokenize
   List* ls=tokenize(f);
-  fclose(f);
   if(!ls){
     add_error(-1,"tokenization buffer overflow");
     return 0;

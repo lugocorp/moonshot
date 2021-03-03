@@ -39,8 +39,8 @@ static void write(const char* msg,...){
 
 // Node to function switch
 void process_node(AstNode* node){
-  int type=node->type;
   switch(node->type){
+    printf("processing %i\n",node->type);
     case AST_STMT: process_stmt(node); return;
     case AST_PRIMITIVE: process_primitive(node); return;
     case AST_INTERFACE: process_interface(node); return;
@@ -123,7 +123,7 @@ void process_class(AstNode* node){
     }
     for(int a=0;a<data->interfaces->n;a++){
       char* interface=(char*)get_from_list(data->interfaces,a);
-      ERROR(!interface_exists(data->parent),"interface %s does not exist",interface);
+      ERROR(!interface_exists(interface),"interface %s does not exist",interface);
       add_child_type(data->name,interface);
     }
     ERROR(type_exists(data->name),"type %s is already declared",data->name);
@@ -154,7 +154,10 @@ void process_do(AstNode* node){
   write("do\n");
   push_scope();
   for(int a=0;a<ls->n;a++){
-    process_node((AstNode*)get_from_list(ls,a));
+    AstNode* e=(AstNode*)get_from_list(ls,a);
+    process_node(e);
+    if(e->type==AST_CALL) write("\n");
+    if(e->type==AST_FUNCTION) write("\n");
   }
   write("end\n");
   pop_scope();
@@ -179,9 +182,10 @@ void process_call(AstNode* node){
       functype=get_type(data->l);
     }
     if(functype){
-      List* funcargs=((AstListNode*)(functype->data))->list;
+      List* funcargs=functype->data?((AstListNode*)(functype->data))->list:NULL;
       if(data->r){
         List* args=(List*)(data->r->data);
+        ERROR(!funcargs,"too many arguments for function %s",name);
         ERROR(funcargs->n!=args->n,"invalid number of arguments for function %s",name);
         for(int a=0;a<args->n;a++){
           AstNode* type1=get_type((AstNode*)get_from_list(args,a));
@@ -189,7 +193,7 @@ void process_call(AstNode* node){
           ERROR(!typed_match(type1,type2),"invalid argument provided for function %s",name);
         }
       }else{
-        ERROR(funcargs->n!=0,"not enough arguments for function %s",name);
+        ERROR(funcargs && funcargs->n,"not enough arguments for function %s",name);
       }
     }
   }
@@ -291,6 +295,8 @@ void process_function(AstNode* node){
       AstNode* child=(AstNode*)get_from_list(data->body,a);
       if(child->type==AST_RETURN) num_returns++;
       process_node(child);
+      if(child->type==AST_CALL) write("\n");
+      if(child->type==AST_FUNCTION) write("\n");
     }
     if(!is_primitive(data->type,PRIMITIVE_NIL) && data->type->type!=AST_TYPE_ANY){
       ERROR(!num_returns,"function of type %t cannot return nil",data->type);
@@ -305,7 +311,10 @@ void process_repeat(AstNode* node){
   write("repeat\n");
   push_scope();
   for(int a=0;a<data->list->n;a++){
-    process_node((AstNode*)get_from_list(data->list,a));
+    AstNode* e=(AstNode*)get_from_list(data->list,a);
+    process_node(e);
+    if(e->type==AST_CALL) write("\n");
+    if(e->type==AST_FUNCTION) write("\n");
   }
   pop_scope();
   write("until ");
@@ -319,7 +328,10 @@ void process_while(AstNode* node){
   write(" do\n");
   push_scope();
   for(int a=0;a<data->list->n;a++){
-    process_node((AstNode*)get_from_list(data->list,a));
+    AstNode* e=(AstNode*)get_from_list(data->list,a);
+    process_node(e);
+    if(e->type==AST_CALL) write("\n");
+    if(e->type==AST_FUNCTION) write("\n");
   }
   pop_scope();
   write("end\n");
@@ -331,7 +343,10 @@ void process_if(AstNode* node){
   write(" then\n");
   push_scope();
   for(int a=0;a<data->list->n;a++){
-    process_node((AstNode*)get_from_list(data->list,a));
+    AstNode* e=(AstNode*)get_from_list(data->list,a);
+    process_node(e);
+    if(e->type==AST_CALL) write("\n");
+    if(e->type==AST_FUNCTION) write("\n");
   }
   pop_scope();
   write("end\n");
@@ -349,7 +364,10 @@ void process_fornum(AstNode* node){
   push_scope();
   write(" do\n");
   for(int a=0;a<data->body->n;a++){
-    process_node((AstNode*)get_from_list(data->body,a));
+    AstNode* e=(AstNode*)get_from_list(data->body,a);
+    process_node(e);
+    if(e->type==AST_CALL) write("\n");
+    if(e->type==AST_FUNCTION) write("\n");
   }
   write("end\n");
   pop_scope();
@@ -363,7 +381,10 @@ void process_forin(AstNode* node){
   write(" do\n");
   push_scope();
   for(int a=0;a<data->body->n;a++){
-    process_node((AstNode*)get_from_list(data->body,a));
+    AstNode* e=(AstNode*)get_from_list(data->body,a);
+    process_node(e);
+    if(e->type==AST_CALL) write("\n");
+    if(e->type==AST_FUNCTION) write("\n");
   }
   write("end\n");
   pop_scope();
@@ -403,18 +424,14 @@ void process_tuple(AstNode* node){
 // Expressions
 void process_unary(AstNode* node){
   BinaryNode* data=(BinaryNode*)(node->data);
-  // write("(");
   write("%s ",data->text);
   process_node(data->l);
-  // write(")");
 }
 void process_binary(AstNode* node){
   BinaryNode* data=(BinaryNode*)(node->data);
-  // write("(");
   process_node(data->l);
   write(" %s ",data->text);
   process_node(data->r);
-  // write(")");
 }
 void process_paren(AstNode* node){
   write("(");

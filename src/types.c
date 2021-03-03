@@ -75,7 +75,7 @@ AstNode* get_type(AstNode* node){
         }
         return new_node(AST_TYPE_ANY,NULL);
       }
-      return get_type(((StringAstNode*)(l->data))->node);
+      return get_type(l);
     }
     case AST_FUNCTION:{
       FunctionNode* func=(FunctionNode*)(node->data);
@@ -172,6 +172,19 @@ int typed_match(AstNode* l,AstNode* r){
 }
 
 // Type registry
+static char* base_type(char* name){
+  List* ls=get_equivalent_types(name);
+  while(ls->n==1){
+    AstNode* node=(AstNode*)get_from_list(ls,0);
+    if(node->type==AST_TYPE_BASIC){
+      name=(char*)(node->data);
+      dealloc_list(ls);
+      ls=get_equivalent_types(name);
+    }
+  }
+  dealloc_list(ls);
+  return name;
+}
 void register_type(char* name){
   add_to_list(types_registry,name);
 }
@@ -196,6 +209,7 @@ int type_exists(char* name){
   return 0;
 }
 ClassNode* class_exists(char* name){
+  name=base_type(name);
   for(int a=0;a<classes_registry->n;a++){
     ClassNode* node=(ClassNode*)get_from_list(classes_registry,a);
     if(!strcmp(node->name,name)) return node;
@@ -210,6 +224,7 @@ FunctionNode* function_exists(char* name){
   return NULL;
 }
 InterfaceNode* interface_exists(char* name){
+  name=base_type(name);
   for(int a=0;a<interfaces_registry->n;a++){
     InterfaceNode* node=(InterfaceNode*)get_from_list(interfaces_registry,a);
     if(!strcmp(node->name,name)) return node;
