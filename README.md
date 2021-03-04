@@ -1,7 +1,7 @@
 <img src="moonshot.svg" height="300px"/>
 
 # Moonshot
-Moonshot is an optionally-typed object-oriented extension language for Lua. This project allows you to use your favorite Lua libraries and frameworks with a more organized and less error-safe code base. Moonshot is lightweight, the command line tool compiles to under 20KB. It gives you full interop with vanilla Lua as well as a fully developed optional typing system.
+Moonshot is an optionally-typed object-oriented extension language for Lua. This project allows you to use your favorite Lua libraries and frameworks with a more organized and error-safe code base. Moonshot is lightweight, the command line tool compiles to under 20KB. It gives you full interop with vanilla Lua as well as a fully developed optional typing system.
 
 ## Todo
 - [x] Obtain a grammar for vanilla Lua code
@@ -14,9 +14,7 @@ Moonshot is an optionally-typed object-oriented extension language for Lua. This
 - [x] Implement a type checker
 - [x] Integrate library into command line tool
 - [x] Ensure that strings work in all scenarios
-- [ ] double check memory deallocation
+- [ ] Double check memory deallocation
 - [ ] Double check the commenting
 - [ ] Add a permissive license
 - [ ] Package for deployment
-- [ ] Design website
-- [ ] Launch

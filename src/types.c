@@ -55,7 +55,7 @@ AstNode* get_type(AstNode* node){
     case AST_PRIMITIVE: return ((StringAstNode*)(node->data))->node;
     case AST_PAREN: return get_type((AstNode*)(node->data));
     case AST_UNARY: return ((BinaryNode*)(node->data))->r;
-    case AST_SUB: return new_node(AST_TYPE_ANY,NULL);
+    case AST_SUB: return any_type_const();
     case AST_TUPLE:{
       List* ls=(List*)(node->data);
       List* types=new_default_list();
@@ -63,7 +63,7 @@ AstNode* get_type(AstNode* node){
         AstNode* e=(AstNode*)get_from_list(ls,a);
         add_to_list(types,get_type(e));
       }
-      return new_node(AST_TYPE_TUPLE,types);
+      return new_node(AST_TYPE_TUPLE,types); // TODO move this to somewhere easier to deallocate
     }
     case AST_CALL:{
       AstNode* l=((AstAstNode*)(node->data))->l;
@@ -71,10 +71,11 @@ AstNode* get_type(AstNode* node){
         char* name=(char*)(l->data);
         FunctionNode* func=function_exists(name);
         if(func) return func->type;
-        if(class_exists(name) || interface_exists(name)){
-          return new_node(AST_TYPE_BASIC,name);
-        }
-        return new_node(AST_TYPE_ANY,NULL);
+        InterfaceNode* inode=interface_exists(name);
+        if(inode) return inode->type;
+        ClassNode* cnode=class_exists(name);
+        if(cnode) return cnode->type;
+        return any_type_const();
       }
       return get_type(l);
     }
@@ -84,12 +85,12 @@ AstNode* get_type(AstNode* node){
       for(int a=0;a<func->args->n;a++){
         add_to_list(ls,((StringAstNode*)get_from_list(func->args,a))->node);
       }
-      return new_node(AST_TYPE_FUNC,new_ast_list_node(func->type,ls));
+      return new_node(AST_TYPE_FUNC,new_ast_list_node(func->type,ls)); // TODO move this to somewhere easier to deallocate
     }
     case AST_ID:{
       char* name=(char*)(node->data);
       BinaryNode* var=get_scoped_var(name);
-      return var?(var->l):new_node(AST_TYPE_ANY,NULL);
+      return var?(var->l):any_type_const();
     }
     case AST_FIELD:{
       StringAstNode* data=(StringAstNode*)(node->data);
@@ -101,17 +102,17 @@ AstNode* get_type(AstNode* node){
           AstNode* type=get_type_of_field(data->text,inode,1);
           if(type) return type;
           add_error(-1,"interface %s has no such field %s",inode->name,data->text);
-          return new_node(AST_TYPE_ANY,NULL);
+          return any_type_const();
         }
         ClassNode* cnode=class_exists(name);
         if(cnode){
           AstNode* type=get_type_of_field(data->text,cnode,0);
           if(type) return type;
           add_error(-1,"class %s has no such field %s",cnode->name,data->text);
-          return new_node(AST_TYPE_ANY,NULL);
+          return any_type_const();
         }
       }
-      return new_node(AST_TYPE_ANY,NULL);
+      return any_type_const();
     }
     case AST_BINARY:{
       BinaryNode* data=(BinaryNode*)(node->data);
@@ -119,19 +120,19 @@ AstNode* get_type(AstNode* node){
       AstNode* tr=get_type(data->r);
       if(!strcmp(data->text,"..")){
         if(is_primitive(tl,PRIMITIVE_STRING) && is_primitive(tr,PRIMITIVE_STRING)) return tl;
-        return new_node(AST_TYPE_ANY,NULL);
+        return any_type_const();
       }
       if(!strcmp(data->text,"/")){
-        return new_node(AST_TYPE_BASIC,new_string_node(PRIMITIVE_FLOAT));
+        return float_type_const();
       }
       if(!strcmp(data->text,"+") || !strcmp(data->text,"-") || !strcmp(data->text,"*")){
         if(is_primitive(tl,PRIMITIVE_FLOAT)) return tl;
         if(is_primitive(tr,PRIMITIVE_FLOAT)) return tr;
-        return new_node(AST_TYPE_BASIC,new_string_node(PRIMITIVE_INT));
+        return int_type_const();
       }
-      return new_node(AST_TYPE_BASIC,new_string_node(PRIMITIVE_BOOL));
+      return bool_type_const();
     }
-    default: return new_node(AST_TYPE_ANY,NULL);
+    default: return any_type_const();
   }
 }
 static int typed_match_no_equivalence(AstNode* l,AstNode* r){

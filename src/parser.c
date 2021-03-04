@@ -1,4 +1,6 @@
+#define MOONSHOT_PARSING
 #include "./internal.h"
+#undef MOONSHOT_PARSING
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -17,14 +19,13 @@ static AstNode* error(Token* tk,const char* msg){
 AstNode* parse(List* ls){
   _i=0;
   tokens=ls;
-  preempt_scopes();
   AstNode* root=parse_stmt();
   if(root){
     Token* tk;
     while(_i<tokens->n){
       if((tk=(Token*)get_from_list(tokens,_i++))->type!=TK_SPACE){
         error(tk,"unparsed tokens");
-        // TODO deallocate root somehow
+        dealloc_ast_node(root);
         return NULL;
       }
     }
@@ -76,34 +77,60 @@ static int precedence(char* op){
 }
 
 // Moonshot-specific parse functions
+// TODO add deallocation on parsing error to every parse function
 AstNode* parse_interface(){
   char* parent=NULL;
   Token* tk=consume();
   List* ls=new_default_list();
-  if(!expect(tk,TK_INTERFACE)) return error(tk,"invalid interface");
+  if(!expect(tk,TK_INTERFACE)){
+    dealloc_list(ls);
+    return error(tk,"invalid interface");
+  }
   tk=consume();
-  if(!expect(tk,TK_NAME)) return error(tk,"invalid interface");
+  if(!expect(tk,TK_NAME)){
+    dealloc_list(ls);
+    return error(tk,"invalid interface");
+  }
   char* name=tk->text;
   tk=check();
   if(expect(tk,TK_EXTENDS)){
     consume();
     tk=consume();
-    if(!expect(tk,TK_NAME)) return error(tk,"invalid interface");
+    if(!expect(tk,TK_NAME)){
+      dealloc_list(ls);
+      return error(tk,"invalid interface");
+    }
     parent=tk->text;
   }
   tk=consume();
-  if(!expect(tk,TK_WHERE)) return error(tk,"invalid interface");
+  if(!expect(tk,TK_WHERE)){
+    dealloc_list(ls);
+    return error(tk,"invalid interface");
+  }
   tk=check();
   while(tk && !expect(tk,TK_END)){
     AstNode* type=parse_type();
-    if(!type) return NULL;
+    if(!type){
+      for(int a=0;a<ls->n;a++) dealloc_ast_node((AstNode*)get_from_list(ls,a));
+      dealloc_list(ls);
+      return NULL;
+    }
     AstNode* func=parse_function(type,0);
-    if(!func) return NULL;
+    if(!func){
+      for(int a=0;a<ls->n;a++) dealloc_ast_node((AstNode*)get_from_list(ls,a));
+      dealloc_ast_type(type);
+      dealloc_list(ls);
+      return NULL;
+    }
     add_to_list(ls,func);
     tk=check();
   }
   tk=consume();
-  if(!expect(tk,TK_END)) return error(tk,"invalid interface");
+  if(!expect(tk,TK_END)){
+    for(int a=0;a<ls->n;a++) dealloc_ast_node((AstNode*)get_from_list(ls,a));
+    dealloc_list(ls);
+    return error(tk,"invalid interface");
+  }
   return new_node(AST_INTERFACE,new_interface_node(name,parent,ls));
 }
 AstNode* parse_class(){
@@ -278,7 +305,10 @@ AstNode* parse_stmt(){
     }else break;
     if(node) add_to_list(ls,node);
     else{
-      // TODO deallocate nodes here
+      for(int a=0;a<ls->n;a++){
+        AstNode* e=(AstNode*)get_from_list(ls,a);
+        dealloc_ast_node(e);
+      }
       dealloc_list(ls);
       return NULL;
     }

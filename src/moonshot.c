@@ -140,7 +140,7 @@ int moonshot_compile(){
   // AST traversal
   traverse(root,1);
   if(_write && !errors->n) traverse(root,0);
-  // TODO dealloc root
+  dealloc_ast_node(root);
   dealloc_token_buffer(ls);
   return (errors->n)?0:1;
 }

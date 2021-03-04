@@ -86,6 +86,7 @@ typedef struct{
 } BinaryNode;
 
 typedef struct{
+  AstNode* type;
   char* parent;
   char* name;
   List* ls;
@@ -93,6 +94,7 @@ typedef struct{
 
 typedef struct{
   List* interfaces;
+  AstNode* type;
   char* parent;
   char* name;
   List* ls;
@@ -188,6 +190,62 @@ List* tokenize(FILE* f);
 // tokenizer.c
 void dealloc_token(Token* tk);
 
+// parser.c
+AstNode* parse_interface();
+AstNode* parse_typedef();
+AstNode* parse_define(AstNode* type);
+AstNode* parse_class();
+AstNode* parse_type();
+AstNode* parse_stmt();
+AstNode* parse_call(AstNode* lhs);
+AstNode* parse_set_or_call();
+AstNode* parse_function_or_define();
+AstNode* parse_function(AstNode* type,int include_body);
+AstNode* parse_paren_or_tuple_function();
+AstNode* parse_repeat();
+AstNode* parse_string();
+AstNode* parse_number();
+AstNode* parse_return();
+AstNode* parse_fornum();
+AstNode* parse_tuple();
+AstNode* parse_list();
+AstNode* parse_while();
+AstNode* parse_local();
+AstNode* parse_table();
+AstNode* parse_forin();
+AstNode* parse_label();
+AstNode* parse_break();
+AstNode* parse_goto();
+AstNode* parse_expr();
+AstNode* parse_lhs();
+AstNode* parse_if();
+AstNode* parse_do();
+
+// nodes.c
+void dealloc_ast_type(AstNode* node);
+void dealloc_ast_node(AstNode* node);
+AstNode* new_node(int type,void* data);
+FunctionNode* new_function_node(AstNode* name,AstNode* type,List* args,List* body);
+AstListNode* new_ast_list_node(AstNode* ast,List* list);
+TableNode* new_table_node(List* keys,List* vals);
+AstAstNode* new_ast_ast_node(AstNode* l,AstNode* r);
+StringAstNode* new_string_ast_node(char* text,AstNode* ast);
+StringAstNode* new_primitive_node(char* text,const char* type);
+FornumNode* new_fornum_node(char* name,AstNode* num1,AstNode* num2,AstNode* num3,List* body);
+ForinNode* new_forin_node(AstNode* lhs,AstNode* tuple,List* body);
+BinaryNode* new_binary_node(char* text,AstNode* l,AstNode* r);
+InterfaceNode* new_interface_node(char* name,char* parent,List* ls);
+ClassNode* new_class_node(char* name,char* parent,List* interfaces,List* ls);
+char* new_string_node(char* msg);
+BinaryNode* new_unary_node(char* op,AstNode* e);
+
+/*
+*   The parsing step should not have
+*   access to these functions or it may
+*   cause a segmentation fault
+*/
+#ifndef MOONSHOT_PARSING
+
 // scopes.c
 void preempt_scopes();
 void init_scopes();
@@ -222,54 +280,11 @@ List* get_equivalent_types(char* name);
 int types_equivalent(char* name,AstNode* type);
 char* stringify_type(AstNode* node);
 
-// nodes.c
-AstNode* new_node(int type,void* data);
-FunctionNode* new_function_node(AstNode* name,AstNode* type,List* args,List* body);
-AstListNode* new_ast_list_node(AstNode* ast,List* list);
-TableNode* new_table_node(List* keys,List* vals);
-AstAstNode* new_ast_ast_node(AstNode* l,AstNode* r);
-StringAstNode* new_string_ast_node(char* text,AstNode* ast);
-StringAstNode* new_primitive_node(char* text,const char* type);
-FornumNode* new_fornum_node(char* name,AstNode* num1,AstNode* num2,AstNode* num3,List* body);
-ForinNode* new_forin_node(AstNode* lhs,AstNode* tuple,List* body);
-BinaryNode* new_binary_node(char* text,AstNode* l,AstNode* r);
-InterfaceNode* new_interface_node(char* name,char* parent,List* ls);
-ClassNode* new_class_node(char* name,char* parent,List* interfaces,List* ls);
-char* new_string_node(char* msg);
-BinaryNode* new_unary_node(char* op,AstNode* e);
-
-// parser.c
-AstNode* parse_interface();
-AstNode* parse_typedef();
-AstNode* parse_define(AstNode* type);
-AstNode* parse_class();
-AstNode* parse_type();
-AstNode* parse_stmt();
-AstNode* parse_call(AstNode* lhs);
-AstNode* parse_set_or_call();
-AstNode* parse_function_or_define();
-AstNode* parse_function(AstNode* type,int include_body);
-AstNode* parse_paren_or_tuple_function();
-AstNode* parse_repeat();
-AstNode* parse_string();
-AstNode* parse_number();
-AstNode* parse_return();
-AstNode* parse_fornum();
-AstNode* parse_tuple();
-AstNode* parse_list();
-AstNode* parse_while();
-AstNode* parse_local();
-AstNode* parse_table();
-AstNode* parse_forin();
-AstNode* parse_label();
-AstNode* parse_break();
-AstNode* parse_goto();
-AstNode* parse_expr();
-AstNode* parse_lhs();
-AstNode* parse_if();
-AstNode* parse_do();
-
 // traversal.c
+AstNode* any_type_const();
+AstNode* int_type_const();
+AstNode* bool_type_const();
+AstNode* float_type_const();
 void set_output(FILE* output);
 void process_stmt(AstNode* node);
 void process_define(AstNode* node);
@@ -300,3 +315,5 @@ void process_sub(AstNode* node);
 void process_if(AstNode* node);
 void process_do(AstNode* node);
 void process_id(AstNode* node);
+
+#endif

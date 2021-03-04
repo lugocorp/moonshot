@@ -6,10 +6,31 @@
 #define ERROR(cond,msg,...) if(cond){add_error(-1,msg,__VA_ARGS__);return;}
 static FILE* _output;
 static int validate;
+AstNode* float_type;
+AstNode* bool_type;
+AstNode* int_type;
+AstNode* any_type;
 
 // Traversal interface
+AstNode* float_type_const(){
+  return float_type;
+}
+AstNode* bool_type_const(){
+  return bool_type;
+}
+AstNode* int_type_const(){
+  return int_type;
+}
+AstNode* any_type_const(){
+  return any_type;
+}
 void traverse(AstNode* root,int valid){
+  float_type=new_node(AST_TYPE_BASIC,PRIMITIVE_FLOAT);
+  bool_type=new_node(AST_TYPE_BASIC,PRIMITIVE_BOOL);
+  int_type=new_node(AST_TYPE_BASIC,PRIMITIVE_INT);
+  any_type=new_node(AST_TYPE_ANY,NULL);
   validate=valid;
+  preempt_scopes();
   init_types();
   init_scopes();
   push_scope();
@@ -17,6 +38,10 @@ void traverse(AstNode* root,int valid){
   pop_scope();
   dealloc_scopes();
   dealloc_types();
+  free(any_type);
+  free(int_type);
+  free(bool_type);
+  free(float_type);
 }
 
 // Output
@@ -256,7 +281,7 @@ void process_return(AstNode* node){
     FunctionNode* func=get_function_scope();
     if(func){
       AstNode* type1=func->type;
-      AstNode* type2=node->data?get_type(node->data):new_node(AST_TYPE_ANY,NULL);
+      AstNode* type2=node->data?get_type(node->data):any_type_const();
       if(type2->type==AST_TYPE_TUPLE){
         List* ls=(List*)(type2->data);
         if(ls->n==1){
