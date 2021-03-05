@@ -28,6 +28,32 @@ void dealloc_types(){
   dealloc_list(types_graph);
 }
 
+// Deep copy types to prevent deallocation errors
+static AstNode* copy_type(AstNode* node){
+  switch(node->type){
+    case AST_TYPE_ANY: return new_node(AST_TYPE_ANY,NULL);
+    case AST_TYPE_BASIC: return new_node(AST_TYPE_BASIC,node->data);
+    case AST_TYPE_TUPLE:{
+      List* data=(List*)(node->data);
+      List* ls=new_default_list();
+      for(int a=0;a<data->n;a++){
+        AstNode* copy=copy_type((AstNode*)get_from_list(data,a));
+        add_to_list(ls,copy);
+      }
+      return new_node(AST_TYPE_TUPLE,ls);
+    }
+    case AST_TYPE_FUNC:{
+      AstListNode* data=(AstListNode*)(node->data);
+      List* ls=new_default_list();
+      for(int a=0;a<data->list->n;a++){
+        AstNode* e=copy_type((AstNode*)get_from_list(data->list,a));
+        add_to_list(ls,e);
+      }
+      return new_node(AST_TYPE_FUNC,new_ast_list_node(copy_type(data->node),ls));
+    }
+  }
+}
+
 // Type matching for AST traversal
 int is_primitive(AstNode* node,const char* type){
   return node->type==AST_TYPE_BASIC && !strcmp((char*)(node->data),type);
@@ -57,13 +83,29 @@ AstNode* get_type(AstNode* node){
     case AST_UNARY: return ((BinaryNode*)(node->data))->r;
     case AST_SUB: return any_type_const();
     case AST_TUPLE:{
-      List* ls=(List*)(node->data);
-      List* types=new_default_list();
-      for(int a=0;a<ls->n;a++){
-        AstNode* e=(AstNode*)get_from_list(ls,a);
-        add_to_list(types,get_type(e));
+      AstListNode* data=(AstListNode*)(node->data);
+      if(!data->node){
+        List* ls=data->list;
+        List* types=new_default_list();
+        for(int a=0;a<ls->n;a++){
+          AstNode* e=(AstNode*)get_from_list(ls,a);
+          add_to_list(types,copy_type(get_type(e)));
+        }
+        data->node=new_node(AST_TYPE_TUPLE,types);
       }
-      return new_node(AST_TYPE_TUPLE,types); // TODO move this to somewhere easier to deallocate
+      return data->node;
+    }
+    case AST_FUNCTION:{
+      FunctionNode* data=(FunctionNode*)(node->data);
+      if(!data->functype){
+        List* ls=new_default_list();
+        for(int a=0;a<data->args->n;a++){
+          AstNode* e=((StringAstNode*)get_from_list(data->args,a))->node;
+          add_to_list(ls,copy_type(e));
+        }
+        data->functype=new_node(AST_TYPE_FUNC,new_ast_list_node(copy_type(data->type),ls));
+      }
+      return data->functype;
     }
     case AST_CALL:{
       AstNode* l=((AstAstNode*)(node->data))->l;
@@ -78,14 +120,6 @@ AstNode* get_type(AstNode* node){
         return any_type_const();
       }
       return get_type(l);
-    }
-    case AST_FUNCTION:{
-      FunctionNode* func=(FunctionNode*)(node->data);
-      List* ls=new_default_list();
-      for(int a=0;a<func->args->n;a++){
-        add_to_list(ls,((StringAstNode*)get_from_list(func->args,a))->node);
-      }
-      return new_node(AST_TYPE_FUNC,new_ast_list_node(func->type,ls)); // TODO move this to somewhere easier to deallocate
     }
     case AST_ID:{
       char* name=(char*)(node->data);

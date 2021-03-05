@@ -44,6 +44,7 @@ typedef struct{
 } AstListNode;
 
 typedef struct{
+  AstNode* functype;
   AstNode* name;
   AstNode* type;
   List* body;
@@ -142,10 +143,10 @@ enum RULES{
   AST_LABEL, AST_GOTO, AST_ID, AST_TYPE_BASIC,
 
   // List*
-  AST_STMT, AST_DO, AST_LTUPLE, AST_TYPE_TUPLE, AST_TUPLE,
+  AST_STMT, AST_DO, AST_LTUPLE, AST_TYPE_TUPLE,
 
   // AstListNode*
-  AST_REPEAT, AST_WHILE, AST_IF, AST_TYPE_FUNC,
+  AST_REPEAT, AST_WHILE, AST_IF, AST_TYPE_FUNC, AST_TUPLE,
 
   // ClassNode*
   AST_CLASS,

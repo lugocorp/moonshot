@@ -242,7 +242,7 @@ void process_call(AstNode* node){
     if(functype){
       List* funcargs=functype->data?((AstListNode*)(functype->data))->list:NULL;
       if(data->r){
-        List* args=(List*)(data->r->data);
+        List* args=((AstListNode*)(data->r->data))->list;
         ERROR(!funcargs,"too many arguments for function %s",name);
         ERROR(funcargs->n!=args->n,"invalid number of arguments for function %s",name);
         for(int a=0;a<args->n;a++){
@@ -473,7 +473,8 @@ void process_table(AstNode* node){
   write("}");
 }
 void process_tuple(AstNode* node){
-  List* ls=(List*)(node->data);
+  AstListNode* data=(AstListNode*)(node->data);
+  List* ls=data->list;
   for(int a=0;a<ls->n;a++){
     if(a) write(",");
     process_node((AstNode*)get_from_list(ls,a));

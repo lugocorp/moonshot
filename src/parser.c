@@ -77,7 +77,6 @@ static int precedence(char* op){
 }
 
 // Moonshot-specific parse functions
-// TODO add deallocation on parsing error to every parse function
 AstNode* parse_interface(){
   char* parent=NULL;
   Token* tk=consume();
@@ -138,43 +137,83 @@ AstNode* parse_class(){
   Token* tk=consume();
   List* ls=new_default_list();
   List* interfaces=new_default_list();
-  if(!expect(tk,TK_CLASS)) return error(tk,"invalid class");
+  if(!expect(tk,TK_CLASS)){
+    dealloc_list(ls);
+    dealloc_list(interfaces);
+    return error(tk,"invalid class");
+  }
   tk=consume();
-  if(!expect(tk,TK_NAME)) return error(tk,"invalid class");
+  if(!expect(tk,TK_NAME)){
+    dealloc_list(ls);
+    dealloc_list(interfaces);
+    return error(tk,"invalid class");
+  }
   char* name=tk->text;
   tk=check();
   if(expect(tk,TK_EXTENDS)){
     consume();
     tk=consume();
-    if(!expect(tk,TK_NAME)) return error(tk,"invalid class");
+    if(!expect(tk,TK_NAME)){
+      dealloc_list(ls);
+      dealloc_list(interfaces);
+      return error(tk,"invalid class");
+    }
     parent=tk->text;
     tk=check();
   }
   if(expect(tk,TK_IMPLEMENTS)){
     consume();
     tk=consume();
-    if(!expect(tk,TK_NAME)) return error(tk,"invalid class");
+    if(!expect(tk,TK_NAME)){
+      dealloc_list(ls);
+      dealloc_list(interfaces);
+      return error(tk,"invalid class");
+    }
     add_to_list(interfaces,tk->text);
     tk=check();
     while(specific(tk,TK_MISC,",")){
       consume();
       tk=consume();
-      if(!expect(tk,TK_NAME)) return error(tk,"invalid class");
+      if(!expect(tk,TK_NAME)){
+        dealloc_list(ls);
+        dealloc_list(interfaces);
+        return error(tk,"invalid class");
+      }
       add_to_list(interfaces,tk->text);
       tk=check();
     }
   }
   tk=consume();
-  if(!expect(tk,TK_WHERE)) return error(tk,"invalid class");
+  if(!expect(tk,TK_WHERE)){
+    dealloc_list(ls);
+    dealloc_list(interfaces);
+    return error(tk,"invalid class");
+  }
   tk=check();
   while(tk && !expect(tk,TK_END)){
     AstNode* node=parse_function_or_define();
-    if(!node) return NULL;
+    if(!node){
+      for(int a=0;a<ls->n;a++){
+        AstNode* e=(AstNode*)get_from_list(ls,a);
+        dealloc_ast_node(e);
+      }
+      dealloc_list(ls);
+      dealloc_list(interfaces);
+      return NULL;
+    }
     add_to_list(ls,node);
     tk=check();
   }
   tk=consume();
-  if(!expect(tk,TK_END)) return error(tk,"invalid class");
+  if(!expect(tk,TK_END)){
+    for(int a=0;a<ls->n;a++){
+      AstNode* e=(AstNode*)get_from_list(ls,a);
+      dealloc_ast_node(e);
+    }
+    dealloc_list(ls);
+    dealloc_list(interfaces);
+    return error(tk,"invalid class");
+  }
   return new_node(AST_CLASS,new_class_node(name,parent,interfaces,ls));
 }
 AstNode* parse_typedef(){
@@ -219,7 +258,15 @@ static AstNode* parse_basic_type(){
       List* ls=new_default_list();
       while(tk && !specific(tk,TK_PAREN,")")){
         AstNode* arg=parse_type();
-        if(!arg) return error(tk,"invalid function type");
+        if(!arg){
+          for(int a=0;a<ls->n;a++){
+            AstNode* e=(AstNode*)get_from_list(ls,a);
+            dealloc_ast_type(e);
+          }
+          dealloc_ast_type(node);
+          dealloc_list(ls);
+          return error(tk,"invalid function type");
+        }
         add_to_list(ls,arg);
         tk=check();
         if(specific(tk,TK_MISC,",")){
@@ -228,14 +275,17 @@ static AstNode* parse_basic_type(){
       }
       node=new_node(AST_TYPE_FUNC,new_ast_list_node(node,ls));
       tk=consume();
-      if(!specific(tk,TK_PAREN,")")) return error(tk,"invalid function type");
+      if(!specific(tk,TK_PAREN,")")){
+        dealloc_ast_type(node);
+        return error(tk,"invalid function type");
+      }
       tk=check();
     }
     return node;
   }
   return error(tk,"invalid type");
 }
-AstNode* parse_type(){
+AstNode* parse_type(){ // TODO add deallocation on parsing error to every parse function
   Token* tk=check();
   if(specific(tk,TK_PAREN,"(")){
     List* ls=new_default_list();
@@ -707,7 +757,7 @@ AstNode* parse_tuple(){
     tk=check();
   }
   DEBUG("tuple\n");
-  return new_node(AST_TUPLE,ls);
+  return new_node(AST_TUPLE,new_ast_list_node(NULL,ls));
 }
 AstNode* parse_paren_or_tuple_function(){
   Token* tk=check_ahead(2);
