@@ -119,7 +119,7 @@ enum TOKENS{
   TK_DBCOLON, TK_EOS,
   TK_FLT, TK_INT, TK_NAME, TK_STRING,
 
-  // New tokens for vanilla lexing
+  // New tokens for vanilla lexing (starts with 37)
   TK_PAREN, TK_CURLY, TK_SQUARE,
   TK_COMMENT, TK_QUOTE,
   TK_UNARY, TK_BINARY,

@@ -13,6 +13,8 @@
 static int class_alphanumeric=0;
 static int class_whitespace=1;
 static int class_special=2;
+static int multiline_comment=0;
+static int comment=0;
 
 /*
   Get the character class for a char
@@ -38,7 +40,17 @@ void dealloc_token(Token* tk){
 */
 static void discover_tokens(List* ls,int line,char* buffer,int n,int char_class){
   buffer[n]=0;
+  //printf("%s\n",buffer);
   if(char_class!=class_special){
+    if(comment && char_class==class_whitespace){
+      for(int a=0;a<n;a++){
+        if(buffer[a]=='\n'){
+          comment=0;
+        }
+      }
+      return;
+    }
+    if(multiline_comment || comment) return;
     Token* tk=(Token*)malloc(sizeof(Token));
     tk->text=(char*)malloc(sizeof(char)*(n+1));
     strcpy(tk->text,buffer);
@@ -90,6 +102,20 @@ static void discover_tokens(List* ls,int line,char* buffer,int n,int char_class)
   }else{
     int a=0;
     while(a<n){
+      if(multiline_comment && n-a>=2 && !strncmp(buffer+a,"]]",2)){
+        multiline_comment=0;
+        a+=2;
+        continue;
+      }
+      if(comment || multiline_comment) break;
+      if(n-a>=4 && !strncmp(buffer+a,"--[[",4)){
+        multiline_comment=1;
+        break;
+      }
+      if(n-a>=2 && !strncmp(buffer+a,"--",2)){
+        comment=1;
+        break;
+      }
       Token* tk=(Token*)malloc(sizeof(Token));
       tk->text=NULL;
       tk->line=line;
@@ -99,7 +125,6 @@ static void discover_tokens(List* ls,int line,char* buffer,int n,int char_class)
         tk->type=TK_DOTS;
         a+=3;
       }
-      SPECIAL_TOKEN("--[[",4,TK_COMMENT)
       SPECIAL_TOKEN("..",2,TK_BINARY)
       SPECIAL_TOKEN("<=",2,TK_BINARY)
       SPECIAL_TOKEN(">=",2,TK_BINARY)

@@ -16,7 +16,7 @@ Moonshot is an optionally-typed object-oriented extension language for Lua. This
 - [x] Ensure that strings work in all scenarios
 - [x] Double check memory deallocation
 - [ ] Finish some features
-  - [ ] Handle Lua comments
+  - [x] Handle Lua comments
   - [ ] require keyword
   - [ ] New trust keyword
   - [ ] Class/interface features
