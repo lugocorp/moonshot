@@ -325,6 +325,7 @@ AstNode* parse_stmt(){
     else if(expect(tk,TK_CLASS)) node=parse_class();
     else if(expect(tk,TK_INTERFACE)) node=parse_interface();
     else if(expect(tk,TK_TYPEDEF)) node=parse_typedef();
+    else if(expect(tk,TK_REQUIRE)) node=parse_require();
     else if(expect(tk,TK_RETURN)) node=parse_return();
     else if(expect(tk,TK_DBCOLON)) node=parse_label();
     else if(expect(tk,TK_LOCAL)) node=parse_local();
@@ -666,6 +667,13 @@ AstNode* parse_goto(){
   DEBUG("goto %s\n",text);
   return new_node(AST_GOTO,new_string_node(text));
 }
+AstNode* parse_require(){
+  Token* tk=consume();
+  if(!expect(tk,TK_REQUIRE)) return error(tk,"invalid require statement");
+  AstNode* expr=parse_string();
+  if(!expr) return NULL;
+  return new_node(AST_REQUIRE,expr);
+}
 
 // Primitive types parse functions
 AstNode* parse_string(){
@@ -804,6 +812,8 @@ AstNode* parse_expr(){
     node=parse_number();
   }else if(expect(tk,TK_QUOTE)){
     node=parse_string();
+  }else if(expect(tk,TK_REQUIRE)){
+    node=parse_require();
   }else if(expect(tk,TK_FUNCTION)){
     node=parse_function(NULL,1);
   }else if(specific(tk,TK_BINARY,"*")){

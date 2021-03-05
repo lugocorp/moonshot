@@ -121,7 +121,7 @@ enum TOKENS{
 
   // New tokens for vanilla lexing (starts with 37)
   TK_PAREN, TK_CURLY, TK_SQUARE,
-  TK_COMMENT, TK_QUOTE,
+  TK_QUOTE, TK_REQUIRE,
   TK_UNARY, TK_BINARY,
   TK_SPACE, TK_MISC,
 
@@ -167,7 +167,7 @@ enum RULES{
   AST_BINARY, AST_UNARY, AST_DEFINE,
 
   // AstNode*
-  AST_RETURN, AST_PAREN,
+  AST_RETURN, AST_PAREN, AST_REQUIRE,
 
   // StringAstNode*
   AST_FIELD, AST_LOCAL, AST_TYPEDEF, AST_PRIMITIVE,
@@ -203,6 +203,7 @@ AstNode* parse_set_or_call();
 AstNode* parse_function_or_define();
 AstNode* parse_function(AstNode* type,int include_body);
 AstNode* parse_paren_or_tuple_function();
+AstNode* parse_require();
 AstNode* parse_repeat();
 AstNode* parse_string();
 AstNode* parse_number();
@@ -294,6 +295,7 @@ void process_primitive(AstNode* node);
 void process_interface(AstNode* node);
 void process_class(AstNode* node);
 void process_function(AstNode* node);
+void process_require(AstNode* node);
 void process_repeat(AstNode* node);
 void process_ltuple(AstNode* node);
 void process_return(AstNode* node);

@@ -74,6 +74,7 @@ void process_node(AstNode* node){
     case AST_INTERFACE: process_interface(node); return;
     case AST_FUNCTION: process_function(node); return;
     case AST_TYPEDEF: process_typedef(node); return;
+    case AST_REQUIRE: process_require(node); return;
     case AST_DEFINE: process_define(node); return;
     case AST_REPEAT: process_repeat(node); return;
     case AST_LTUPLE: process_ltuple(node); return;
@@ -177,7 +178,9 @@ void process_class(AstNode* node){
       for(int a=0;a<cdata->body->n;a++){
         AstNode* e=(AstNode*)get_from_list(cdata->body,a);
         process_node(e);
-        if(e->type==AST_FUNCTION || e->type==AST_CALL) write("\n");
+        if(e->type==AST_FUNCTION) write("\n");
+        if(e->type==AST_CALL) write("\n");
+        if(e->type==AST_REQUIRE) write("\n");
       }
       write("end\n");
     }else if(child->type==AST_DEFINE){
@@ -205,6 +208,7 @@ void process_stmt(AstNode* node){
     process_node(e);
     if(e->type==AST_CALL) write("\n");
     if(e->type==AST_FUNCTION) write("\n");
+    if(e->type==AST_REQUIRE) write("\n");
   }
 }
 void process_do(AstNode* node){
@@ -216,6 +220,7 @@ void process_do(AstNode* node){
     process_node(e);
     if(e->type==AST_CALL) write("\n");
     if(e->type==AST_FUNCTION) write("\n");
+    if(e->type==AST_REQUIRE) write("\n");
   }
   write("end\n");
   pop_scope();
@@ -329,6 +334,11 @@ void process_local(AstNode* node){
   }
   write("\n");
 }
+void process_require(AstNode* node){
+  AstNode* data=(AstNode*)(node->data);
+  write("require ");
+  process_node(data);
+}
 
 // Control
 void process_function(AstNode* node){
@@ -356,6 +366,7 @@ void process_function(AstNode* node){
       process_node(child);
       if(child->type==AST_CALL) write("\n");
       if(child->type==AST_FUNCTION) write("\n");
+      if(child->type==AST_REQUIRE) write("\n");
     }
     if(!is_primitive(data->type,PRIMITIVE_NIL) && data->type->type!=AST_TYPE_ANY){
       ERROR(!num_returns,"function of type %t cannot return nil",data->type);
@@ -374,6 +385,7 @@ void process_repeat(AstNode* node){
     process_node(e);
     if(e->type==AST_CALL) write("\n");
     if(e->type==AST_FUNCTION) write("\n");
+    if(e->type==AST_REQUIRE) write("\n");
   }
   pop_scope();
   write("until ");
@@ -391,6 +403,7 @@ void process_while(AstNode* node){
     process_node(e);
     if(e->type==AST_CALL) write("\n");
     if(e->type==AST_FUNCTION) write("\n");
+    if(e->type==AST_REQUIRE) write("\n");
   }
   pop_scope();
   write("end\n");
@@ -406,6 +419,7 @@ void process_if(AstNode* node){
     process_node(e);
     if(e->type==AST_CALL) write("\n");
     if(e->type==AST_FUNCTION) write("\n");
+    if(e->type==AST_REQUIRE) write("\n");
   }
   pop_scope();
   write("end\n");
@@ -427,6 +441,7 @@ void process_fornum(AstNode* node){
     process_node(e);
     if(e->type==AST_CALL) write("\n");
     if(e->type==AST_FUNCTION) write("\n");
+    if(e->type==AST_REQUIRE) write("\n");
   }
   write("end\n");
   pop_scope();
@@ -444,6 +459,7 @@ void process_forin(AstNode* node){
     process_node(e);
     if(e->type==AST_CALL) write("\n");
     if(e->type==AST_FUNCTION) write("\n");
+    if(e->type==AST_REQUIRE) write("\n");
   }
   write("end\n");
   pop_scope();

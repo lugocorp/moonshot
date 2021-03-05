@@ -89,6 +89,7 @@ static void discover_tokens(List* ls,int line,char* buffer,int n,int char_class)
       KEY_TOKEN("extends",TK_EXTENDS)
       KEY_TOKEN("implements",TK_IMPLEMENTS)
       KEY_TOKEN("where",TK_WHERE)
+      KEY_TOKEN("require",TK_REQUIRE)
       else{
         tk->type=TK_INT;
         for(int a=0;a<n;a++){
@@ -131,7 +132,6 @@ static void discover_tokens(List* ls,int line,char* buffer,int n,int char_class)
       SPECIAL_TOKEN("==",2,TK_BINARY)
       SPECIAL_TOKEN("~=",2,TK_BINARY)
       SPECIAL_TOKEN("::",2,TK_DBCOLON)
-      SPECIAL_TOKEN("--",2,TK_COMMENT)
       SPECIAL_TOKEN("<",1,TK_BINARY)
       SPECIAL_TOKEN(">",1,TK_BINARY)
       SPECIAL_TOKEN("+",1,TK_BINARY)

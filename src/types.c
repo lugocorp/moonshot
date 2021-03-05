@@ -81,6 +81,7 @@ AstNode* get_type(AstNode* node){
     case AST_PRIMITIVE: return ((StringAstNode*)(node->data))->node;
     case AST_PAREN: return get_type((AstNode*)(node->data));
     case AST_UNARY: return ((BinaryNode*)(node->data))->r;
+    case AST_REQUIRE: return any_type_const();
     case AST_SUB: return any_type_const();
     case AST_TUPLE:{
       AstListNode* data=(AstListNode*)(node->data);

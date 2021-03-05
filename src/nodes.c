@@ -40,7 +40,7 @@ void dealloc_ast_node(AstNode* node){
   else if(node->type==AST_LTUPLE){
     dealloc_list((List*)(node->data));
   }
-  else if(node->type==AST_RETURN || node->type==AST_PAREN){
+  else if(node->type==AST_RETURN || node->type==AST_PAREN || node->type==AST_REQUIRE){
     if(node->data) dealloc_ast_node((AstNode*)(node->data));
   }
   else if(node->type==AST_PRIMITIVE || node->type==AST_FIELD || node->type==AST_LOCAL || node->type==AST_TYPEDEF){

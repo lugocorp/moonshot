@@ -1,3 +1,5 @@
+local lib=require "library"
+require "hello"
 
 -- Hello function!
 function hello()
