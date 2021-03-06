@@ -500,7 +500,7 @@ void process_tuple(AstNode* node){
 // Expressions
 void process_unary(AstNode* node){
   BinaryNode* data=(BinaryNode*)(node->data);
-  write("%s ",data->text);
+  if(strcmp(data->text,"trust")) write("%s ",data->text);
   process_node(data->l);
 }
 void process_binary(AstNode* node){

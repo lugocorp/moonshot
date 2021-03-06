@@ -240,6 +240,9 @@ char* new_string_node(char* msg){
   return text;
 }
 BinaryNode* new_unary_node(char* op,AstNode* e){
-  AstNode* type=new_node(AST_TYPE_BASIC,strcmp(op,"#")?PRIMITIVE_BOOL:PRIMITIVE_INT);
+  AstNode* type;
+  if(!strcmp(op,"trust")) type=new_node(AST_TYPE_BASIC,PRIMITIVE_NIL);
+  else if(!strcmp(op,"#")) type=new_node(AST_TYPE_BASIC,PRIMITIVE_INT);
+  else type=new_node(AST_TYPE_BASIC,PRIMITIVE_BOOL);
   return new_binary_node(op,e,type);
 }
