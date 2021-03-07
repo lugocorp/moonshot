@@ -210,16 +210,16 @@ int typed_match(AstNode* l,AstNode* r){
 
 // Type registry
 static char* base_type(char* name){
-  List* ls=get_equivalent_types(name);
-  while(ls->n==1){
-    AstNode* node=(AstNode*)get_from_list(ls,0);
-    if(node->type==AST_TYPE_BASIC){
-      name=(char*)(node->data);
-      dealloc_list(ls);
-      ls=get_equivalent_types(name);
+  while(1){
+    for(int a=0;a<types_graph->n;a++){
+      EqualTypesNode* node=(EqualTypesNode*)get_from_list(types_graph,a);
+      if(node->relation==RL_EQUALS && !strcmp(node->name,name)){
+        name=(char*)(node->type->data);
+        continue;
+      }
     }
+    break;
   }
-  dealloc_list(ls);
   return name;
 }
 void register_type(char* name){
@@ -312,13 +312,13 @@ static int path_exists(char* name,AstNode* type){
   dealloc_list(ls);
   return 0;
 }
-int add_child_type(char* child,char* parent){
+int add_child_type(char* child,char* parent,int relation){
   AstNode* r=new_node(AST_TYPE_BASIC,child);
-  int cycle=add_type_equivalence(parent,r);
+  int cycle=add_type_equivalence(parent,r,relation);
   free(r);
   return cycle;
 }
-int add_type_equivalence(char* name,AstNode* type){
+int add_type_equivalence(char* name,AstNode* type,int relation){
   if(type->type==AST_TYPE_BASIC){
     AstNode* r=new_node(AST_TYPE_BASIC,name);
     char* l=(char*)(type->data);
@@ -326,14 +326,16 @@ int add_type_equivalence(char* name,AstNode* type){
     free(r);
     if(cycle) return 0;
   }
-  add_to_list(types_graph,new_string_ast_node(name,type));
+  //add_to_list(types_graph,new_string_ast_node(name,type));
+  add_to_list(types_graph,new_equal_types_node(name,type,relation));
   return 1;
 }
 List* get_equivalent_types(char* name){
   List* ls=new_default_list();
   for(int a=0;a<types_graph->n;a++){
-    StringAstNode* node=(StringAstNode*)get_from_list(types_graph,a);
-    if(!strcmp(node->text,name)) add_to_list(ls,node->node);
+    //StringAstNode* node=(StringAstNode*)get_from_list(types_graph,a);
+    EqualTypesNode* node=(EqualTypesNode*)get_from_list(types_graph,a);
+    if(!strcmp(node->name,name)) add_to_list(ls,node->type);
   }
   return ls;
 }

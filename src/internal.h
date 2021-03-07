@@ -101,10 +101,18 @@ typedef struct{
   List* ls;
 } ClassNode;
 
-/*
-  List of all possible tokens
-*/
+typedef struct{
+  AstNode* type;
+  int relation;
+  char* name;
+} EqualTypesNode;
 
+// List of all equivalent type relationships
+enum RELATIONS{
+  RL_EXTENDS, RL_EQUALS, RL_IMPLEMENTS
+};
+
+// List of all possible tokens
 enum TOKENS{
 
   // Lua reserved keywords (starts with 0)
@@ -132,9 +140,7 @@ enum TOKENS{
 
 };
 
-/*
-  List of all grammar rules
-*/
+// List of all grammar rules
 enum RULES{
   // NULL,
   AST_BREAK, AST_TYPE_ANY,
@@ -238,6 +244,7 @@ ForinNode* new_forin_node(AstNode* lhs,AstNode* tuple,List* body);
 BinaryNode* new_binary_node(char* text,AstNode* l,AstNode* r);
 InterfaceNode* new_interface_node(char* name,char* parent,List* ls);
 ClassNode* new_class_node(char* name,char* parent,List* interfaces,List* ls);
+EqualTypesNode* new_equal_types_node(char* name,AstNode* type,int relation);
 char* new_string_node(char* msg);
 BinaryNode* new_unary_node(char* op,AstNode* e);
 
@@ -276,8 +283,8 @@ ClassNode* class_exists(char* name);
 FunctionNode* function_exists(char* name);
 InterfaceNode* interface_exists(char* name);
 int compound_type_exists(AstNode* node);
-int add_child_type(char* child,char* parent);
-int add_type_equivalence(char* name,AstNode* type);
+int add_child_type(char* child,char* parent,int relation);
+int add_type_equivalence(char* name,AstNode* type,int relation);
 List* get_equivalent_types(char* name);
 int types_equivalent(char* name,AstNode* type);
 char* stringify_type(AstNode* node);

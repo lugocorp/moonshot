@@ -124,19 +124,19 @@ void process_typedef(AstNode* node){
   if(validate){
     ERROR(type_exists(data->text),"type %s is already declared",data->text);
     ERROR(!compound_type_exists(data->node),"type %t does not exist",data->node);
-    ERROR(!add_type_equivalence(data->text,data->node),"co-dependent typedef %s detected",data->text);
+    ERROR(!add_type_equivalence(data->text,data->node,RL_EQUALS),"co-dependent typedef %s detected",data->text);
     register_type(data->text);
   }
-  char* type1=stringify_type(data->node);
+  /*char* type1=stringify_type(data->node);
   write("-- typedef %s -> %s\n",data->text,type1);
-  free(type1);
+  free(type1);*/
 }
 void process_interface(AstNode* node){
   InterfaceNode* data=(InterfaceNode*)(node->data);
   if(validate){
     if(data->parent){
       ERROR(!interface_exists(data->parent),"parent interface %s does not exist",data->parent);
-      ERROR(!add_child_type(data->name,data->parent),"co-dependent interface %s detected",data->name);
+      ERROR(!add_child_type(data->name,data->parent,RL_EXTENDS),"co-dependent interface %s detected",data->name);
     }
     ERROR(type_exists(data->name),"type %s is already declared",data->name);
     register_type(data->name);
@@ -148,12 +148,12 @@ void process_class(AstNode* node){
   if(validate){
     if(data->parent){
       ERROR(!class_exists(data->parent),"parent class %s does not exist",data->parent);
-      ERROR(!add_child_type(data->name,data->parent),"co-dependent class %s detected",data->name);
+      ERROR(!add_child_type(data->name,data->parent,RL_EXTENDS),"co-dependent class %s detected",data->name);
     }
     for(int a=0;a<data->interfaces->n;a++){
       char* interface=(char*)get_from_list(data->interfaces,a);
       ERROR(!interface_exists(interface),"interface %s does not exist",interface);
-      add_child_type(data->name,interface);
+      add_child_type(data->name,interface,RL_IMPLEMENTS);
     }
     ERROR(type_exists(data->name),"type %s is already declared",data->name);
     register_type(data->name);

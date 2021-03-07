@@ -234,6 +234,13 @@ ClassNode* new_class_node(char* name,char* parent,List* interfaces,List* ls){
   node->ls=ls;
   return node;
 }
+EqualTypesNode* new_equal_types_node(char* name,AstNode* type,int relation){
+  EqualTypesNode* node=(EqualTypesNode*)malloc(sizeof(EqualTypesNode));
+  node->relation=relation;
+  node->type=type;
+  node->name=name;
+  return node;
+}
 char* new_string_node(char* msg){
   char* text=(char*)malloc(sizeof(char)*(strlen(msg)+1));
   strcpy(text,msg);
