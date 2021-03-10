@@ -28,6 +28,11 @@ void pop_scope(){
 // Functions
 void push_function(FunctionNode* node){
   add_to_list(funcs,node);
+  for(int a=0;a<node->args->n;a++){
+    StringAstNode* arg=(StringAstNode*)get_from_list(node->args,a);
+    BinaryNode* bn=new_binary_node(arg->text,arg->node,NULL);
+    add_scoped_var(bn);
+  }
 }
 void pop_function(FunctionNode* node){
   remove_from_list(funcs,funcs->n-1);
