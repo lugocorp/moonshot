@@ -56,6 +56,14 @@ int add_to_list(List* ls,void* e){
 }
 
 /*
+  Appends every element from ls1 to ls
+*/
+void append_all(List* ls,List* ls1){
+  int n=ls1->n;
+  for(int a=0;a<n;a++) add_to_list(ls,get_from_list(ls1,a));
+}
+
+/*
   Deallocates a list object
 */
 void dealloc_list(List* ls){

@@ -156,6 +156,19 @@ void process_class(AstNode* node){
       add_child_type(data->name,interface,RL_IMPLEMENTS);
     }
     ERROR(type_exists(data->name),"type %s is already declared",data->name);
+    List* missing=get_missing_class_methods(data);
+    if(missing->n){
+      for(int a=0;a<missing->n;a++){
+        FunctionNode* f=(FunctionNode*)get_from_list(missing,a);
+        add_error(-1,"Class %s does not implement method %s",data->name,(char*)(f->name->data));
+      }
+      dealloc_list(missing);
+      return;
+    }
+    for(int a=0;a<data->ls->n;a++){
+      process_node((AstNode*)get_from_list(data->ls,a));
+    }
+    dealloc_list(missing);
     register_type(data->name);
     register_class(data);
   }

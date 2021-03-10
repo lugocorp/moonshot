@@ -18,6 +18,7 @@ List* new_list(int max);
 List* new_default_list();
 void* get_from_list(List* ls,int i);
 void* remove_from_list(List* ls,int i);
+void append_all(List* ls,List* ls1);
 int add_to_list(List* ls,void* e);
 void dealloc_list(List* ls);
 
@@ -287,6 +288,8 @@ int add_child_type(char* child,char* parent,int relation);
 int add_type_equivalence(char* name,AstNode* type,int relation);
 List* get_equivalent_types(char* name);
 int types_equivalent(char* name,AstNode* type);
+List* get_missing_class_methods(ClassNode* node);
+int methods_equivalent(FunctionNode* f1,FunctionNode* f2);
 char* stringify_type(AstNode* node);
 
 // traversal.c
