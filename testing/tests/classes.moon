@@ -18,3 +18,11 @@ end
 
 Math m=Math()
 int a=m.name
+
+class Log where
+  constructor(int a)
+    print(a)
+  end
+end
+
+Log l=Log(1)

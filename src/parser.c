@@ -191,7 +191,9 @@ AstNode* parse_class(){
   }
   tk=check();
   while(tk && !expect(tk,TK_END)){
-    AstNode* node=parse_function_or_define();
+    AstNode* node;
+    if(expect(tk,TK_CONSTRUCTOR)) node=parse_constructor(name);
+    else node=parse_function_or_define();
     if(!node){
       for(int a=0;a<ls->n;a++){
         AstNode* e=(AstNode*)get_from_list(ls,a);
@@ -310,6 +312,40 @@ AstNode* parse_type(){ // TODO add deallocation on parsing error to every parse 
   }
   return parse_basic_type();
 }
+AstNode* parse_constructor(char* classname){
+  List* args=new_default_list();
+  Token* tk=consume();
+  if(!expect(tk,TK_CONSTRUCTOR)) return error(tk,"invalid constructor");
+  tk=consume();
+  if(!specific(tk,TK_PAREN,"(")) return error(tk,"invalid constructor");
+  tk=check();
+  while(tk && !specific(tk,TK_PAREN,")")){
+    AstNode* arg_type=NULL;
+    tk=check_ahead(2);
+    if(!specific(tk,TK_MISC,",") && !specific(tk,TK_PAREN,")")){
+      arg_type=parse_type();
+      if(!arg_type) return NULL;
+    }
+    tk=consume();
+    if(!expect(tk,TK_NAME)) return error(tk,"invalid constructor argument");
+    add_to_list(args,new_string_ast_node(tk->text,arg_type));
+    tk=check();
+    if(specific(tk,TK_MISC,",")){
+      consume();
+      tk=check();
+    }
+  }
+  if(!tk) return error(tk,"invalid constructor");
+  consume();
+  AstNode* node=parse_stmt();
+  if(!node) return NULL;
+  tk=consume();
+  if(!expect(tk,TK_END)) return error(tk,"invalid constructor");
+  List* ls=(List*)(node->data);
+  FunctionNode* data=new_function_node(NULL,new_node(AST_TYPE_BASIC,classname),args,ls);
+  data->is_constructor=1;
+  return new_node(AST_FUNCTION,data);
+}
 
 // Statement group parse functions
 AstNode* parse_stmt(){
@@ -353,6 +389,8 @@ AstNode* parse_stmt(){
       }else{
         node=error(tk,"invalid statement");
       }
+    }else if(expect(tk,TK_CONSTRUCTOR)){
+      node=error(tk,"invalid constructor without a class");
     }else break;
     if(node) add_to_list(ls,node);
     else{

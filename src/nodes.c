@@ -156,6 +156,7 @@ AstNode* new_node(int type,void* data){
 }
 FunctionNode* new_function_node(AstNode* name,AstNode* type,List* args,List* body){
   FunctionNode* node=(FunctionNode*)malloc(sizeof(FunctionNode));
+  node->is_constructor=0;
   node->functype=NULL;
   node->name=name;
   node->args=args;

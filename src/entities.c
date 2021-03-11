@@ -2,6 +2,29 @@
 #include <stdlib.h>
 #include <string.h>
 
+// Class constructors
+int num_constructors(ClassNode* data){
+  int cons=0;
+  for(int a=0;a<data->ls->n;a++){
+    AstNode* e=(AstNode*)get_from_list(data->ls,a);
+    if(e->type==AST_FUNCTION){
+      FunctionNode* func=(FunctionNode*)(e->data);
+      if(func->is_constructor) cons++;
+    }
+  }
+  return cons;
+}
+FunctionNode* get_constructor(ClassNode* data){
+  for(int a=0;a<data->ls->n;a++){
+    AstNode* e=(AstNode*)get_from_list(data->ls,a);
+    if(e->type==AST_FUNCTION){
+      FunctionNode* func=(FunctionNode*)(e->data);
+      if(func->is_constructor) return func;
+    }
+  }
+  return NULL;
+}
+
 // Interface and Class function checks
 static List* get_interface_ancestor_methods(AstNode* node){
   char* name;

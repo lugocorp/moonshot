@@ -157,6 +157,8 @@ void process_class(AstNode* node){
       add_child_type(data->name,interface,RL_IMPLEMENTS);
     }
     ERROR(type_exists(data->name),"type %s is already declared",data->name);
+    int num_cons=num_constructors(data);
+    ERROR(num_cons>1,"class %s has %i constructors, should have only 1",data->name,num_cons);
     List* missing=get_missing_class_methods(data);
     if(missing->n){
       for(int a=0;a<missing->n;a++){
@@ -174,23 +176,43 @@ void process_class(AstNode* node){
     register_class(data);
     pop_scope();
   }
-  write("function %s()\n",data->name);
+  write("function %s(",data->name);
+  FunctionNode* constructor=get_constructor(data);
+  if(constructor){
+    for(int a=0;a<constructor->args->n;a++){
+      StringAstNode* e=(StringAstNode*)get_from_list(constructor->args,a);
+      if(a) write(",");
+      write("%s",e->text);
+    }
+  }
+  write(")\n");
   write("local obj={}\n");
+  FunctionNode* fdata=get_constructor(data);
+  if(fdata){
+    for(int a=0;a<fdata->body->n;a++){
+      AstNode* e=(AstNode*)get_from_list(fdata->body,a);
+      process_node(e);
+      if(e->type==AST_FUNCTION) write("\n");
+      if(e->type==AST_CALL) write("\n");
+      if(e->type==AST_REQUIRE) write("\n");
+    }
+  }
   for(int a=0;a<data->ls->n;a++){
     AstNode* child=(AstNode*)get_from_list(data->ls,a);
     if(child->type==AST_FUNCTION){
-      FunctionNode* cdata=(FunctionNode*)(child->data);
-      write("obj.%s=function(",(char*)(cdata->name->data));
-      if(cdata->args){
-        for(int a=0;a<cdata->args->n;a++){
+      fdata=(FunctionNode*)(child->data);
+      if(fdata->is_constructor) continue;
+      write("obj.%s=function(",(char*)(fdata->name->data));
+      if(fdata->args){
+        for(int a=0;a<fdata->args->n;a++){
           if(a) write(",");
-          char* arg=((StringAstNode*)get_from_list(cdata->args,a))->text;
+          char* arg=((StringAstNode*)get_from_list(fdata->args,a))->text;
           write("%s",arg);
         }
       }
       write(")\n");
-      for(int a=0;a<cdata->body->n;a++){
-        AstNode* e=(AstNode*)get_from_list(cdata->body,a);
+      for(int a=0;a<fdata->body->n;a++){
+        AstNode* e=(AstNode*)get_from_list(fdata->body,a);
         process_node(e);
         if(e->type==AST_FUNCTION) write("\n");
         if(e->type==AST_CALL) write("\n");
@@ -246,6 +268,7 @@ void process_call(AstNode* node){
   if(validate){
     char* name=NULL;
     AstNode* functype=NULL;
+    AstNode* dummy_constructor_type=NULL;
     if(data->l->type==AST_ID){
       name=(char*)(data->l->data);
       FunctionNode* func=function_exists(name);
@@ -253,6 +276,19 @@ void process_call(AstNode* node){
         AstNode* funcnode=new_node(AST_FUNCTION,func);
         functype=get_type(funcnode);
         free(funcnode);
+      }else{
+        ClassNode* clas=class_exists(name);
+        if(clas){
+          FunctionNode* constructor=get_constructor(clas);
+          if(constructor){
+            AstNode* funcnode=new_node(AST_FUNCTION,constructor);
+            functype=get_type(funcnode);
+            free(funcnode);
+          }else{
+            dummy_constructor_type=new_node(AST_TYPE_FUNC,new_ast_list_node(new_node(AST_TYPE_BASIC,name),new_default_list()));
+            functype=dummy_constructor_type;
+          }
+        }
       }
     }else if(data->l->type==AST_FIELD){
       name=((StringAstNode*)(data->l->data))->text;
@@ -271,6 +307,9 @@ void process_call(AstNode* node){
         }
       }else{
         ERROR(funcargs && funcargs->n,"not enough arguments for function %s",name);
+      }
+      if(dummy_constructor_type){
+        dealloc_ast_type(dummy_constructor_type);
       }
     }
   }
@@ -382,7 +421,9 @@ void process_function(AstNode* node){
       if(child->type==AST_FUNCTION) write("\n");
       if(child->type==AST_REQUIRE) write("\n");
     }
-    if(!is_primitive(data->type,PRIMITIVE_NIL) && data->type->type!=AST_TYPE_ANY){
+    if(data->is_constructor){
+      ERROR(num_returns,"constructors cannot have return statements",NULL);
+    }else if(!is_primitive(data->type,PRIMITIVE_NIL) && data->type->type!=AST_TYPE_ANY){
       ERROR(!num_returns,"function of type %t cannot return nil",data->type);
     }
     pop_function(data);

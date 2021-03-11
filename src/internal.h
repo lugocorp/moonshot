@@ -45,6 +45,7 @@ typedef struct{
 } AstListNode;
 
 typedef struct{
+  int is_constructor;
   AstNode* functype;
   AstNode* name;
   AstNode* type;
@@ -137,7 +138,7 @@ enum TOKENS{
   // New tokens specific to Moonshot
   TK_NEW, TK_FINAL, TK_TYPEDEF, TK_VAR,
   TK_INTERFACE, TK_CLASS, TK_EXTENDS, TK_IMPLEMENTS,
-  TK_WHERE
+  TK_WHERE, TK_CONSTRUCTOR
 
 };
 
@@ -209,6 +210,7 @@ AstNode* parse_call(AstNode* lhs);
 AstNode* parse_set_or_call();
 AstNode* parse_function_or_define();
 AstNode* parse_function(AstNode* type,int include_body);
+AstNode* parse_constructor(char* classname);
 AstNode* parse_paren_or_tuple_function();
 AstNode* parse_potential_tuple_lhs();
 AstNode* parse_require();
@@ -292,6 +294,8 @@ int types_equivalent(char* name,AstNode* type);
 char* stringify_type(AstNode* node);
 
 // entities.c
+int num_constructors(ClassNode* data);
+FunctionNode* get_constructor(ClassNode* data);
 List* get_missing_class_methods(ClassNode* node);
 int methods_equivalent(FunctionNode* f1,FunctionNode* f2);
 

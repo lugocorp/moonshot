@@ -127,8 +127,6 @@ AstNode* get_type(AstNode* node){
         char* name=(char*)(l->data);
         FunctionNode* func=function_exists(name);
         if(func) return func->type;
-        InterfaceNode* inode=interface_exists(name);
-        if(inode) return inode->type;
         ClassNode* cnode=class_exists(name);
         if(cnode) return cnode->type;
         return any_type_const();
