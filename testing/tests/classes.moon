@@ -2,7 +2,7 @@
 interface Methods where
   string hello()
   var whatsup()
-  int coords(int a)
+  (int,int) coords(int a)
 end
 
 class Math implements Methods where
@@ -10,7 +10,7 @@ class Math implements Methods where
     return "Hi there"
   end
   var whatsup() end
-  int coords(int a)
-    return a
+  (int,int) coords(int a)
+    return a,a+1
   end
 end

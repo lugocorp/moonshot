@@ -317,10 +317,10 @@ void process_return(AstNode* node){
   write("\n");
 }
 void process_ltuple(AstNode* node){
-  List* ls=(List*)(node->data);
-  for(int a=0;a<ls->n;a++){
+  AstListNode* data=(AstListNode*)(node->data);
+  for(int a=0;a<data->list->n;a++){
     if(a) write(",");
-    write("%s",(char*)get_from_list(ls,a));
+    process_id((AstNode*)get_from_list(data->list,a));
   }
 }
 void process_field(AstNode* node){

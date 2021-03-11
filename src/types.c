@@ -83,6 +83,19 @@ AstNode* get_type(AstNode* node){
     case AST_UNARY: return ((BinaryNode*)(node->data))->r;
     case AST_REQUIRE: return any_type_const();
     case AST_SUB: return any_type_const();
+    case AST_LTUPLE:{
+      AstListNode* data=(AstListNode*)(node->data);
+      if(!data->node){
+        List* ls=data->list;
+        List* types=new_default_list();
+        for(int a=0;a<ls->n;a++){
+          AstNode* e=(AstNode*)get_from_list(ls,a);
+          add_to_list(types,copy_type(get_type(e)));
+        }
+        data->node=new_node(AST_TYPE_TUPLE,types);
+      }
+      return data->node;
+    }
     case AST_TUPLE:{
       AstListNode* data=(AstListNode*)(node->data);
       if(!data->node){
@@ -120,7 +133,8 @@ AstNode* get_type(AstNode* node){
         if(cnode) return cnode->type;
         return any_type_const();
       }
-      return get_type(l);
+      // get_type(l)->type better be AST_TYPE_FUNC
+      return ((AstListNode*)(get_type(l)->data))->node;
     }
     case AST_ID:{
       char* name=(char*)(node->data);

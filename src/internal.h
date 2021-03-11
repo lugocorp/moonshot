@@ -210,6 +210,7 @@ AstNode* parse_set_or_call();
 AstNode* parse_function_or_define();
 AstNode* parse_function(AstNode* type,int include_body);
 AstNode* parse_paren_or_tuple_function();
+AstNode* parse_potential_tuple_lhs();
 AstNode* parse_require();
 AstNode* parse_repeat();
 AstNode* parse_string();

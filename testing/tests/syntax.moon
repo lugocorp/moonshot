@@ -6,7 +6,7 @@ interface Test where
 
 end
 class Object implements Test where
-  var greet(int a)
+  (int,int) greet(int a)
     print(a)
     return a,a
   end

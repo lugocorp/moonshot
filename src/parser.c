@@ -381,10 +381,13 @@ AstNode* parse_call(AstNode* lhs){
   return new_node(AST_CALL,new_ast_ast_node(lhs,args));
 }
 AstNode* parse_set_or_call(){
-  AstNode* lhs=parse_lhs();
+  AstNode* lhs=parse_potential_tuple_lhs();
   if(!lhs) return NULL;
   Token* tk=check();
-  if(expect(tk,TK_PAREN)) return parse_call(lhs);
+  if(expect(tk,TK_PAREN)){
+    if(lhs->type==AST_LTUPLE) return error(tk,"invalid function call");
+    return parse_call(lhs);
+  }
   tk=consume();
   if(!specific(tk,TK_MISC,"=")) return error(tk,"invalid set statement");
   AstNode* expr=parse_tuple();
@@ -424,37 +427,38 @@ AstNode* parse_return(){
   }
   return new_node(AST_RETURN,node);
 }
-AstNode* parse_lhs(){
-  Token* tk=consume();
-  if(!expect(tk,TK_NAME)) return error(tk,"invalid left-hand side of statement");
-  DEBUG("lhs: %s\n",tk->text);
-  char* first=tk->text;
-  tk=check();
+AstNode* parse_potential_tuple_lhs(){
+  AstNode* node=parse_lhs();
+  Token* tk=check();
   if(specific(tk,TK_MISC,",")){
+    if(node->type!=AST_ID) return error(tk,"Invalid left-hand entity in tuple");
     List* ls=new_default_list();
-    add_to_list(ls,first);
+    add_to_list(ls,node);
     while(specific(tk,TK_MISC,",")){
       consume();
       tk=consume();
       if(!expect(tk,TK_NAME)) return error(tk,"invalid left-hand tuple");
       DEBUG(",%s\n",tk->text);
-      add_to_list(ls,tk->text);
+      add_to_list(ls,new_node(AST_ID,tk->text));
       tk=check();
     }
-    return new_node(AST_LTUPLE,ls);
+    return new_node(AST_LTUPLE,new_ast_list_node(NULL,ls));
   }
+  return node;
+}
+AstNode* parse_lhs(){
+  Token* tk=consume();
+  if(!expect(tk,TK_NAME)) return error(tk,"invalid left-hand side of statement");
+  DEBUG("lhs: %s\n",tk->text);
+  AstNode* node=new_node(AST_ID,tk->text);
   tk=check_next();
-  AstNode* tmp=NULL;
-  AstNode* node=new_node(AST_ID,first);
-  int attempt=(tk)?1:0;
-  while(attempt){
+  while(specific(tk,TK_MISC,".") || specific(tk,TK_SQUARE,"[")){
     if(specific(tk,TK_SQUARE,"[")){
       consume();
       DEBUG("square bracket\n");
       AstNode* r=parse_expr();
       if(!r) return NULL;
-      tmp=node;
-      node=new_node(AST_SUB,new_ast_ast_node(tmp,r));
+      node=new_node(AST_SUB,new_ast_ast_node(node,r));
       tk=consume();
       if(!specific(tk,TK_SQUARE,"]")) return error(tk,"invalid property");
     }
@@ -463,11 +467,9 @@ AstNode* parse_lhs(){
       tk=consume();
       DEBUG(".%s\n",tk->text);
       if(!expect(tk,TK_NAME)) return error(tk,"invalid field");
-      tmp=node;
-      node=new_node(AST_FIELD,new_string_ast_node(tk->text,tmp));
+      node=new_node(AST_FIELD,new_string_ast_node(tk->text,node));
     }
     tk=check_next();
-    attempt=specific(tk,TK_MISC,".") || specific(tk,TK_SQUARE,"[");
   }
   return node;
 }
@@ -617,13 +619,13 @@ AstNode* parse_forin(){
   if(!expect(tk,TK_FOR)) return error(tk,"invalid for loop");
   tk=consume();
   if(!expect(tk,TK_NAME)) return error(tk,"invalid for loop");
-  add_to_list(lhs,tk->text);
+  add_to_list(lhs,new_node(AST_ID,tk->text));
   tk=check();
   while(specific(tk,TK_MISC,",")){
     consume();
     tk=consume();
     if(!expect(tk,TK_NAME)) return error(tk,"invalid for loop");
-    add_to_list(lhs,tk->text);
+    add_to_list(lhs,new_node(AST_ID,tk->text));
     tk=check();
   }
   tk=consume();
@@ -636,7 +638,7 @@ AstNode* parse_forin(){
   if(!body) return NULL;
   tk=consume();
   if(!expect(tk,TK_END)) return error(tk,"invalid for loop");
-  AstNode* lhs_node=new_node(AST_LTUPLE,lhs);
+  AstNode* lhs_node=new_node(AST_LTUPLE,new_ast_list_node(NULL,lhs));
   DEBUG("for in\n");
   return new_node(AST_FORIN,new_forin_node(lhs_node,tuple,(List*)(body->data)));
 }
