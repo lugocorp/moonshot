@@ -289,9 +289,11 @@ int add_child_type(char* child,char* parent,int relation);
 int add_type_equivalence(char* name,AstNode* type,int relation);
 List* get_equivalent_types(char* name);
 int types_equivalent(char* name,AstNode* type);
+char* stringify_type(AstNode* node);
+
+// entities.c
 List* get_missing_class_methods(ClassNode* node);
 int methods_equivalent(FunctionNode* f1,FunctionNode* f2);
-char* stringify_type(AstNode* node);
 
 // traversal.c
 AstNode* any_type_const();

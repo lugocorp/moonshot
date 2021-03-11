@@ -146,6 +146,7 @@ void process_interface(AstNode* node){
 void process_class(AstNode* node){
   ClassNode* data=(ClassNode*)(node->data);
   if(validate){
+    push_scope();
     if(data->parent){
       ERROR(!class_exists(data->parent),"parent class %s does not exist",data->parent);
       ERROR(!add_child_type(data->name,data->parent,RL_EXTENDS),"co-dependent class %s detected",data->name);
@@ -171,8 +172,8 @@ void process_class(AstNode* node){
     dealloc_list(missing);
     register_type(data->name);
     register_class(data);
+    pop_scope();
   }
-  push_scope();
   write("function %s()\n",data->name);
   write("local obj={}\n");
   for(int a=0;a<data->ls->n;a++){
@@ -203,6 +204,7 @@ void process_class(AstNode* node){
         write("obj.%s=",cdata->text);
         process_node(cdata->r);
       }
+      write("\n");
     }else{
       add_error(-1,"invalid child node in class %s",data->name);
       break;
@@ -210,7 +212,6 @@ void process_class(AstNode* node){
   }
   write("return obj\n");
   write("end\n");
-  pop_scope();
 }
 
 // Statement group

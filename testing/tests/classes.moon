@@ -6,6 +6,7 @@ interface Methods where
 end
 
 class Math implements Methods where
+  int name=1
   string hello()
     return "Hi there"
   end
@@ -14,3 +15,6 @@ class Math implements Methods where
     return a,a+1
   end
 end
+
+Math m=Math()
+int a=m.name
