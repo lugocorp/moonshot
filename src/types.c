@@ -1,13 +1,15 @@
 #include "./internal.h"
 #include <stdlib.h>
 #include <string.h>
-static List* interfaces_registry;
-static List* functions_registry;
-static List* classes_registry;
-static List* types_registry;
-static List* types_graph;
+static List* interfaces_registry; // List of InterfaceNodes
+static List* functions_registry; // List of FunctionNodes
+static List* classes_registry; // List of ClassNodes
+static List* types_registry; // List of strings
+static List* types_graph; // List of EqualTypesNodes
 
-// Init/dealloc
+/*
+  Initialize the data structures used in this module
+*/
 void init_types(){
   types_graph=new_default_list();
   types_registry=new_default_list();
@@ -20,6 +22,10 @@ void init_types(){
   register_primitive(PRIMITIVE_INT);
   register_primitive(PRIMITIVE_NIL);
 }
+
+/*
+  Deallocate registers and equivalence graphs
+*/
 void dealloc_types(){
   dealloc_list(interfaces_registry);
   dealloc_list(functions_registry);
@@ -28,7 +34,9 @@ void dealloc_types(){
   dealloc_list(types_graph);
 }
 
-// Deep copy types to prevent deallocation errors
+/*
+  Deep copies a type to prevent deallocation errors
+*/
 static AstNode* copy_type(AstNode* node){
   switch(node->type){
     case AST_TYPE_ANY: return new_node(AST_TYPE_ANY,NULL);
@@ -54,10 +62,17 @@ static AstNode* copy_type(AstNode* node){
   }
 }
 
-// Type matching for AST traversal
+/*
+  Returns 1 if the AST_TYPE_* AstNode node is a AST_TYPE_BASIC node with value type
+*/
 int is_primitive(AstNode* node,const char* type){
   return node->type==AST_TYPE_BASIC && !strcmp((char*)(node->data),type);
 }
+
+/*
+  Returns the type of some entity's field name
+  node is either a ClassNode or InterfaceNode, as specified by is_interface
+*/
 static AstNode* get_type_of_field(char* name,void* node,int is_interface){
   List* body=NULL;
   if(is_interface) body=((InterfaceNode*)node)->ls;
@@ -75,6 +90,11 @@ static AstNode* get_type_of_field(char* name,void* node,int is_interface){
   }
   return NULL;
 }
+
+/*
+  Finds an AST_TYPE_* AstNode for the input AstNode
+  Never free the result of this function, it will be deallocated elsewhere
+*/
 AstNode* get_type(AstNode* node){
   int type=node->type;
   switch(node->type){
@@ -183,6 +203,10 @@ AstNode* get_type(AstNode* node){
     default: return any_type_const();
   }
 }
+
+/*
+  Returns 1 if the type r can be placed into a variable of type l
+*/
 static int typed_match_no_equivalence(AstNode* l,AstNode* r){
   if(l->type==AST_TYPE_ANY) return 1;
   if(!r) return 0;
@@ -215,13 +239,21 @@ static int typed_match_no_equivalence(AstNode* l,AstNode* r){
   }
   return 0;
 }
+
+/*
+  Returns 1 if the types r and l are an exact match
+  Or returns 1 if the type r can be placed into a variable of type l
+*/
 int typed_match(AstNode* l,AstNode* r){
   if(!l) return 1;
   if(r && l->type==AST_TYPE_BASIC && types_equivalent((char*)(l->data),r)) return 1;
   return typed_match_no_equivalence(l,r);
 }
 
-// Type registry
+/*
+  Boils a typedef type down into its lowest-level typedef
+  Returns the input type if it is already at its lowest typedef link
+*/
 static char* base_type(char* name){
   while(1){
     for(int a=0;a<types_graph->n;a++){
@@ -235,29 +267,58 @@ static char* base_type(char* name){
   }
   return name;
 }
+
+/*
+  Registers a type
+*/
 void register_type(char* name){
   add_to_list(types_registry,name);
 }
+
+/*
+  Registers a class
+*/
 void register_class(ClassNode* node){
   add_to_list(classes_registry,node);
 }
+
+/*
+  Registers a function
+*/
 void register_function(FunctionNode* node){
   add_to_list(functions_registry,node);
 }
+
+/*
+  Registers an interface
+*/
 void register_interface(InterfaceNode* node){
   add_to_list(interfaces_registry,node);
 }
+
+/*
+  Registers a new primitive type (a typedef, class or interface)
+*/
 void register_primitive(const char* name){
   char* type=(char*)malloc(sizeof(char)*(strlen(name)+1));
   strcpy(type,name);
   add_to_list(types_registry,type);
 }
+
+/*
+  Returns 1 if type name is registered
+*/
 int type_exists(char* name){
   for(int a=0;a<types_registry->n;a++){
     if(!strcmp((char*)get_from_list(types_registry,a),name)) return 1;
   }
   return 0;
 }
+
+/*
+  Returns the registered ClassNode if name is a registered class
+  Returns NULL if class name does not exist
+*/
 ClassNode* class_exists(char* name){
   if(!name) return NULL;
   name=base_type(name);
@@ -267,6 +328,11 @@ ClassNode* class_exists(char* name){
   }
   return NULL;
 }
+
+/*
+  Returns the registered FunctionNode if name is a registered function
+  Returns NULL if function name does not exist
+*/
 FunctionNode* function_exists(char* name){
   if(!name) return NULL;
   for(int a=0;a<functions_registry->n;a++){
@@ -276,6 +342,11 @@ FunctionNode* function_exists(char* name){
   }
   return NULL;
 }
+
+/*
+  Returns the registered InterfaceNode if name is a registered interface
+  Returns NULL if interface name does not exist
+*/
 InterfaceNode* interface_exists(char* name){
   if(!name) return NULL;
   name=base_type(name);
@@ -285,6 +356,12 @@ InterfaceNode* interface_exists(char* name){
   }
   return NULL;
 }
+
+/*
+  Checks recursively through a compound type (tuple or function) or singular type
+  Ensures that every type referenced is in fact registered
+  Returns 0 if a non-existent type if referenced in type node
+*/
 int compound_type_exists(AstNode* node){
   switch(node->type){
     case AST_TYPE_ANY: return 1;
@@ -308,7 +385,10 @@ int compound_type_exists(AstNode* node){
   }
 }
 
-// Type equivalence graph
+/*
+  Checks for a path from name to type in the equivalent types graph
+  Returns 1 if such a path exists
+*/
 static int path_exists(char* name,AstNode* type){
   List* ls=get_equivalent_types(name);
   int a=0;
@@ -328,12 +408,23 @@ static int path_exists(char* name,AstNode* type){
   dealloc_list(ls);
   return 0;
 }
+
+/*
+  Creates a type equivalence for entity types (classes and interfaces)
+  Just a wrapper around add_type_equivalence
+*/
 int add_child_type(char* child,char* parent,int relation){
   AstNode* r=new_node(AST_TYPE_BASIC,child);
   int cycle=add_type_equivalence(parent,r,relation);
   free(r);
   return cycle;
 }
+
+/*
+  Registers a type relationship as a path in the equivalent types graph
+  name points to type in the graph
+  Returns 0 if this will create a cycle
+*/
 int add_type_equivalence(char* name,AstNode* type,int relation){
   if(type->type==AST_TYPE_BASIC){
     AstNode* r=new_node(AST_TYPE_BASIC,name);
@@ -345,6 +436,11 @@ int add_type_equivalence(char* name,AstNode* type,int relation){
   add_to_list(types_graph,new_equal_types_node(name,type,relation));
   return 1;
 }
+
+/*
+  Returns a List of AST_TYPE_* AstNodes
+  List is full of types that are equivalent to name with 1 degree of separation
+*/
 List* get_equivalent_types(char* name){
   List* ls=new_default_list();
   for(int a=0;a<types_graph->n;a++){
@@ -353,12 +449,18 @@ List* get_equivalent_types(char* name){
   }
   return ls;
 }
+
+/*
+  Returns 1 if two types are equivalent (or if type is a subtype of name)
+*/
 int types_equivalent(char* name,AstNode* type){
   if(type->type==AST_TYPE_BASIC && !strcmp(name,(char*)(type->data))) return 1;
   return path_exists(name,type);
 }
 
-// Type stringification
+/*
+  Internal recursive function that helps with type stringification
+*/
 static void stringify_type_internal(List* ls,AstNode* node){
   if(!node || node->type==AST_TYPE_ANY){
     add_to_list(ls,"var");
@@ -386,6 +488,11 @@ static void stringify_type_internal(List* ls,AstNode* node){
     add_to_list(ls,")");
   }
 }
+
+/*
+  Converts a AST_TYPE_* AstNode into a string representation
+  Very helpful for error formatting and debugging
+*/
 char* stringify_type(AstNode* node){
   int len=1;
   List* ls=new_default_list();

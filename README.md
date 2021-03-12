@@ -18,12 +18,13 @@ Moonshot is an optionally-typed object-oriented extension language for Lua. This
 - [x] Buff up class/interface relationships
 - [x] Fix tuple function return statements getting confused between lhs's and real tuples
 - [x] Implement constructors and ancestor functions in the output
-- [ ] Comment the code
-- [ ] Analyze parser and traversal patterns, compress and finalize deallocation
+- [x] Comment the code
+- [ ] Analyze parser and traversal patterns, compress and finalize deallocation in parser
 - [ ] Refactor validation check systems to be more well organized
 - [ ] Finish plugging up memory leaks
 
 ## Post-beta release updates
 - [ ] Give AST nodes a line number for better traversal stage error messages
 - [ ] Add a permissive license and package for deployment
+- [ ] Implement this keyword for classes
 - [ ] Constructor chaining

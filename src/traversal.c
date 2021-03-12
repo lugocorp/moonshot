@@ -4,14 +4,14 @@
 #include <stdlib.h>
 #include <stdio.h>
 #define ERROR(cond,msg,...) if(cond){add_error(-1,msg,__VA_ARGS__);return;}
-static FILE* _output;
-static int validate;
-AstNode* float_type;
-AstNode* bool_type;
-AstNode* int_type;
-AstNode* any_type;
+static FILE* _output; // The configured output as desired by the developer
+static int validate; // The traversal phase you're running
+AstNode* float_type; // AstNode constant representing the FLOAT type
+AstNode* bool_type; // AstNode constant representing the BOOL type
+AstNode* int_type; // AstNode constant representing the INT type
+AstNode* any_type; // AstNode constant representing the ANY type
 
-// Traversal interface
+// Constant primitive type AstNodes access
 AstNode* float_type_const(){
   return float_type;
 }
@@ -24,12 +24,23 @@ AstNode* int_type_const(){
 AstNode* any_type_const(){
   return any_type;
 }
+
+/*
+  Set up resources used by traversal
+*/
 void init_traverse(){
   float_type=new_node(AST_TYPE_BASIC,PRIMITIVE_FLOAT);
   bool_type=new_node(AST_TYPE_BASIC,PRIMITIVE_BOOL);
   int_type=new_node(AST_TYPE_BASIC,PRIMITIVE_INT);
   any_type=new_node(AST_TYPE_ANY,NULL);
 }
+
+/*
+  Traverse through a parsed Moonshot AST
+  This function is called twice in the Moonshot compile function
+  if valid is 1, traversal will check for errors instead of writing output
+  if valid is 0, traversal will output and ignore error checks
+*/
 void traverse(AstNode* root,int valid){
   validate=valid;
   if(validate){
@@ -40,6 +51,10 @@ void traverse(AstNode* root,int valid){
   }
   process_stmt(root);
 }
+
+/*
+  Deallocate resources used by the traversal module
+*/
 void dealloc_traverse(){
   pop_scope();
   dealloc_scopes();
@@ -50,10 +65,16 @@ void dealloc_traverse(){
   free(float_type);
 }
 
-// Output
+/*
+  Sets the output to the stream desired by the developer
+*/
 void set_output(FILE* output){
   _output=output;
 }
+
+/*
+  Writes a message to the configured output
+*/
 static void write(const char* msg,...){
   if(validate) return;
   va_list args;
@@ -72,7 +93,9 @@ static void write(const char* msg,...){
   va_end(args);
 }
 
-// Node to function switch
+/*
+  Switch for calling a specific traversal method by AstNode type
+*/
 void process_node(AstNode* node){
   switch(node->type){
     case AST_STMT: process_stmt(node); return;
@@ -133,9 +156,6 @@ void process_typedef(AstNode* node){
     ERROR(!add_type_equivalence(data->text,data->node,RL_EQUALS),"co-dependent typedef %s detected",data->text);
     register_type(data->text);
   }
-  /*char* type1=stringify_type(data->node);
-  write("-- typedef %s -> %s\n",data->text,type1);
-  free(type1);*/
 }
 void process_interface(AstNode* node){
   InterfaceNode* data=(InterfaceNode*)(node->data);
@@ -195,7 +215,7 @@ void process_class(AstNode* node){
     }
   }
   write(")\n");
-  write("local obj={}\n");
+  write("local __obj={}\n");
   FunctionNode* fdata=get_constructor(data);
   if(fdata){
     for(int a=0;a<fdata->body->n;a++){
@@ -212,7 +232,7 @@ void process_class(AstNode* node){
       if(child->type==AST_FUNCTION){
         fdata=(FunctionNode*)(child->data);
         if(fdata->is_constructor) continue;
-        write("obj.%s=function(",(char*)(fdata->name->data));
+        write("__obj.%s=function(",(char*)(fdata->name->data));
         if(fdata->args){
           for(int a=0;a<fdata->args->n;a++){
             if(a) write(",");
@@ -231,9 +251,9 @@ void process_class(AstNode* node){
         write("end\n");
       }else if(child->type==AST_DEFINE){
         BinaryNode* cdata=(BinaryNode*)(child->data);
-        if(!cdata->r) write("obj.%s=nil",cdata->text);
+        if(!cdata->r) write("__obj.%s=nil",cdata->text);
         else{
-          write("obj.%s=",cdata->text);
+          write("__obj.%s=",cdata->text);
           process_node(cdata->r);
         }
         write("\n");

@@ -1,31 +1,51 @@
 #include "./internal.h"
 #include <stdlib.h>
 #include <string.h>
-static List* scopes;
-static List* funcs;
+static List* scopes; // List of Lists of BinaryNodes
+static List* funcs; // List of FunctionNodes
 
-// Variable scope tracking
+/*
+  Stuff to be done before we start working with scopes
+*/
 void preempt_scopes(){
   scopes=NULL;
   funcs=NULL;
 }
+
+/*
+  Initializes the scope lists used by this module
+*/
 void init_scopes(){
   scopes=new_default_list();
   funcs=new_default_list();
 }
+
+/*
+  Deallocs all scope Lists
+*/
 void dealloc_scopes(){
   dealloc_list(scopes);
   dealloc_list(funcs);
 }
+
+/*
+  Enters a new innermost scope
+*/
 void push_scope(){
   add_to_list(scopes,new_default_list());
 }
+
+/*
+  Exits the current innermost scope
+*/
 void pop_scope(){
   List* ls=remove_from_list(scopes,scopes->n-1);
   dealloc_list(ls);
 }
 
-// Functions
+/*
+  Enters a new inner function scope
+*/
 void push_function(FunctionNode* node){
   add_to_list(funcs,node);
   for(int a=0;a<node->args->n;a++){
@@ -34,15 +54,26 @@ void push_function(FunctionNode* node){
     add_scoped_var(bn);
   }
 }
+
+/*
+  Exits the innermost function scope
+*/
 void pop_function(FunctionNode* node){
   remove_from_list(funcs,funcs->n-1);
 }
+
+/*
+  Returns the innermost function scope
+  Returns NULL if the current scope is not within any function
+*/
 FunctionNode* get_function_scope(){
   if(funcs->n) return (FunctionNode*)get_from_list(funcs,funcs->n-1);
   return NULL;
 }
 
-// Variables
+/*
+  Adds a new typed variable to the current scope
+*/
 int add_scoped_var(BinaryNode* node){
   List* scope=get_from_list(scopes,scopes->n-1);
   for(int a=0;a<scope->n;a++){
@@ -53,6 +84,12 @@ int add_scoped_var(BinaryNode* node){
   add_to_list(scope,node);
   return 1;
 }
+
+/*
+  Returns the BinaryNode representing the typed variable called name
+  Return NULL if no such typed variable exists
+  Searches through every scope from innermost to outermost
+*/
 BinaryNode* get_scoped_var(char* name){
   if(scopes){
     for(int a=(scopes->n)-1;a>=0;a--){
