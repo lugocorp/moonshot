@@ -268,7 +268,6 @@ BinaryNode* new_binary_node(char* text,AstNode* l,AstNode* r);
 InterfaceNode* new_interface_node(char* name,char* parent,List* ls);
 ClassNode* new_class_node(char* name,char* parent,List* interfaces,List* ls);
 EqualTypesNode* new_equal_types_node(char* name,AstNode* type,int relation);
-char* new_string_node(char* msg);
 BinaryNode* new_unary_node(char* op,AstNode* e);
 
 /*

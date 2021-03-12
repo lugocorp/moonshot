@@ -2,7 +2,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
-#define TOKEN_BUFFER_LENGTH 256
+#define TOKEN_BUFFER_LENGTH 256 // Max length for a token string
 #define KEY_TOKEN(s,t) else if(!strcmp(buffer,s)) tk->type=t;
 #define SPECIAL_TOKEN(s,l,t) else if(n-a>=l && !strncmp(buffer+a,s,l)){ \
     tk->text=(char*)malloc(sizeof(char)*(l+1)); \
@@ -10,11 +10,11 @@
     tk->type=t; \
     a+=l; \
   }
-static int class_alphanumeric=0;
-static int class_whitespace=1;
-static int class_special=2;
-static int multiline_comment=0;
-static int comment=0;
+static int class_alphanumeric=0; // Represents the alphanumeric token class
+static int class_whitespace=1; // Represents the whitespace token class
+static int class_special=2; // Represents the special token class
+static int multiline_comment=0; // Flag for tokenizing within a multiline comment
+static int comment=0; // Flag for tokenizing within a single line comment
 
 /*
   Get the character class for a char
@@ -35,13 +35,13 @@ void dealloc_token(Token* tk){
 }
 
 /*
-  Generate tokens from a group of similar characters
-  Returns 0 if there's no error
+  Generates tokens from a buffer of similarly-classes characters
 */
 static void discover_tokens(List* ls,int line,char* buffer,int n,int char_class){
   buffer[n]=0;
-  //printf("%s\n",buffer);
   if(char_class!=class_special){
+
+    // Comment tokenization
     if(comment && char_class==class_whitespace){
       for(int a=0;a<n;a++){
         if(buffer[a]=='\n'){
@@ -51,6 +51,8 @@ static void discover_tokens(List* ls,int line,char* buffer,int n,int char_class)
       return;
     }
     if(multiline_comment || comment) return;
+
+    // Whitespace and alphanumeric tokenization
     Token* tk=(Token*)malloc(sizeof(Token));
     tk->text=(char*)malloc(sizeof(char)*(n+1));
     strcpy(tk->text,buffer);
@@ -102,7 +104,7 @@ static void discover_tokens(List* ls,int line,char* buffer,int n,int char_class)
         }
       }
     }
-  }else{
+  }else{ // Special class tokenization
     int a=0;
     while(a<n){
       if(multiline_comment && n-a>=2 && !strncmp(buffer+a,"]]",2)){
@@ -162,7 +164,8 @@ static void discover_tokens(List* ls,int line,char* buffer,int n,int char_class)
 }
 
 /*
-  Stream some Lua code and tokenize it along the way
+  Read through some Lua code and tokenize it along the way
+  Returns a list of Tokens
 */
 List* tokenize(FILE* f){
   int line=1;

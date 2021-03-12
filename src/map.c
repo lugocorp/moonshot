@@ -1,7 +1,6 @@
 #include "./internal.h"
 #include <stdlib.h>
 #include <string.h>
-#define MAP_SIZE 10
 
 /*
   Instantiates a new Map object with some initial max capacity
@@ -19,7 +18,7 @@ Map* new_map(int max){
   Instantiates a Map with the default initial max capacity
 */
 Map* new_default_map(){
-  return new_map(MAP_SIZE);
+  return new_map(10);
 }
 
 /*
@@ -35,14 +34,17 @@ void* get_from_map(Map* m,char* k){
 
 /*
   Returns a value at arbitrary position i within a map
+  Used in traversal algorithms
 */
 void* iterate_from_map(Map* m,int i){
-  if(i>=m->n) return NULL;
-  return (m->data[i]).v;
+  if(i<m->n && i>=0) return (m->data[i]).v;
+  return NULL;
 }
 
 /*
   Puts a key-value pair in a map
+  Doubles the max length of the map if it's already full
+  Replaces the value associates with key k if it already exists
 */
 void put_in_map(Map* m,char* k,void* v){
   for(int a=0;a<m->n;a++){
@@ -66,6 +68,7 @@ void put_in_map(Map* m,char* k,void* v){
 
 /*
   Deallocates a map
+  Does not touch the map's contents
 */
 void dealloc_map(Map* m){
   free(m->data);

@@ -2,7 +2,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-// Deallocation
+/*
+  Deallocates an AstNode with type AST_TYPE_*
+*/
 void dealloc_ast_type(AstNode* node){
   if(node->type==AST_TYPE_FUNC){
     AstListNode* data=(AstListNode*)(node->data);
@@ -24,6 +26,10 @@ void dealloc_ast_type(AstNode* node){
   }
   free(node);
 }
+
+/*
+  Recursively deallocates an AstNode*
+*/
 void dealloc_ast_node(AstNode* node){
   if(node->type==AST_TYPE_ANY || node->type==AST_TYPE_FUNC || node->type==AST_TYPE_BASIC || node->type==AST_TYPE_TUPLE){
     dealloc_ast_type(node);
@@ -71,7 +77,7 @@ void dealloc_ast_node(AstNode* node){
   }
   else if(node->type==AST_FUNCTION){
     FunctionNode* data=(FunctionNode*)(node->data);
-    if(data->functype) free(data->functype);//dealloc_ast_type(data->functype);
+    if(data->functype) dealloc_ast_type(data->functype);
     if(data->type) dealloc_ast_type(data->type);
     if(data->name) dealloc_ast_node(data->name);
     if(data->body){
@@ -147,13 +153,21 @@ void dealloc_ast_node(AstNode* node){
   free(node);
 }
 
-// Node constructors
+/*
+  Creates a new AstNode
+*/
 AstNode* new_node(int type,void* data){
   AstNode* node=(AstNode*)malloc(sizeof(AstNode));
   node->type=type;
   node->data=data;
   return node;
 }
+
+/*
+  Creates a new FunctionNode
+  name can be AST_ID, AST_FIELD or NULL
+  args is full of StringAstNodes
+*/
 FunctionNode* new_function_node(AstNode* name,AstNode* type,List* args,List* body){
   FunctionNode* node=(FunctionNode*)malloc(sizeof(FunctionNode));
   node->is_constructor=0;
@@ -164,30 +178,55 @@ FunctionNode* new_function_node(AstNode* name,AstNode* type,List* args,List* bod
   node->body=body;
   return node;
 }
+
+/*
+  Creates a new AstListNode
+*/
 AstListNode* new_ast_list_node(AstNode* ast,List* list){
   AstListNode* node=(AstListNode*)malloc(sizeof(AstListNode));
   node->list=list;
   node->node=ast;
   return node;
 }
+
+/*
+  Creates a new table node
+  The two lists should be of equal length
+  keys is full of strings
+  vals is full of AstNodes
+*/
 TableNode* new_table_node(List* keys,List* vals){
   TableNode* node=(TableNode*)malloc(sizeof(TableNode));
   node->keys=keys;
   node->vals=vals;
   return node;
 }
+
+/*
+  Creates a new AstAstNode
+*/
 AstAstNode* new_ast_ast_node(AstNode* l,AstNode* r){
   AstAstNode* node=(AstAstNode*)malloc(sizeof(AstAstNode));
   node->l=l;
   node->r=r;
   return node;
 }
+
+/*
+  Creates a new StringAstNode
+*/
 StringAstNode* new_string_ast_node(char* text,AstNode* ast){
   StringAstNode* node=(StringAstNode*)malloc(sizeof(StringAstNode));
   node->text=text;
   node->node=ast;
   return node;
 }
+
+/*
+  Creates a StringAstNode*
+  node->text is the name
+  node->type is a AST_TYPE_BASIC node
+*/
 StringAstNode* new_primitive_node(char* text,const char* type){
   char* stype=(char*)malloc(strlen(type)+1);
   strcpy(stype,type);
@@ -195,6 +234,12 @@ StringAstNode* new_primitive_node(char* text,const char* type){
   strcpy(stext,text);
   return new_string_ast_node(stext,new_node(AST_TYPE_BASIC,stype));
 }
+
+/*
+  Creates a new for_num node
+  body is full of AstNodes
+  num3 may be NULL if the increment is not specified
+*/
 FornumNode* new_fornum_node(char* name,AstNode* num1,AstNode* num2,AstNode* num3,List* body){
   FornumNode* node=(FornumNode*)malloc(sizeof(FornumNode));
   node->name=name;
@@ -204,6 +249,11 @@ FornumNode* new_fornum_node(char* name,AstNode* num1,AstNode* num2,AstNode* num3
   node->body=body;
   return node;
 }
+
+/*
+  Creates a new for_in node
+  body is full of AstNodes
+*/
 ForinNode* new_forin_node(AstNode* lhs,AstNode* tuple,List* body){
   ForinNode* node=(ForinNode*)malloc(sizeof(ForinNode));
   node->tuple=tuple;
@@ -211,6 +261,10 @@ ForinNode* new_forin_node(AstNode* lhs,AstNode* tuple,List* body){
   node->lhs=lhs;
   return node;
 }
+
+/*
+  Creates a new binary node
+*/
 BinaryNode* new_binary_node(char* text,AstNode* l,AstNode* r){
   BinaryNode* node=(BinaryNode*)malloc(sizeof(BinaryNode));
   node->text=text;
@@ -218,6 +272,12 @@ BinaryNode* new_binary_node(char* text,AstNode* l,AstNode* r){
   node->l=l;
   return node;
 }
+
+/*
+  Creates a new interface node
+  Sets its type to a AST_TYPE_BASIC of its own name
+  ls is full of AST_FUNCTION
+*/
 InterfaceNode* new_interface_node(char* name,char* parent,List* ls){
   InterfaceNode* node=(InterfaceNode*)malloc(sizeof(InterfaceNode));
   node->type=new_node(AST_TYPE_BASIC,name);
@@ -226,6 +286,13 @@ InterfaceNode* new_interface_node(char* name,char* parent,List* ls){
   node->ls=ls;
   return node;
 }
+
+/*
+  Creates a new class node
+  Sets its type to a AST_TYPE_BASIC of its own name
+  ls is full of AST_FUCTION and AST_DEFINE nodes
+  interfaces is full of strings (interface names)
+*/
 ClassNode* new_class_node(char* name,char* parent,List* interfaces,List* ls){
   ClassNode* node=(ClassNode*)malloc(sizeof(ClassNode));
   node->type=new_node(AST_TYPE_BASIC,name);
@@ -235,6 +302,11 @@ ClassNode* new_class_node(char* name,char* parent,List* interfaces,List* ls){
   node->ls=ls;
   return node;
 }
+
+/*
+  Creates an EqualTypesNode, which is used in the equivalent types graph
+  These nodes help keep track of type relationships
+*/
 EqualTypesNode* new_equal_types_node(char* name,AstNode* type,int relation){
   EqualTypesNode* node=(EqualTypesNode*)malloc(sizeof(EqualTypesNode));
   node->relation=relation;
@@ -242,11 +314,11 @@ EqualTypesNode* new_equal_types_node(char* name,AstNode* type,int relation){
   node->name=name;
   return node;
 }
-char* new_string_node(char* msg){
-  char* text=(char*)malloc(sizeof(char)*(strlen(msg)+1));
-  strcpy(text,msg);
-  return text;
-}
+
+/*
+  Creates a BinaryNode for a unary expression
+  It also sets the type of this expression based on the operator (op)
+*/
 BinaryNode* new_unary_node(char* op,AstNode* e){
   AstNode* type;
   if(!strcmp(op,"trust")) type=new_node(AST_TYPE_BASIC,PRIMITIVE_NIL);

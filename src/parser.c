@@ -4,18 +4,24 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
-#define UNARY_PRECEDENCE 6
+#define UNARY_PRECEDENCE 6 // Precedence level for unary operators
 #define DEBUG(...) //printf(__VA_ARGS__)
-static List* tokens;
-static int _i;
+static List* tokens; // List of Tokens
+static int _i; // Index of the Token that's next to be consumed
 
-// Errors
+/*
+  Wrapper for adding a compilation error
+  Pulls the line number from a Token
+*/
 static AstNode* error(Token* tk,const char* msg){
   add_error(tk?tk->line:-1,msg,NULL);
   return NULL;
 }
 
-// Parsing interface
+/*
+  The top-level parser interface function
+  Takes in a Tokens list and returns an AST representation of your Moonshot source code
+*/
 AstNode* parse(List* ls){
   _i=0;
   tokens=ls;
@@ -33,24 +39,42 @@ AstNode* parse(List* ls){
   return root;
 }
 
-// Token consumption functions
+/*
+  Consumes the next non-whitespace Token and returns it
+*/
 static Token* consume(){
   while(_i<tokens->n && ((Token*)get_from_list(tokens,_i))->type==TK_SPACE) _i++;
   return (_i<tokens->n)?((Token*)get_from_list(tokens,_i++)):NULL;
 }
+
+/*
+  Looks ahead at the next non-whitespace Token and returns it
+*/
 static Token* check(){
   int a=_i;
   while(a<tokens->n && ((Token*)get_from_list(tokens,a))->type==TK_SPACE) a++;
   return (a<tokens->n)?((Token*)get_from_list(tokens,a)):NULL;
 }
+
+/*
+  Consumes the next Token and returns it
+*/
 static Token* consume_next(){
   if(_i<tokens->n) return (Token*)get_from_list(tokens,_i++);
   return NULL;
 }
+
+/*
+  Looks ahead at the next Token and returns it
+*/
 static Token* check_next(){
   if(_i<tokens->n) return (Token*)get_from_list(tokens,_i);
   return NULL;
 }
+
+/*
+  Looks ahead the nth next non-whitespace Token and returns it
+*/
 static Token* check_ahead(int n){
   int a=_i;
   while(n){
@@ -60,12 +84,24 @@ static Token* check_ahead(int n){
   }
   return (a<tokens->n)?((Token*)get_from_list(tokens,a)):NULL;
 }
+
+/*
+  Returns 1 if the Token is of type type
+*/
 static int expect(Token* tk,int type){
   return tk && tk->type==type;
 }
+
+/*
+  Returns 1 if the Token is of type type and has text val
+*/
 static int specific(Token* tk,int type,const char* val){
   return tk && tk->type==type && !strcmp(tk->text,val);
 }
+
+/*
+  Returns the precedence level of a binary operator
+*/
 static int precedence(char* op){
   if(!strcmp(op,"^")) return 7;
   if(!strcmp(op,"*") || !strcmp(op,"/")) return 5;
@@ -695,7 +731,7 @@ AstNode* parse_label(){
   tk=consume();
   if(!expect(tk,TK_DBCOLON)) return error(tk,"invalid label");
   DEBUG("label %s\n",text);
-  return new_node(AST_LABEL,new_string_node(text));
+  return new_node(AST_LABEL,text);
 }
 AstNode* parse_goto(){
   char text[256];
@@ -705,7 +741,7 @@ AstNode* parse_goto(){
   if(!expect(tk,TK_NAME)) return error(tk,"invalid goto statement");
   strcpy(text,tk->text);
   DEBUG("goto %s\n",text);
-  return new_node(AST_GOTO,new_string_node(text));
+  return new_node(AST_GOTO,text);
 }
 AstNode* parse_require(){
   Token* tk=consume();

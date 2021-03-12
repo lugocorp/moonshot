@@ -1,7 +1,6 @@
 #include "./internal.h"
 #include <stdlib.h>
 #include <string.h>
-#define LIST_SIZE 10
 
 /*
   Instantiates a new List object with some initial max capacity
@@ -19,7 +18,7 @@ List* new_list(int max){
   Instantiates a List with the default initial max capacity
 */
 List* new_default_list(){
-  return new_list(LIST_SIZE);
+  return new_list(10);
 }
 
 /*
@@ -65,6 +64,7 @@ void append_all(List* ls,List* ls1){
 
 /*
   Deallocates a list object
+  Does not touch the list's contents
 */
 void dealloc_list(List* ls){
   free(ls->items);
