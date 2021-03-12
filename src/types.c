@@ -83,6 +83,7 @@ AstNode* get_type(AstNode* node){
     case AST_UNARY: return ((BinaryNode*)(node->data))->r;
     case AST_REQUIRE: return any_type_const();
     case AST_SUB: return any_type_const();
+    case AST_DEFINE: return ((BinaryNode*)(node->data))->l;
     case AST_LTUPLE:{
       AstListNode* data=(AstListNode*)(node->data);
       if(!data->node){

@@ -23,6 +23,25 @@ int add_to_list(List* ls,void* e);
 void dealloc_list(List* ls);
 
 /*
+  Map: a key-value object
+*/
+typedef struct{
+  char* k;
+  void* v;
+} Pair;
+typedef struct{
+  Pair* data;
+  int max;
+  int n;
+} Map;
+Map* new_map(int max);
+Map* new_default_map();
+void* get_from_map(Map* m,char* k);
+void* iterate_from_map(Map* m,int i);
+void put_in_map(Map* m,char* k,void* v);
+void dealloc_map(Map* m);
+
+/*
   Token: a symbol from the input code utilized by the parser
 */
 typedef struct{
@@ -190,13 +209,13 @@ enum RULES{
   AST_UNKNOWN
 };
 
-// Global functions
+// Global and/or important functions
 void add_error(int line,const char* msg,...);
 void traverse(AstNode* node,int validate);
 AstNode* parse(List* ls);
+void init_traverse();
+void dealloc_traverse();
 List* tokenize(FILE* f);
-
-// tokenizer.c
 void dealloc_token(Token* tk);
 
 // parser.c
@@ -298,6 +317,8 @@ int num_constructors(ClassNode* data);
 FunctionNode* get_constructor(ClassNode* data);
 List* get_missing_class_methods(ClassNode* node);
 int methods_equivalent(FunctionNode* f1,FunctionNode* f2);
+List* get_all_class_fields(ClassNode* data);
+Map* collapse_ancestor_class_fields(List* ls);
 
 // traversal.c
 AstNode* any_type_const();

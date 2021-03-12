@@ -24,17 +24,23 @@ AstNode* int_type_const(){
 AstNode* any_type_const(){
   return any_type;
 }
-void traverse(AstNode* root,int valid){
+void init_traverse(){
   float_type=new_node(AST_TYPE_BASIC,PRIMITIVE_FLOAT);
   bool_type=new_node(AST_TYPE_BASIC,PRIMITIVE_BOOL);
   int_type=new_node(AST_TYPE_BASIC,PRIMITIVE_INT);
   any_type=new_node(AST_TYPE_ANY,NULL);
+}
+void traverse(AstNode* root,int valid){
   validate=valid;
-  preempt_scopes();
-  init_types();
-  init_scopes();
-  push_scope();
+  if(validate){
+    preempt_scopes();
+    init_types();
+    init_scopes();
+    push_scope();
+  }
   process_stmt(root);
+}
+void dealloc_traverse(){
   pop_scope();
   dealloc_scopes();
   dealloc_types();
@@ -176,6 +182,9 @@ void process_class(AstNode* node){
     register_class(data);
     pop_scope();
   }
+  List* all_fields=get_all_class_fields(data);
+  Map* fields=collapse_ancestor_class_fields(all_fields);
+  ERROR(validate && !fields,"class %s has colliding names",data->name);
   write("function %s(",data->name);
   FunctionNode* constructor=get_constructor(data);
   if(constructor){
@@ -197,40 +206,43 @@ void process_class(AstNode* node){
       if(e->type==AST_REQUIRE) write("\n");
     }
   }
-  for(int a=0;a<data->ls->n;a++){
-    AstNode* child=(AstNode*)get_from_list(data->ls,a);
-    if(child->type==AST_FUNCTION){
-      fdata=(FunctionNode*)(child->data);
-      if(fdata->is_constructor) continue;
-      write("obj.%s=function(",(char*)(fdata->name->data));
-      if(fdata->args){
-        for(int a=0;a<fdata->args->n;a++){
-          if(a) write(",");
-          char* arg=((StringAstNode*)get_from_list(fdata->args,a))->text;
-          write("%s",arg);
+  if(fields){
+    for(int a=0;a<fields->n;a++){
+      AstNode* child=(AstNode*)iterate_from_map(fields,a);
+      if(child->type==AST_FUNCTION){
+        fdata=(FunctionNode*)(child->data);
+        if(fdata->is_constructor) continue;
+        write("obj.%s=function(",(char*)(fdata->name->data));
+        if(fdata->args){
+          for(int a=0;a<fdata->args->n;a++){
+            if(a) write(",");
+            char* arg=((StringAstNode*)get_from_list(fdata->args,a))->text;
+            write("%s",arg);
+          }
         }
+        write(")\n");
+        for(int a=0;a<fdata->body->n;a++){
+          AstNode* e=(AstNode*)get_from_list(fdata->body,a);
+          process_node(e);
+          if(e->type==AST_FUNCTION) write("\n");
+          if(e->type==AST_CALL) write("\n");
+          if(e->type==AST_REQUIRE) write("\n");
+        }
+        write("end\n");
+      }else if(child->type==AST_DEFINE){
+        BinaryNode* cdata=(BinaryNode*)(child->data);
+        if(!cdata->r) write("obj.%s=nil",cdata->text);
+        else{
+          write("obj.%s=",cdata->text);
+          process_node(cdata->r);
+        }
+        write("\n");
+      }else{
+        add_error(-1,"invalid child node in class %s",data->name);
+        break;
       }
-      write(")\n");
-      for(int a=0;a<fdata->body->n;a++){
-        AstNode* e=(AstNode*)get_from_list(fdata->body,a);
-        process_node(e);
-        if(e->type==AST_FUNCTION) write("\n");
-        if(e->type==AST_CALL) write("\n");
-        if(e->type==AST_REQUIRE) write("\n");
-      }
-      write("end\n");
-    }else if(child->type==AST_DEFINE){
-      BinaryNode* cdata=(BinaryNode*)(child->data);
-      if(!cdata->r) write("obj.%s=nil",cdata->text);
-      else{
-        write("obj.%s=",cdata->text);
-        process_node(cdata->r);
-      }
-      write("\n");
-    }else{
-      add_error(-1,"invalid child node in class %s",data->name);
-      break;
     }
+    dealloc_map(fields);
   }
   write("return obj\n");
   write("end\n");

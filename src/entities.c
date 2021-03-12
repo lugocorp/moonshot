@@ -97,3 +97,38 @@ int methods_equivalent(FunctionNode* f1,FunctionNode* f2){
   free(node);
   return !strcmp((char*)(f1->name->data),(char*)(f2->name->data)) && typed_match(type1,type2);
 }
+
+List* get_all_class_fields(ClassNode* data){
+  List* ls=new_default_list();
+  while(data){
+    append_all(ls,data->ls);
+    data=class_exists(data->parent);
+  }
+  return ls;
+}
+Map* collapse_ancestor_class_fields(List* ls){
+  Map* m=new_default_map();
+  for(int a=0;a<ls->n;a++){
+    AstNode* node=(AstNode*)get_from_list(ls,a);
+    char* name=NULL;
+    fflush(stdout);
+    if(node->type==AST_DEFINE) name=((BinaryNode*)(node->data))->text;
+    if(node->type==AST_FUNCTION){
+      FunctionNode* data=(FunctionNode*)(node->data);
+      if(!data->name) continue;
+      name=(char*)(data->name->data); // Assumes the function's name is AST_ID
+    }
+    AstNode* e=(AstNode*)get_from_map(m,name);
+    if(e){
+      AstNode* rtype=get_type(e);
+      AstNode* ltype=get_type(node);
+      if(node->type!=e->type || !typed_match(ltype,rtype)){
+        dealloc_map(m);
+        return NULL;
+      }
+    }else{
+      put_in_map(m,name,node);
+    }
+  }
+  return m;
+}

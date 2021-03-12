@@ -26,3 +26,7 @@ class Log where
 end
 
 Log l=Log(1)
+
+class Math1 extends Math where
+
+end
