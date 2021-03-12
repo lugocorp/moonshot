@@ -44,9 +44,7 @@ static void discover_tokens(List* ls,int line,char* buffer,int n,int char_class)
     // Comment tokenization
     if(comment && char_class==class_whitespace){
       for(int a=0;a<n;a++){
-        if(buffer[a]=='\n'){
-          comment=0;
-        }
+        if(buffer[a]=='\n') comment=0;
       }
       return;
     }

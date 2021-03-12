@@ -325,6 +325,7 @@ AstNode* int_type_const();
 AstNode* bool_type_const();
 AstNode* float_type_const();
 void set_output(FILE* output);
+void process_node(AstNode* node);
 void process_stmt(AstNode* node);
 void process_define(AstNode* node);
 void process_typedef(AstNode* node);

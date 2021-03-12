@@ -94,6 +94,22 @@ static void write(const char* msg,...){
 }
 
 /*
+  Prints a newline character after nodes that could either be a value or statement
+*/
+static void conditional_newline(AstNode* node){
+  if(node->type==AST_FUNCTION) write("\n");
+  if(node->type==AST_CALL) write("\n");
+  if(node->type==AST_REQUIRE) write("\n");
+}
+static void process_list(List* ls){
+  for(int a=0;a<ls->n;a++){
+    AstNode* e=(AstNode*)get_from_list(ls,a);
+    process_node(e);
+    conditional_newline(e);
+  }
+}
+
+/*
   Switch for calling a specific traversal method by AstNode type
 */
 void process_node(AstNode* node){
@@ -132,31 +148,9 @@ void process_node(AstNode* node){
   }
 }
 
-// Extended grammar
-void process_define(AstNode* node){
-  BinaryNode* data=(BinaryNode*)(node->data);
-  if(validate){
-    ERROR(!compound_type_exists(data->l),"reference to nonexistent type %t",data->l);
-    if(data->r){
-      AstNode* tr=get_type(data->r);
-      ERROR(!typed_match(data->l,tr),"expression of type %t cannot be assigned to variable of type %t",tr,data->l);
-    }
-    ERROR(!add_scoped_var(data),"variable %s was already declared in this scope",data->text);
-  }
-  write("local %s=",data->text);
-  if(data->r) process_node(data->r);
-  else write("nil");
-  write("\n");
-}
-void process_typedef(AstNode* node){
-  StringAstNode* data=(StringAstNode*)(node->data);
-  if(validate){
-    ERROR(type_exists(data->text),"type %s is already declared",data->text);
-    ERROR(!compound_type_exists(data->node),"type %t does not exist",data->node);
-    ERROR(!add_type_equivalence(data->text,data->node,RL_EQUALS),"co-dependent typedef %s detected",data->text);
-    register_type(data->text);
-  }
-}
+/*
+  Traverses through entity nodes
+*/
 void process_interface(AstNode* node){
   InterfaceNode* data=(InterfaceNode*)(node->data);
   if(validate){
@@ -206,26 +200,17 @@ void process_class(AstNode* node){
   Map* fields=collapse_ancestor_class_fields(all_fields);
   ERROR(validate && !fields,"class %s has colliding names",data->name);
   write("function %s(",data->name);
-  FunctionNode* constructor=get_constructor(data);
-  if(constructor){
-    for(int a=0;a<constructor->args->n;a++){
-      StringAstNode* e=(StringAstNode*)get_from_list(constructor->args,a);
+  FunctionNode* fdata=get_constructor(data);
+  if(fdata){
+    for(int a=0;a<fdata->args->n;a++){
+      StringAstNode* e=(StringAstNode*)get_from_list(fdata->args,a);
       if(a) write(",");
       write("%s",e->text);
     }
   }
   write(")\n");
   write("local __obj={}\n");
-  FunctionNode* fdata=get_constructor(data);
-  if(fdata){
-    for(int a=0;a<fdata->body->n;a++){
-      AstNode* e=(AstNode*)get_from_list(fdata->body,a);
-      process_node(e);
-      if(e->type==AST_FUNCTION) write("\n");
-      if(e->type==AST_CALL) write("\n");
-      if(e->type==AST_REQUIRE) write("\n");
-    }
-  }
+  if(fdata) process_list(fdata->body);
   if(fields){
     for(int a=0;a<fields->n;a++){
       AstNode* child=(AstNode*)iterate_from_map(fields,a);
@@ -241,13 +226,7 @@ void process_class(AstNode* node){
           }
         }
         write(")\n");
-        for(int a=0;a<fdata->body->n;a++){
-          AstNode* e=(AstNode*)get_from_list(fdata->body,a);
-          process_node(e);
-          if(e->type==AST_FUNCTION) write("\n");
-          if(e->type==AST_CALL) write("\n");
-          if(e->type==AST_REQUIRE) write("\n");
-        }
+        process_list(fdata->body);
         write("end\n");
       }else if(child->type==AST_DEFINE){
         BinaryNode* cdata=(BinaryNode*)(child->data);
@@ -268,33 +247,23 @@ void process_class(AstNode* node){
   write("end\n");
 }
 
-// Statement group
+/*
+  Traverses through node groups
+*/
 void process_stmt(AstNode* node){
-  List* ls=(List*)(node->data);
-  for(int a=0;a<ls->n;a++){
-    AstNode* e=(AstNode*)get_from_list(ls,a);
-    process_node(e);
-    if(e->type==AST_CALL) write("\n");
-    if(e->type==AST_FUNCTION) write("\n");
-    if(e->type==AST_REQUIRE) write("\n");
-  }
+  process_list((List*)(node->data));
 }
 void process_do(AstNode* node){
-  List* ls=(List*)(node->data);
   write("do\n");
   push_scope();
-  for(int a=0;a<ls->n;a++){
-    AstNode* e=(AstNode*)get_from_list(ls,a);
-    process_node(e);
-    if(e->type==AST_CALL) write("\n");
-    if(e->type==AST_FUNCTION) write("\n");
-    if(e->type==AST_REQUIRE) write("\n");
-  }
+  process_list((List*)(node->data));
   write("end\n");
   pop_scope();
 }
 
-// Statement
+/*
+  Traverses through miscellaneous value nodes
+*/
 void process_call(AstNode* node){
   AstAstNode* data=(AstAstNode*)(node->data);
   if(validate){
@@ -388,6 +357,10 @@ void process_return(AstNode* node){
   }
   write("\n");
 }
+
+/*
+  Traverses through identifier nodes
+*/
 void process_ltuple(AstNode* node){
   AstListNode* data=(AstListNode*)(node->data);
   for(int a=0;a<data->list->n;a++){
@@ -410,6 +383,15 @@ void process_sub(AstNode* node){
 void process_id(AstNode* node){
   write("%s",(char*)(node->data));
 }
+
+/*
+  Traverses through nodes that define new things
+*/
+void process_require(AstNode* node){
+  AstNode* data=(AstNode*)(node->data);
+  write("require ");
+  process_node(data);
+}
 void process_local(AstNode* node){
   StringAstNode* data=(StringAstNode*)(node->data);
   write("local %s",data->text);
@@ -419,13 +401,34 @@ void process_local(AstNode* node){
   }
   write("\n");
 }
-void process_require(AstNode* node){
-  AstNode* data=(AstNode*)(node->data);
-  write("require ");
-  process_node(data);
+void process_define(AstNode* node){
+  BinaryNode* data=(BinaryNode*)(node->data);
+  if(validate){
+    ERROR(!compound_type_exists(data->l),"reference to nonexistent type %t",data->l);
+    if(data->r){
+      AstNode* tr=get_type(data->r);
+      ERROR(!typed_match(data->l,tr),"expression of type %t cannot be assigned to variable of type %t",tr,data->l);
+    }
+    ERROR(!add_scoped_var(data),"variable %s was already declared in this scope",data->text);
+  }
+  write("local %s=",data->text);
+  if(data->r) process_node(data->r);
+  else write("nil");
+  write("\n");
+}
+void process_typedef(AstNode* node){
+  StringAstNode* data=(StringAstNode*)(node->data);
+  if(validate){
+    ERROR(type_exists(data->text),"type %s is already declared",data->text);
+    ERROR(!compound_type_exists(data->node),"type %t does not exist",data->node);
+    ERROR(!add_type_equivalence(data->text,data->node,RL_EQUALS),"co-dependent typedef %s detected",data->text);
+    register_type(data->text);
+  }
 }
 
-// Control
+/*
+  Traverses through a function node
+*/
 void process_function(AstNode* node){
   FunctionNode* data=(FunctionNode*)(node->data);
   write("function");
@@ -437,8 +440,7 @@ void process_function(AstNode* node){
   write("(");
   for(int a=0;a<data->args->n;a++){
     if(a) write(",");
-    StringAstNode* arg=(StringAstNode*)get_from_list(data->args,a);
-    write("%s",arg->text);
+    write("%s",((StringAstNode*)get_from_list(data->args,a))->text);
   }
   write(")\n");
   if(data->body){
@@ -449,9 +451,7 @@ void process_function(AstNode* node){
       AstNode* child=(AstNode*)get_from_list(data->body,a);
       if(child->type==AST_RETURN) num_returns++;
       process_node(child);
-      if(child->type==AST_CALL) write("\n");
-      if(child->type==AST_FUNCTION) write("\n");
-      if(child->type==AST_REQUIRE) write("\n");
+      conditional_newline(child);
     }
     if(data->is_constructor){
       ERROR(num_returns,"constructors cannot have return statements",NULL);
@@ -463,17 +463,15 @@ void process_function(AstNode* node){
     pop_scope();
   }
 }
+
+/*
+  Traverses through conditional nodes
+*/
 void process_repeat(AstNode* node){
   AstListNode* data=(AstListNode*)(node->data);
   write("repeat\n");
   push_scope();
-  for(int a=0;a<data->list->n;a++){
-    AstNode* e=(AstNode*)get_from_list(data->list,a);
-    process_node(e);
-    if(e->type==AST_CALL) write("\n");
-    if(e->type==AST_FUNCTION) write("\n");
-    if(e->type==AST_REQUIRE) write("\n");
-  }
+  process_list(data->list);
   pop_scope();
   write("until ");
   process_node(data->node);
@@ -485,13 +483,7 @@ void process_while(AstNode* node){
   process_node(data->node);
   write(" do\n");
   push_scope();
-  for(int a=0;a<data->list->n;a++){
-    AstNode* e=(AstNode*)get_from_list(data->list,a);
-    process_node(e);
-    if(e->type==AST_CALL) write("\n");
-    if(e->type==AST_FUNCTION) write("\n");
-    if(e->type==AST_REQUIRE) write("\n");
-  }
+  process_list(data->list);
   pop_scope();
   write("end\n");
 }
@@ -501,16 +493,14 @@ void process_if(AstNode* node){
   process_node(data->node);
   write(" then\n");
   push_scope();
-  for(int a=0;a<data->list->n;a++){
-    AstNode* e=(AstNode*)get_from_list(data->list,a);
-    process_node(e);
-    if(e->type==AST_CALL) write("\n");
-    if(e->type==AST_FUNCTION) write("\n");
-    if(e->type==AST_REQUIRE) write("\n");
-  }
+  process_list(data->list);
   pop_scope();
   write("end\n");
 }
+
+/*
+  Traverses through for loop nodes
+*/
 void process_fornum(AstNode* node){
   FornumNode* data=(FornumNode*)(node->data);
   write("for %s=",data->name);
@@ -523,13 +513,7 @@ void process_fornum(AstNode* node){
   }
   push_scope();
   write(" do\n");
-  for(int a=0;a<data->body->n;a++){
-    AstNode* e=(AstNode*)get_from_list(data->body,a);
-    process_node(e);
-    if(e->type==AST_CALL) write("\n");
-    if(e->type==AST_FUNCTION) write("\n");
-    if(e->type==AST_REQUIRE) write("\n");
-  }
+  process_list(data->body);
   write("end\n");
   pop_scope();
 }
@@ -541,16 +525,14 @@ void process_forin(AstNode* node){
   process_node(data->tuple);
   write(" do\n");
   push_scope();
-  for(int a=0;a<data->body->n;a++){
-    AstNode* e=(AstNode*)get_from_list(data->body,a);
-    process_node(e);
-    if(e->type==AST_CALL) write("\n");
-    if(e->type==AST_FUNCTION) write("\n");
-    if(e->type==AST_REQUIRE) write("\n");
-  }
+  process_list(data->body);
   write("end\n");
   pop_scope();
 }
+
+/*
+  Traverses through simple control statement nodes
+*/
 void process_break(AstNode* node){
   write("break\n");
 }
@@ -561,7 +543,9 @@ void process_goto(AstNode* node){
   write("goto %s\n",(char*)(node->data));
 }
 
-// Primitives
+/*
+  Traverses through primitive value nodes
+*/
 void process_primitive(AstNode* node){
   write("%s",((StringAstNode*)(node->data))->text);
 }
@@ -584,7 +568,9 @@ void process_tuple(AstNode* node){
   }
 }
 
-// Expressions
+/*
+  Traverses through expression nodes
+*/
 void process_unary(AstNode* node){
   BinaryNode* data=(BinaryNode*)(node->data);
   if(strcmp(data->text,"trust")) write("%s ",data->text);
