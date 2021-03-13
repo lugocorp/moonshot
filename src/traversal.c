@@ -243,7 +243,7 @@ void process_class(AstNode* node){
     }
     dealloc_map(fields);
   }
-  write("return obj\n");
+  write("return __obj\n");
   write("end\n");
 }
 

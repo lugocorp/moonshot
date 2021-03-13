@@ -158,7 +158,7 @@ AstNode* get_type(AstNode* node){
     case AST_ID:{
       char* name=(char*)(node->data);
       BinaryNode* var=get_scoped_var(name);
-      return var?(var->l):any_type_const();
+      return (var && var->l)?(var->l):any_type_const();
     }
     case AST_FIELD:{
       StringAstNode* data=(StringAstNode*)(node->data);
