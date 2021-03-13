@@ -32,13 +32,17 @@ char* moonshot_next_error(){
   Exits with a special error if your msg and va_args cause the error buffer to overflow
 */
 void add_error(int line,const char* msg,...){
+  va_list args;
+  va_start(args,msg);
+  add_error_internal(line,msg,args);
+  va_end(args);
+}
+void add_error_internal(int line,const char* msg,va_list args){
   char* err=(char*)malloc(sizeof(char)*ERROR_BUFFER_LENGTH);
   char symbol[2]={0,0};
   int n=strlen(msg);
   int total=0;
   err[0]=0;
-  va_list args;
-  va_start(args,msg);
   for(int a=0;a<n;a++){
     if(a<n-1 && msg[a]=='%'){
       if(msg[a+1]=='s'){
@@ -101,7 +105,6 @@ void add_error(int line,const char* msg,...){
     sprintf(suffix," on line %i",line);
     strcat(err,suffix);
   }
-  va_end(args);
   add_to_list(errors,err);
 }
 

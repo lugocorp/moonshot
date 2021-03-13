@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdarg.h>
 #define PRIMITIVE_STRING "string"
 #define PRIMITIVE_FLOAT "float"
 #define PRIMITIVE_BOOL "bool"
@@ -211,6 +212,7 @@ enum RULES{
 
 // Global and/or important functions
 void add_error(int line,const char* msg,...);
+void add_error_internal(int line,const char* msg,va_list args);
 void traverse(AstNode* node,int validate);
 AstNode* parse(List* ls);
 void init_traverse();
