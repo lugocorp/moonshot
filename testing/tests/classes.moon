@@ -30,3 +30,12 @@ Log l=Log(1)
 class Math1 extends Math where
 
 end
+
+class TestThis where
+  int a=1
+
+  var increment()
+    this.a=this.a+1
+    return this.a
+  end
+end

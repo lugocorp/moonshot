@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #define ERROR(cond,msg,...) if(cond){add_error(-1,msg,__VA_ARGS__);return;}
+static char* instance_str; // The variable used for the produced object in constructors
 static FILE* _output; // The configured output as desired by the developer
 static int validate; // The traversal phase you're running
 AstNode* float_type; // AstNode constant representing the FLOAT type
@@ -29,10 +30,12 @@ AstNode* any_type_const(){
   Set up resources used by traversal
 */
 void init_traverse(){
+  instance_str=(char*)malloc(sizeof(char)*6);
   float_type=new_node(AST_TYPE_BASIC,PRIMITIVE_FLOAT);
   bool_type=new_node(AST_TYPE_BASIC,PRIMITIVE_BOOL);
   int_type=new_node(AST_TYPE_BASIC,PRIMITIVE_INT);
   any_type=new_node(AST_TYPE_ANY,NULL);
+  sprintf(instance_str,"__obj");
 }
 
 /*
@@ -56,6 +59,7 @@ void traverse(AstNode* root,int valid){
   Deallocate resources used by the traversal module
 */
 void dealloc_traverse(){
+  free(instance_str);
   pop_scope();
   dealloc_scopes();
   dealloc_types();
@@ -165,8 +169,9 @@ void process_interface(AstNode* node){
 }
 void process_class(AstNode* node){
   ClassNode* data=(ClassNode*)(node->data);
+  push_scope();
+  push_class(data);
   if(validate){
-    push_scope();
     if(data->parent){
       ERROR(!class_exists(data->parent),"parent class %s does not exist",data->parent);
       ERROR(!add_child_type(data->name,data->parent,RL_EXTENDS),"co-dependent class %s detected",data->name);
@@ -194,7 +199,6 @@ void process_class(AstNode* node){
     dealloc_list(missing);
     register_type(data->name);
     register_class(data);
-    pop_scope();
   }
   List* all_fields=get_all_class_fields(data);
   Map* fields=collapse_ancestor_class_fields(all_fields);
@@ -209,7 +213,7 @@ void process_class(AstNode* node){
     }
   }
   write(")\n");
-  write("local __obj={}\n");
+  write("local %s={}\n",instance_str);
   if(fdata) process_list(fdata->body);
   if(fields){
     for(int a=0;a<fields->n;a++){
@@ -217,7 +221,7 @@ void process_class(AstNode* node){
       if(child->type==AST_FUNCTION){
         fdata=(FunctionNode*)(child->data);
         if(fdata->is_constructor) continue;
-        write("__obj.%s=function(",(char*)(fdata->name->data));
+        write("%s.%s=function(",instance_str,(char*)(fdata->name->data));
         if(fdata->args){
           for(int a=0;a<fdata->args->n;a++){
             if(a) write(",");
@@ -230,9 +234,9 @@ void process_class(AstNode* node){
         write("end\n");
       }else if(child->type==AST_DEFINE){
         BinaryNode* cdata=(BinaryNode*)(child->data);
-        if(!cdata->r) write("__obj.%s=nil",cdata->text);
+        if(!cdata->r) write("%s.%s=nil",instance_str,cdata->text);
         else{
-          write("__obj.%s=",cdata->text);
+          write("%s.%s=",instance_str,cdata->text);
           process_node(cdata->r);
         }
         write("\n");
@@ -243,8 +247,10 @@ void process_class(AstNode* node){
     }
     dealloc_map(fields);
   }
-  write("return __obj\n");
+  write("return %s\n",instance_str);
   write("end\n");
+  pop_class();
+  pop_scope();
 }
 
 /*
@@ -381,7 +387,11 @@ void process_sub(AstNode* node){
   write("]");
 }
 void process_id(AstNode* node){
-  write("%s",(char*)(node->data));
+  if(get_class_scope() && !strcmp((char*)(node->data),"this")){
+    write("%s",instance_str);
+  }else{
+    write("%s",(char*)(node->data));
+  }
 }
 
 /*

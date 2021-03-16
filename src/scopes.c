@@ -1,6 +1,7 @@
 #include "./internal.h"
 #include <stdlib.h>
 #include <string.h>
+static List* classes; // List of ClassNodes
 static List* scopes; // List of Lists of BinaryNodes
 static List* funcs; // List of FunctionNodes
 
@@ -8,6 +9,7 @@ static List* funcs; // List of FunctionNodes
   Stuff to be done before we start working with scopes
 */
 void preempt_scopes(){
+  classes=NULL;
   scopes=NULL;
   funcs=NULL;
 }
@@ -16,6 +18,7 @@ void preempt_scopes(){
   Initializes the scope lists used by this module
 */
 void init_scopes(){
+  classes=new_default_list();
   scopes=new_default_list();
   funcs=new_default_list();
 }
@@ -24,6 +27,7 @@ void init_scopes(){
   Deallocs all scope Lists
 */
 void dealloc_scopes(){
+  dealloc_list(classes);
   dealloc_list(scopes);
   dealloc_list(funcs);
 }
@@ -58,7 +62,7 @@ void push_function(FunctionNode* node){
 /*
   Exits the innermost function scope
 */
-void pop_function(FunctionNode* node){
+void pop_function(){
   remove_from_list(funcs,funcs->n-1);
 }
 
@@ -68,6 +72,34 @@ void pop_function(FunctionNode* node){
 */
 FunctionNode* get_function_scope(){
   if(funcs->n) return (FunctionNode*)get_from_list(funcs,funcs->n-1);
+  return NULL;
+}
+
+/*
+  Enters a new inner class scope
+*/
+void push_class(ClassNode* node){
+  add_to_list(classes,node);
+  char* this=(char*)malloc(sizeof(char)*5);
+  sprintf(this,"this");
+  AstNode* type=new_node(AST_TYPE_BASIC,node->name);
+  BinaryNode* bn=new_binary_node(this,type,NULL);
+  add_scoped_var(bn);
+}
+
+/*
+  Exits the innermost class scope
+*/
+void pop_class(){
+  remove_from_list(classes,classes->n-1);
+}
+
+/*
+  Returns the innermost class scope
+  Returns NULL if the current scope is not within any class
+*/
+ClassNode* get_class_scope(){
+  if(classes->n) return (ClassNode*)get_from_list(classes,classes->n-1);
   return NULL;
 }
 

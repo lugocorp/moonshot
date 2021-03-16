@@ -285,9 +285,12 @@ void init_scopes();
 void dealloc_scopes();
 void push_scope();
 void pop_scope();
-void push_function();
+void push_function(FunctionNode* node);
 void pop_function();
 FunctionNode* get_function_scope();
+void push_class(ClassNode* node);
+void pop_class();
+ClassNode* get_class_scope();
 int add_scoped_var(BinaryNode* node);
 BinaryNode* get_scoped_var(char* name);
 
