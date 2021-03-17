@@ -221,6 +221,7 @@ void process_class(AstNode* node){
   }
   List* all_fields=get_all_class_fields(data);
   Map* fields=collapse_ancestor_class_fields(all_fields);
+  dealloc_list(all_fields);
   ERROR(validate && !fields,"class %s has colliding names",data->name);
   write("function %s(",data->name);
   FunctionNode* fdata=get_constructor(data);

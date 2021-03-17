@@ -358,6 +358,7 @@ AstNode* parse_constructor(char* classname){
   if(!expect(tk,TK_END)) FREE_AST_NODE_LIST(error(tk,"invalid constructor",NULL),args);
   FunctionNode* data=new_function_node(NULL,new_node(AST_TYPE_BASIC,classname),args,(List*)(node->data));
   data->is_constructor=1;
+  free(node);
   return new_node(AST_FUNCTION,data);
 }
 
@@ -603,6 +604,7 @@ AstNode* parse_function(AstNode* type,int include_body){
       FREE_STRING_AST_NODE_LIST(error(tk,"unclosed function",NULL),args);
     }
     ls=(List*)(node->data);
+    free(node);
   }
   DEBUG("Function (%i args) (%i stmts)\n",args->n,ls?ls->n:0);
   return new_node(AST_FUNCTION,new_function_node(name,type,args,ls));
@@ -781,8 +783,11 @@ AstNode* parse_string(){
     if(a) strcat(string,part);
     else strcpy(string,part);
   }
+  dealloc_list(buffer);
   DEBUG("string %s\n",string);
-  return new_node(AST_PRIMITIVE,new_primitive_node(string,PRIMITIVE_STRING));
+  AstNode* node=new_node(AST_PRIMITIVE,new_primitive_node(string,PRIMITIVE_STRING));
+  free(string);
+  return node;
 }
 AstNode* parse_number(){
   char dot[2]={'.',0};

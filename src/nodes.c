@@ -49,9 +49,16 @@ void dealloc_ast_node(AstNode* node){
   else if(node->type==AST_RETURN || node->type==AST_PAREN || node->type==AST_REQUIRE){
     if(node->data) dealloc_ast_node((AstNode*)(node->data));
   }
-  else if(node->type==AST_PRIMITIVE || node->type==AST_FIELD || node->type==AST_LOCAL || node->type==AST_TYPEDEF){
+  else if(node->type==AST_FIELD || node->type==AST_LOCAL || node->type==AST_TYPEDEF){
     StringAstNode* data=(StringAstNode*)(node->data);
     dealloc_ast_node(data->node);
+    free(data);
+  }
+  else if(node->type==AST_PRIMITIVE){
+    StringAstNode* data=(StringAstNode*)(node->data);
+    free(data->node->data);
+    free(data->node);
+    free(data->text);
     free(data);
   }
   else if(node->type==AST_INTERFACE){
@@ -223,7 +230,7 @@ StringAstNode* new_string_ast_node(char* text,AstNode* ast){
 }
 
 /*
-  Creates a StringAstNode*
+  Creates a StringAstNode* with copies of the provided arguments
   node->text is the name
   node->type is a AST_TYPE_BASIC node
 */

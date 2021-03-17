@@ -63,6 +63,12 @@ void push_function(FunctionNode* node){
   Exits the innermost function scope
 */
 void pop_function(){
+  FunctionNode* node=(FunctionNode*)get_from_list(funcs,funcs->n-1);
+  for(int a=0;a<node->args->n;a++){
+    StringAstNode* arg=(StringAstNode*)get_from_list(node->args,a);
+    BinaryNode* bn=(BinaryNode*)get_scoped_var(arg->text);
+    free(bn);
+  }
   remove_from_list(funcs,funcs->n-1);
 }
 
@@ -89,9 +95,16 @@ void push_class(ClassNode* node){
 
 /*
   Exits the innermost class scope
+  Must be called before pop_scope
 */
 void pop_class(){
+  char varname[5];
+  sprintf(varname,"this");
   remove_from_list(classes,classes->n-1);
+  BinaryNode* this=get_scoped_var(varname);
+  free(this->text);
+  free(this->l);
+  free(this);
 }
 
 /*

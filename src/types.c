@@ -27,6 +27,16 @@ void init_types(){
   Deallocate registers and equivalence graphs
 */
 void dealloc_types(){
+  for(int a=0;a<types_graph->n;a++){
+    EqualTypesNode* node=(EqualTypesNode*)get_from_list(types_graph,a);
+    free(node);
+  }
+  for(int a=0;a<types_registry->n;a++){
+    char* type=(char*)get_from_list(types_registry,a);
+    if(!strcmp(type,PRIMITIVE_STRING) || !strcmp(type,PRIMITIVE_FLOAT) || !strcmp(type,PRIMITIVE_BOOL) || !strcmp(type,PRIMITIVE_INT) || !strcmp(type,PRIMITIVE_NIL)){
+      free(type);
+    }
+  }
   dealloc_list(interfaces_registry);
   dealloc_list(functions_registry);
   dealloc_list(classes_registry);
