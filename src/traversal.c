@@ -7,6 +7,8 @@
 static char* instance_str; // The variable used for the produced object in constructors
 static FILE* _output; // The configured output as desired by the developer
 static int validate; // The traversal phase you're running
+static int line_written; // Zero if there's no content on the current output line yet
+static int num_indents; // Number of tabs on the output line
 AstNode* float_type; // AstNode constant representing the FLOAT type
 AstNode* bool_type; // AstNode constant representing the BOOL type
 AstNode* int_type; // AstNode constant representing the INT type
@@ -36,6 +38,8 @@ void init_traverse(){
   int_type=new_node(AST_TYPE_BASIC,PRIMITIVE_INT);
   any_type=new_node(AST_TYPE_ANY,NULL);
   sprintf(instance_str,"__obj");
+  line_written=0;
+  num_indents=0;
 }
 
 /*
@@ -77,6 +81,13 @@ void set_output(FILE* output){
 }
 
 /*
+  Increment the output indentation
+*/
+static void indent(int a){
+  num_indents+=a;
+}
+
+/*
   Writes a message to the configured output
 */
 static void write(const char* msg,...){
@@ -85,6 +96,14 @@ static void write(const char* msg,...){
   int n=strlen(msg);
   va_start(args,msg);
   for(int a=0;a<n;a++){
+    if(msg[a]=='\n'){
+      line_written=0;
+    }else if(!line_written){
+      line_written=1;
+      for(int a=0;a<num_indents;a++){
+        fprintf(_output,"\t");
+      }
+    }
     if(a<n-1 && msg[a]=='%'){
       if(msg[a+1]=='s'){
         fprintf(_output,"%s",va_arg(args,char*));
@@ -213,6 +232,7 @@ void process_class(AstNode* node){
     }
   }
   write(")\n");
+  indent(1);
   write("local %s={}\n",instance_str);
   if(fdata) process_list(fdata->body);
   if(fields){
@@ -230,7 +250,9 @@ void process_class(AstNode* node){
           }
         }
         write(")\n");
+        indent(1);
         process_list(fdata->body);
+        indent(-1);
         write("end\n");
       }else if(child->type==AST_DEFINE){
         BinaryNode* cdata=(BinaryNode*)(child->data);
@@ -248,6 +270,7 @@ void process_class(AstNode* node){
     dealloc_map(fields);
   }
   write("return %s\n",instance_str);
+  indent(-1);
   write("end\n");
   pop_class();
   pop_scope();
@@ -261,8 +284,10 @@ void process_stmt(AstNode* node){
 }
 void process_do(AstNode* node){
   write("do\n");
+  indent(1);
   push_scope();
   process_list((List*)(node->data));
+  indent(-1);
   write("end\n");
   pop_scope();
 }
@@ -453,6 +478,7 @@ void process_function(AstNode* node){
     write("%s",((StringAstNode*)get_from_list(data->args,a))->text);
   }
   write(")\n");
+  indent(1);
   if(data->body){
     push_scope();
     push_function(data);
@@ -469,6 +495,7 @@ void process_function(AstNode* node){
       ERROR(!num_returns,"function of type %t cannot return nil",data->type);
     }
     pop_function(data);
+    indent(-1);
     write("end");
     pop_scope();
   }
@@ -480,9 +507,11 @@ void process_function(AstNode* node){
 void process_repeat(AstNode* node){
   AstListNode* data=(AstListNode*)(node->data);
   write("repeat\n");
+  indent(1);
   push_scope();
   process_list(data->list);
   pop_scope();
+  indent(-1);
   write("until ");
   process_node(data->node);
   write("\n");
@@ -492,9 +521,11 @@ void process_while(AstNode* node){
   write("while ");
   process_node(data->node);
   write(" do\n");
+  indent(1);
   push_scope();
   process_list(data->list);
   pop_scope();
+  indent(-1);
   write("end\n");
 }
 void process_if(AstNode* node){
@@ -502,9 +533,11 @@ void process_if(AstNode* node){
   write("if ");
   process_node(data->node);
   write(" then\n");
+  indent(1);
   push_scope();
   process_list(data->list);
   pop_scope();
+  indent(-1);
   write("end\n");
 }
 
@@ -523,7 +556,9 @@ void process_fornum(AstNode* node){
   }
   push_scope();
   write(" do\n");
+  indent(1);
   process_list(data->body);
+  indent(-1);
   write("end\n");
   pop_scope();
 }
@@ -534,8 +569,10 @@ void process_forin(AstNode* node){
   write(" in ");
   process_node(data->tuple);
   write(" do\n");
+  indent(1);
   push_scope();
   process_list(data->body);
+  indent(-1);
   write("end\n");
   pop_scope();
 }
