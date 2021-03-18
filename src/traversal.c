@@ -188,8 +188,7 @@ void process_interface(AstNode* node){
 }
 void process_class(AstNode* node){
   ClassNode* data=(ClassNode*)(node->data);
-  push_scope();
-  push_class(data);
+  push_class_scope(data);
   if(validate){
     if(data->parent){
       ERROR(!class_exists(data->parent),"parent class %s does not exist",data->parent);
@@ -242,7 +241,9 @@ void process_class(AstNode* node){
       if(child->type==AST_FUNCTION){
         fdata=(FunctionNode*)(child->data);
         if(fdata->is_constructor) continue;
-        write("%s.%s=function(",instance_str,(char*)(fdata->name->data));
+        char* funcname=(char*)(fdata->name->data);
+        add_scoped_var(new_string_ast_node(funcname,get_type(child)));
+        write("%s.%s=function(",instance_str,funcname);
         if(fdata->args){
           for(int a=0;a<fdata->args->n;a++){
             if(a) write(",");
@@ -257,10 +258,12 @@ void process_class(AstNode* node){
         write("end\n");
       }else if(child->type==AST_DEFINE){
         BinaryNode* cdata=(BinaryNode*)(child->data);
-        if(!cdata->r) write("%s.%s=nil",instance_str,cdata->text);
-        else{
+        add_scoped_var(new_string_ast_node(cdata->text,cdata->l));
+        if(cdata->r){
           write("%s.%s=",instance_str,cdata->text);
           process_node(cdata->r);
+        }else{
+          write("%s.%s=nil",instance_str,cdata->text);
         }
         write("\n");
       }else{
@@ -273,7 +276,6 @@ void process_class(AstNode* node){
   write("return %s\n",instance_str);
   indent(-1);
   write("end\n");
-  pop_class();
   pop_scope();
 }
 
@@ -413,10 +415,14 @@ void process_sub(AstNode* node){
   write("]");
 }
 void process_id(AstNode* node){
-  if(get_class_scope() && !strcmp((char*)(node->data),"this")){
+  char* var=(char*)(node->data);
+  if(get_class_scope() && !strcmp(var,"this")){
     write("%s",instance_str);
   }else{
-    write("%s",(char*)(node->data));
+    if(field_defined_in_class(var)){
+      write("%s.",instance_str);
+    }
+    write("%s",var);
   }
 }
 
@@ -445,7 +451,11 @@ void process_define(AstNode* node){
       AstNode* tr=get_type(data->r);
       ERROR(!typed_match(data->l,tr),"expression of type %t cannot be assigned to variable of type %t",tr,data->l);
     }
-    ERROR(!add_scoped_var(data),"variable %s was already declared in this scope",data->text);
+    StringAstNode* data1=new_string_ast_node(data->text,data->l);
+    if(!add_scoped_var(data1)){
+      add_error(-1,"variable %s was already declared in this scope",data->text);
+      free(data1);
+    }
   }
   write("local %s=",data->text);
   if(data->r) process_node(data->r);
@@ -481,8 +491,7 @@ void process_function(AstNode* node){
   write(")\n");
   indent(1);
   if(data->body){
-    push_scope();
-    push_function(data);
+    push_function_scope(data);
     int num_returns=0;
     for(int a=0;a<data->body->n;a++){
       AstNode* child=(AstNode*)get_from_list(data->body,a);
@@ -495,7 +504,6 @@ void process_function(AstNode* node){
     }else if(!is_primitive(data->type,PRIMITIVE_NIL) && data->type->type!=AST_TYPE_ANY){
       ERROR(!num_returns,"function of type %t cannot return nil",data->type);
     }
-    pop_function(data);
     indent(-1);
     write("end");
     pop_scope();

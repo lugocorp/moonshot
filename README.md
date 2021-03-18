@@ -22,7 +22,7 @@ Moonshot is an optionally-typed object-oriented extension language for Lua. This
 - [x] Analyze parser and traversal patterns, compress and finalize deallocation in parser
 - [x] Implement this keyword for classes
 - [x] Finish plugging up memory leaks
-- [ ] Refactor validation check systems to be better organized
+- [x] Refactor validation check systems to be better organized
 - [ ] Constructor chaining
 
 ## Post-beta release updates

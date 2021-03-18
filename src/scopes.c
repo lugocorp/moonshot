@@ -1,75 +1,81 @@
 #include "./internal.h"
 #include <stdlib.h>
 #include <string.h>
-static List* classes; // List of ClassNodes
-static List* scopes; // List of Lists of BinaryNodes
-static List* funcs; // List of FunctionNodes
+static List* scopes;
+
+/*
+  Initialize a new scope object
+*/
+static Scope* new_scope(int type,void* data){
+  Scope* scope=(Scope*)malloc(sizeof(Scope));
+  scope->defs=new_default_list();
+  scope->type=type;
+  scope->data=data;
+  return scope;
+}
 
 /*
   Stuff to be done before we start working with scopes
 */
 void preempt_scopes(){
-  classes=NULL;
   scopes=NULL;
-  funcs=NULL;
 }
 
 /*
   Initializes the scope lists used by this module
 */
 void init_scopes(){
-  classes=new_default_list();
   scopes=new_default_list();
-  funcs=new_default_list();
 }
 
 /*
   Deallocs all scope Lists
 */
 void dealloc_scopes(){
-  dealloc_list(classes);
   dealloc_list(scopes);
-  dealloc_list(funcs);
 }
 
 /*
   Enters a new innermost scope
 */
 void push_scope(){
-  add_to_list(scopes,new_default_list());
+  add_to_list(scopes,new_scope(SCOPE_NONE,NULL));
 }
 
 /*
   Exits the current innermost scope
 */
 void pop_scope(){
-  List* ls=remove_from_list(scopes,scopes->n-1);
-  dealloc_list(ls);
+  Scope* scope=remove_from_list(scopes,scopes->n-1);
+  for(int a=0;a<scope->defs->n;a++){
+    StringAstNode* var=(StringAstNode*)get_from_list(scope->defs,a);
+    if(scope->type==SCOPE_CLASS && !strcmp(var->text,"this") && var->node->type==AST_TYPE_BASIC){
+      ClassNode* class=(ClassNode*)(scope->data);
+      char* type=(char*)(var->node->data);
+      if(!strcmp(class->name,type)){
+        free(var->text);
+        free(var->node);
+      }
+    }
+    free(var);
+  }
+  dealloc_list(scope->defs);
+  free(scope);
 }
 
 /*
   Enters a new inner function scope
 */
-void push_function(FunctionNode* node){
-  add_to_list(funcs,node);
+void push_function_scope(FunctionNode* node){
+  add_to_list(scopes,new_scope(SCOPE_FUNCTION,node));
   for(int a=0;a<node->args->n;a++){
     StringAstNode* arg=(StringAstNode*)get_from_list(node->args,a);
-    BinaryNode* bn=new_binary_node(arg->text,arg->node,NULL);
-    add_scoped_var(bn);
+    StringAstNode* var=new_string_ast_node(arg->text,arg->node);
+    if(!add_scoped_var(var)){
+      // This should never ever happen
+      free(var);
+    }
   }
-}
-
-/*
-  Exits the innermost function scope
-*/
-void pop_function(){
-  FunctionNode* node=(FunctionNode*)get_from_list(funcs,funcs->n-1);
-  for(int a=0;a<node->args->n;a++){
-    StringAstNode* arg=(StringAstNode*)get_from_list(node->args,a);
-    BinaryNode* bn=(BinaryNode*)get_scoped_var(arg->text);
-    free(bn);
-  }
-  remove_from_list(funcs,funcs->n-1);
 }
 
 /*
@@ -77,34 +83,30 @@ void pop_function(){
   Returns NULL if the current scope is not within any function
 */
 FunctionNode* get_function_scope(){
-  if(funcs->n) return (FunctionNode*)get_from_list(funcs,funcs->n-1);
+  for(int a=scopes->n-1;a>=0;a--){
+    Scope* scope=(Scope*)get_from_list(scopes,a);
+    if(scope->type==SCOPE_FUNCTION){
+      return (FunctionNode*)(scope->data);
+    }
+  }
   return NULL;
 }
 
 /*
   Enters a new inner class scope
 */
-void push_class(ClassNode* node){
-  add_to_list(classes,node);
+void push_class_scope(ClassNode* node){
+  add_to_list(scopes,new_scope(SCOPE_CLASS,node));
   char* this=(char*)malloc(sizeof(char)*5);
   sprintf(this,"this");
   AstNode* type=new_node(AST_TYPE_BASIC,node->name);
-  BinaryNode* bn=new_binary_node(this,type,NULL);
-  add_scoped_var(bn);
-}
-
-/*
-  Exits the innermost class scope
-  Must be called before pop_scope
-*/
-void pop_class(){
-  char varname[5];
-  sprintf(varname,"this");
-  remove_from_list(classes,classes->n-1);
-  BinaryNode* this=get_scoped_var(varname);
-  free(this->text);
-  free(this->l);
-  free(this);
+  StringAstNode* var=new_string_ast_node(this,type);
+  if(!add_scoped_var(var)){
+    // This should never ever happen
+    free(type);
+    free(this);
+    free(var);
+  }
 }
 
 /*
@@ -112,21 +114,28 @@ void pop_class(){
   Returns NULL if the current scope is not within any class
 */
 ClassNode* get_class_scope(){
-  if(classes->n) return (ClassNode*)get_from_list(classes,classes->n-1);
+  for(int a=scopes->n-1;a>=0;a--){
+    Scope* scope=(Scope*)get_from_list(scopes,a);
+    if(scope->type==SCOPE_CLASS){
+      return (ClassNode*)(scope->data);
+    }
+  }
   return NULL;
 }
 
 /*
   Adds a new typed variable to the current scope
+  node must be allocated specifically for this function
+  node will be freed automatically in pop_scope
 */
-int add_scoped_var(BinaryNode* node){
-  List* scope=get_from_list(scopes,scopes->n-1);
-  for(int a=0;a<scope->n;a++){
-    if(!strcmp(((BinaryNode*)get_from_list(scope,a))->text,node->text)){
+int add_scoped_var(StringAstNode* node){
+  Scope* scope=(Scope*)get_from_list(scopes,scopes->n-1);
+  for(int a=0;a<scope->defs->n;a++){
+    if(!strcmp(((StringAstNode*)get_from_list(scope->defs,a))->text,node->text)){
       return 0;
     }
   }
-  add_to_list(scope,node);
+  add_to_list(scope->defs,node);
   return 1;
 }
 
@@ -135,16 +144,32 @@ int add_scoped_var(BinaryNode* node){
   Return NULL if no such typed variable exists
   Searches through every scope from innermost to outermost
 */
-BinaryNode* get_scoped_var(char* name){
-  if(scopes){
-    for(int a=(scopes->n)-1;a>=0;a--){
-      List* scope=(List*)get_from_list(scopes,a);
-      for(int b=0;b<scope->n;b++){
-        BinaryNode* n=(BinaryNode*)get_from_list(scope,b);
-        if(!strcmp(n->text,name)) return n;
+StringAstNode* get_scoped_var(char* name){
+  for(int a=(scopes->n)-1;a>=0;a--){
+    Scope* scope=(Scope*)get_from_list(scopes,a);
+    for(int b=0;b<scope->defs->n;b++){
+      StringAstNode* n=(StringAstNode*)get_from_list(scope->defs,b);
+      if(!strcmp(n->text,name)){
+        return n;
       }
-
     }
   }
   return NULL;
+}
+
+/*
+  Returns 1 if the given field is defined as a class field
+*/
+int field_defined_in_class(char* name){
+  StringAstNode* node=get_scoped_var(name);
+  for(int a=scopes->n-1;a>=0;a--){
+    Scope* scope=(Scope*)get_from_list(scopes,a);
+    for(int b=0;b<scope->defs->n;b++){
+      StringAstNode* n=(StringAstNode*)get_from_list(scope->defs,b);
+      if(!strcmp(n->text,name)){
+        return scope->type==SCOPE_CLASS;
+      }
+    }
+  }
+  return 0;
 }

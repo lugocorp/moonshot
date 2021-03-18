@@ -123,11 +123,23 @@ typedef struct{
   List* ls;
 } ClassNode;
 
+// Traversal algorithm structs
 typedef struct{
   AstNode* type;
   int relation;
   char* name;
 } EqualTypesNode;
+
+typedef struct{
+  List* defs; // List of StringAstNodes representing local definitions
+  void* data; // Context node attached to this scope
+  int type; // The type of this scope
+} Scope;
+
+// List of all scope types
+enum SCOPE_TYPES{
+  SCOPE_FUNCTION, SCOPE_CLASS, SCOPE_NONE
+};
 
 // List of all equivalent type relationships
 enum RELATIONS{
@@ -285,14 +297,13 @@ void init_scopes();
 void dealloc_scopes();
 void push_scope();
 void pop_scope();
-void push_function(FunctionNode* node);
-void pop_function();
+void push_function_scope(FunctionNode* node);
 FunctionNode* get_function_scope();
-void push_class(ClassNode* node);
-void pop_class();
+void push_class_scope(ClassNode* node);
 ClassNode* get_class_scope();
-int add_scoped_var(BinaryNode* node);
-BinaryNode* get_scoped_var(char* name);
+int add_scoped_var(StringAstNode* node);
+StringAstNode* get_scoped_var(char* name);
+int field_defined_in_class(char* name);
 
 // types.c
 void init_types();
