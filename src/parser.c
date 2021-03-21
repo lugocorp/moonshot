@@ -155,7 +155,7 @@ static int precedence(char* op){
   return 0;
 }
 
-// Moonshot-specific parse functions
+// Entity parsers (classes and interfaces)
 AstNode* parse_interface(){
   char* parent=NULL;
   Token* tk=consume();
@@ -241,6 +241,8 @@ AstNode* parse_class(){
   }
   return new_node(AST_CLASS,new_class_node(name,parent,interfaces,ls));
 }
+
+// Type parsers
 AstNode* parse_typedef(){
   Token* tk=consume();
   if(!expect(tk,TK_TYPEDEF)) return error(tk,"invalid typedef",NULL);
@@ -250,19 +252,6 @@ AstNode* parse_typedef(){
   AstNode* node=parse_type();
   if(!node) return NULL;
   return new_node(AST_TYPEDEF,new_string_ast_node(name,node));
-}
-AstNode* parse_define(AstNode* type){
-  AstNode* expr=NULL;
-  Token* tk=consume();
-  if(!expect(tk,TK_NAME)) return error(tk,"invalid name for definition",NULL);
-  char* name=tk->text;
-  tk=check();
-  if(specific(tk,TK_MISC,"=")){
-    consume();
-    expr=parse_expr();
-    if(!expr) return NULL;
-  }
-  return new_node(AST_DEFINE,new_binary_node(name,type,expr));
 }
 static AstNode* parse_basic_type(){
   Token* tk=check();
@@ -327,42 +316,8 @@ AstNode* parse_type(){
   }
   return parse_basic_type();
 }
-AstNode* parse_constructor(char* classname){
-  Token* tk=consume();
-  if(!expect(tk,TK_CONSTRUCTOR)) return error(tk,"invalid constructor",NULL);
-  tk=consume();
-  if(!specific(tk,TK_PAREN,"(")) return error(tk,"missing parenthesis from constructor",NULL);
-  tk=check();
-  List* args=new_default_list();
-  while(tk && !specific(tk,TK_PAREN,")")){
-    AstNode* arg_type=NULL;
-    tk=check_ahead(2);
-    if(!specific(tk,TK_MISC,",") && !specific(tk,TK_PAREN,")")){
-      arg_type=parse_type();
-      if(!arg_type) FREE_AST_NODE_LIST(NULL,args);
-    }
-    tk=consume();
-    if(!expect(tk,TK_NAME)) FREE_AST_NODE_LIST(error(tk,"invalid constructor argument",NULL),args);
-    add_to_list(args,new_string_ast_node(tk->text,arg_type));
-    tk=check();
-    if(specific(tk,TK_MISC,",")){
-      consume();
-      tk=check();
-    }
-  }
-  if(!tk) return error(tk,"invalid constructor",NULL);
-  consume();
-  AstNode* node=parse_stmt();
-  if(!node) FREE_AST_NODE_LIST(NULL,args);
-  tk=consume();
-  if(!expect(tk,TK_END)) FREE_AST_NODE_LIST(error(tk,"invalid constructor",NULL),args);
-  FunctionNode* data=new_function_node(NULL,new_node(AST_TYPE_BASIC,classname),args,(List*)(node->data));
-  data->is_constructor=1;
-  free(node);
-  return new_node(AST_FUNCTION,data);
-}
 
-// Statement group parse functions
+// Statement block parsers
 AstNode* parse_stmt(){
   Token* tk;
   AstNode* node;
@@ -409,19 +364,30 @@ AstNode* parse_stmt(){
   }
   return new_node(AST_STMT,ls);
 }
-AstNode* parse_call(AstNode* lhs){
-  AstNode* args=NULL;
-  Token* tk=consume_next();
-  if(!specific(tk,TK_PAREN,"(")) return error(tk,"invalid function call",NULL);
-  tk=check();
-  if(tk && !specific(tk,TK_PAREN,")")){
-    args=parse_tuple();
-    if(!args) return NULL;
-  }
+AstNode* parse_do(){
+  Token* tk=consume();
+  if(!expect(tk,TK_DO)) return error(tk,"invalid do block",NULL);
+  AstNode* node=parse_stmt();
+  if(!node) return NULL;
   tk=consume();
-  if(!specific(tk,TK_PAREN,")")) FREE_AST_NODE(error(tk,"unclosed function call",NULL),args);
-  DEBUG("call node\n");
-  return new_node(AST_CALL,new_ast_ast_node(lhs,args));
+  if(!expect(tk,TK_END)) return error(tk,"unclosed do block",NULL);
+  DEBUG("do stmt\n");
+  return new_node(AST_DO,(List*)(node->data));
+}
+
+// Variable parse functions
+AstNode* parse_define(AstNode* type){
+  AstNode* expr=NULL;
+  Token* tk=consume();
+  if(!expect(tk,TK_NAME)) return error(tk,"invalid name for definition",NULL);
+  char* name=tk->text;
+  tk=check();
+  if(specific(tk,TK_MISC,"=")){
+    consume();
+    expr=parse_expr();
+    if(!expr) return NULL;
+  }
+  return new_node(AST_DEFINE,new_binary_node(name,type,expr));
 }
 AstNode* parse_set_or_call(){
   AstNode* lhs=parse_potential_tuple_lhs();
@@ -446,29 +412,6 @@ AstNode* parse_function_or_define(){
   tk=check_ahead(2);
   if(specific(tk,TK_PAREN,"(")) return parse_function(type,1);
   return parse_define(type);
-}
-AstNode* parse_do(){
-  Token* tk=consume();
-  if(!expect(tk,TK_DO)) return error(tk,"invalid do block",NULL);
-  AstNode* node=parse_stmt();
-  if(!node) return NULL;
-  tk=consume();
-  if(!expect(tk,TK_END)) return error(tk,"unclosed do block",NULL);
-  DEBUG("do stmt\n");
-  return new_node(AST_DO,(List*)(node->data));
-}
-
-// Statement parse functions
-AstNode* parse_return(){
-  AstNode* node=NULL;
-  Token* tk=consume();
-  if(!expect(tk,TK_RETURN)) return error(tk,"invalid return statement",NULL);
-  tk=check();
-  if(!expect(tk,TK_END)){
-    node=parse_tuple();
-    if(!node) return NULL;
-  }
-  return new_node(AST_RETURN,node);
 }
 AstNode* parse_potential_tuple_lhs(){
   AstNode* node=parse_lhs();
@@ -533,7 +476,21 @@ AstNode* parse_local(){
   return new_node(AST_LOCAL,new_string_ast_node(name,node));
 }
 
-// Control parse functions
+// Function parsers
+AstNode* parse_call(AstNode* lhs){
+  AstNode* args=NULL;
+  Token* tk=consume_next();
+  if(!specific(tk,TK_PAREN,"(")) return error(tk,"invalid function call",NULL);
+  tk=check();
+  if(tk && !specific(tk,TK_PAREN,")")){
+    args=parse_tuple();
+    if(!args) return NULL;
+  }
+  tk=consume();
+  if(!specific(tk,TK_PAREN,")")) FREE_AST_NODE(error(tk,"unclosed function call",NULL),args);
+  DEBUG("call node\n");
+  return new_node(AST_CALL,new_ast_ast_node(lhs,args));
+}
 AstNode* parse_function(AstNode* type,int include_body){
   Token* tk;
   int typed=(type!=NULL);
@@ -609,6 +566,42 @@ AstNode* parse_function(AstNode* type,int include_body){
   DEBUG("Function (%i args) (%i stmts)\n",args->n,ls?ls->n:0);
   return new_node(AST_FUNCTION,new_function_node(name,type,args,ls));
 }
+AstNode* parse_constructor(char* classname){
+  Token* tk=consume();
+  if(!expect(tk,TK_CONSTRUCTOR)) return error(tk,"invalid constructor",NULL);
+  tk=consume();
+  if(!specific(tk,TK_PAREN,"(")) return error(tk,"missing parenthesis from constructor",NULL);
+  tk=check();
+  List* args=new_default_list();
+  while(tk && !specific(tk,TK_PAREN,")")){
+    AstNode* arg_type=NULL;
+    tk=check_ahead(2);
+    if(!specific(tk,TK_MISC,",") && !specific(tk,TK_PAREN,")")){
+      arg_type=parse_type();
+      if(!arg_type) FREE_AST_NODE_LIST(NULL,args);
+    }
+    tk=consume();
+    if(!expect(tk,TK_NAME)) FREE_AST_NODE_LIST(error(tk,"invalid constructor argument",NULL),args);
+    add_to_list(args,new_string_ast_node(tk->text,arg_type));
+    tk=check();
+    if(specific(tk,TK_MISC,",")){
+      consume();
+      tk=check();
+    }
+  }
+  if(!tk) return error(tk,"invalid constructor",NULL);
+  consume();
+  AstNode* node=parse_stmt();
+  if(!node) FREE_AST_NODE_LIST(NULL,args);
+  tk=consume();
+  if(!expect(tk,TK_END)) FREE_AST_NODE_LIST(error(tk,"invalid constructor",NULL),args);
+  FunctionNode* data=new_function_node(NULL,new_node(AST_TYPE_BASIC,classname),args,(List*)(node->data));
+  data->is_constructor=1;
+  free(node);
+  return new_node(AST_FUNCTION,data);
+}
+
+// Conditional statements
 AstNode* parse_repeat(){
   Token* tk=consume();
   if(!expect(tk,TK_REPEAT)) return error(tk,"invalid repeat statement",NULL);
@@ -649,6 +642,8 @@ AstNode* parse_if(){
   DEBUG("if\n");
   return new_node(AST_IF,new_ast_list_node(expr,(List*)(body->data)));
 }
+
+// For statements
 AstNode* parse_fornum(){
   Token* tk=consume();
   AstNode *num1,*num2,*num3=NULL;
@@ -728,11 +723,8 @@ AstNode* parse_forin(){
   DEBUG("for in\n");
   return new_node(AST_FORIN,new_forin_node(lhs_node,tuple,(List*)(body->data)));
 }
-AstNode* parse_break(){
-  Token* tk=consume();
-  if(!expect(tk,TK_BREAK)) return error(tk,"invalid break",NULL);
-  return new_node(AST_BREAK,NULL);
-}
+
+// Label-based statements
 AstNode* parse_label(){
   Token* tk=consume();
   if(!expect(tk,TK_DBCOLON)) return error(tk,"invalid label",NULL);
@@ -753,12 +745,30 @@ AstNode* parse_goto(){
   DEBUG("goto %s\n",text);
   return new_node(AST_GOTO,text);
 }
+
+// Basic control statements
+AstNode* parse_break(){
+  Token* tk=consume();
+  if(!expect(tk,TK_BREAK)) return error(tk,"invalid break",NULL);
+  return new_node(AST_BREAK,NULL);
+}
 AstNode* parse_require(){
   Token* tk=consume();
   if(!expect(tk,TK_REQUIRE)) return error(tk,"invalid require statement",NULL);
   AstNode* expr=parse_string();
   if(!expr) return NULL;
   return new_node(AST_REQUIRE,expr);
+}
+AstNode* parse_return(){
+  AstNode* node=NULL;
+  Token* tk=consume();
+  if(!expect(tk,TK_RETURN)) return error(tk,"invalid return statement",NULL);
+  tk=check();
+  if(!expect(tk,TK_END)){
+    node=parse_tuple();
+    if(!node) return NULL;
+  }
+  return new_node(AST_RETURN,node);
 }
 
 // Primitive types parse functions
