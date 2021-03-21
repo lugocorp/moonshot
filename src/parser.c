@@ -477,19 +477,35 @@ AstNode* parse_local(){
 }
 
 // Function parsers
-AstNode* parse_call(AstNode* lhs){
-  AstNode* args=NULL;
-  Token* tk=consume_next();
-  if(!specific(tk,TK_PAREN,"(")) return error(tk,"invalid function call",NULL);
+static List* parse_function_params(){
+  Token* tk=consume();
+  if(!specific(tk,TK_PAREN,"(")) return (List*)error(tk,"invalid function",NULL);
   tk=check();
-  if(tk && !specific(tk,TK_PAREN,")")){
-    args=parse_tuple();
-    if(!args) return NULL;
+  List* args=new_default_list();
+  while(tk && !specific(tk,TK_PAREN,")")){
+    AstNode* arg_type=NULL;
+    tk=check_ahead(2);
+    if(!specific(tk,TK_MISC,",") && !specific(tk,TK_PAREN,")")){
+      arg_type=parse_type();
+      if(!arg_type) FREE_STRING_AST_NODE_LIST(NULL,args);
+    }
+    tk=consume();
+    if(!expect(tk,TK_NAME)){
+      if(arg_type) dealloc_ast_node(arg_type);
+      FREE_STRING_AST_NODE_LIST((List*)error(tk,"invalid function argument",NULL),args);
+    }
+    add_to_list(args,new_string_ast_node(tk->text,arg_type));
+    tk=check();
+    if(specific(tk,TK_MISC,",")){
+      consume();
+      tk=check();
+    }
   }
   tk=consume();
-  if(!specific(tk,TK_PAREN,")")) FREE_AST_NODE(error(tk,"unclosed function call",NULL),args);
-  DEBUG("call node\n");
-  return new_node(AST_CALL,new_ast_ast_node(lhs,args));
+  if(!specific(tk,TK_PAREN,")")){
+    FREE_STRING_AST_NODE_LIST((List*)error(tk,"unclosed function arguments",NULL),args);
+  }
+  return args;
 }
 AstNode* parse_function(AstNode* type,int include_body){
   Token* tk;
@@ -515,49 +531,25 @@ AstNode* parse_function(AstNode* type,int include_body){
     if(!expect(tk,TK_FUNCTION)) return error(tk,"invalid anonymous typed function",NULL);
     consume();
   }
-  tk=consume();
-  if(!specific(tk,TK_PAREN,"(")) return error(tk,"invalid function",NULL);
-  tk=check();
-  List* args=new_default_list();
-  while(tk && !specific(tk,TK_PAREN,")")){
-    AstNode* arg_type=NULL;
-    tk=check_ahead(2);
-    if(!specific(tk,TK_MISC,",") && !specific(tk,TK_PAREN,")")){
-      arg_type=parse_type();
-      if(!arg_type){
-        if(!typed) free(type);
-        FREE_STRING_AST_NODE_LIST(NULL,args);
-      }
-    }
-    tk=consume();
-    if(!expect(tk,TK_NAME)){
-      if(!typed) free(type);
-      if(arg_type) dealloc_ast_node(arg_type);
-      FREE_STRING_AST_NODE_LIST(error(tk,"invalid function argument",NULL),args);
-    }
-    add_to_list(args,new_string_ast_node(tk->text,arg_type));
-    tk=check();
-    if(specific(tk,TK_MISC,",")){
-      consume();
-      tk=check();
-    }
-  }
-  if(!tk){
+  List* args=parse_function_params();
+  if(!args){
     if(!typed) free(type);
-    FREE_STRING_AST_NODE_LIST(error(tk,"unclosed function arguments",NULL),args);
+    if(name) FREE_AST_NODE(NULL,name);
+    return NULL;
   }
-  tk=consume();
   List* ls=NULL;
   if(include_body){
     AstNode* node=parse_stmt();
     if(!node){
       if(!typed) free(type);
+      if(name) FREE_AST_NODE(NULL,name);
       FREE_STRING_AST_NODE_LIST(NULL,args);
     }
     tk=consume();
     if(!expect(tk,TK_END)){
       if(!typed) free(type);
       dealloc_ast_node(node);
+      if(name) FREE_AST_NODE(NULL,name);
       FREE_STRING_AST_NODE_LIST(error(tk,"unclosed function",NULL),args);
     }
     ls=(List*)(node->data);
@@ -568,37 +560,31 @@ AstNode* parse_function(AstNode* type,int include_body){
 }
 AstNode* parse_constructor(char* classname){
   Token* tk=consume();
-  if(!expect(tk,TK_CONSTRUCTOR)) return error(tk,"invalid constructor",NULL);
-  tk=consume();
-  if(!specific(tk,TK_PAREN,"(")) return error(tk,"missing parenthesis from constructor",NULL);
-  tk=check();
-  List* args=new_default_list();
-  while(tk && !specific(tk,TK_PAREN,")")){
-    AstNode* arg_type=NULL;
-    tk=check_ahead(2);
-    if(!specific(tk,TK_MISC,",") && !specific(tk,TK_PAREN,")")){
-      arg_type=parse_type();
-      if(!arg_type) FREE_AST_NODE_LIST(NULL,args);
-    }
-    tk=consume();
-    if(!expect(tk,TK_NAME)) FREE_AST_NODE_LIST(error(tk,"invalid constructor argument",NULL),args);
-    add_to_list(args,new_string_ast_node(tk->text,arg_type));
-    tk=check();
-    if(specific(tk,TK_MISC,",")){
-      consume();
-      tk=check();
-    }
-  }
-  if(!tk) return error(tk,"invalid constructor",NULL);
-  consume();
+  if(!expect(tk,TK_CONSTRUCTOR)) return error(tk,"invalid constructor for class %s",classname);
+  List* args=parse_function_params();
+  if(!args) return NULL;
   AstNode* node=parse_stmt();
   if(!node) FREE_AST_NODE_LIST(NULL,args);
   tk=consume();
-  if(!expect(tk,TK_END)) FREE_AST_NODE_LIST(error(tk,"invalid constructor",NULL),args);
+  if(!expect(tk,TK_END)) FREE_AST_NODE_LIST(error(tk,"unclosed constructor for class %s",classname),args);
   FunctionNode* data=new_function_node(NULL,new_node(AST_TYPE_BASIC,classname),args,(List*)(node->data));
   data->is_constructor=1;
   free(node);
   return new_node(AST_FUNCTION,data);
+}
+AstNode* parse_call(AstNode* lhs){
+  AstNode* args=NULL;
+  Token* tk=consume_next();
+  if(!specific(tk,TK_PAREN,"(")) return error(tk,"invalid function call",NULL);
+  tk=check();
+  if(tk && !specific(tk,TK_PAREN,")")){
+    args=parse_tuple();
+    if(!args) return NULL;
+  }
+  tk=consume();
+  if(!specific(tk,TK_PAREN,")")) FREE_AST_NODE(error(tk,"unclosed function call",NULL),args);
+  DEBUG("call node\n");
+  return new_node(AST_CALL,new_ast_ast_node(lhs,args));
 }
 
 // Conditional statements
