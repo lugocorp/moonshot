@@ -334,14 +334,20 @@ void process_call(AstNode* node){
       if(data->r){
         List* args=((AstListNode*)(data->r->data))->list;
         ERROR(!funcargs,"too many arguments for function %s",name);
-        ERROR(funcargs->n!=args->n,"invalid number of arguments for function %s",name);
-        for(int a=0;a<args->n;a++){
+        int max=funcargs->n;
+        if(is_variadic_function(funcargs)){
+          ERROR(args->n<funcargs->n-1,"not enough arguments for function %s",name);
+          max=funcargs->n-1;
+        }else{
+          ERROR(args->n!=funcargs->n,"invalid number of arguments for function %s",name);
+        }
+        for(int a=0;a<max;a++){
           AstNode* type1=get_type((AstNode*)get_from_list(args,a));
           AstNode* type2=(AstNode*)get_from_list(funcargs,a);
           ERROR(!typed_match(type1,type2),"invalid argument provided for function %s",name);
         }
-      }else{
-        ERROR(funcargs && funcargs->n,"not enough arguments for function %s",name);
+      }else if(funcargs && !(funcargs->n==1 && is_variadic_function(funcargs))){
+        ERROR(funcargs->n,"not enough arguments for function %s",name);
       }
       if(dummy_constructor_type){
         dealloc_ast_type(dummy_constructor_type);

@@ -11,7 +11,7 @@ void dealloc_ast_type(AstNode* node){
     if(data->node) dealloc_ast_type(data->node);
     for(int a=0;a<data->list->n;a++){
       AstNode* e=(AstNode*)get_from_list(data->list,a);
-      if(e) dealloc_ast_type(e);
+      dealloc_ast_type(e);
     }
     dealloc_list(data->list);
     free(data);
@@ -31,7 +31,7 @@ void dealloc_ast_type(AstNode* node){
   Recursively deallocates an AstNode*
 */
 void dealloc_ast_node(AstNode* node){
-  if(node->type==AST_TYPE_ANY || node->type==AST_TYPE_FUNC || node->type==AST_TYPE_BASIC || node->type==AST_TYPE_TUPLE){
+  if(node->type==AST_TYPE_ANY || node->type==AST_TYPE_VARARG || node->type==AST_TYPE_FUNC || node->type==AST_TYPE_BASIC || node->type==AST_TYPE_TUPLE){
     dealloc_ast_type(node);
     return;
   }

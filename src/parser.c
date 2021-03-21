@@ -258,6 +258,9 @@ static AstNode* parse_basic_type(){
   if(expect(tk,TK_VAR)){
     consume();
     return new_node(AST_TYPE_ANY,NULL);
+  }else if(expect(tk,TK_DOTS)){
+    consume();
+    return new_node(AST_TYPE_VARARG,NULL);
   }else if(expect(tk,TK_NAME)){
     consume();
     return new_node(AST_TYPE_BASIC,tk->text);
@@ -265,6 +268,10 @@ static AstNode* parse_basic_type(){
     consume();
     AstNode* node=parse_type();
     if(!node) return NULL;
+    if(node->type==AST_TYPE_VARARG){
+      (node);
+      return error(tk,"invalid variadic member in function type",NULL);
+    }
     tk=check();
     while(specific(tk,TK_PAREN,"(")){
       consume();
@@ -298,6 +305,10 @@ AstNode* parse_type(){
     consume();
     AstNode* e=parse_basic_type();
     if(!e) return NULL;
+    if(e->type==AST_TYPE_VARARG){
+      dealloc_ast_type(e);
+      return error(tk,"invalid variadic member in tuple type",NULL);
+    }
     List* ls=new_default_list();
     add_to_list(ls,e);
     tk=check();
@@ -305,6 +316,10 @@ AstNode* parse_type(){
       consume();
       e=parse_basic_type();
       if(!e) FREE_AST_NODE_LIST(NULL,ls);
+      if(e->type==AST_TYPE_VARARG){
+        (e);
+        FREE_AST_NODE_LIST(error(tk,"invalid variadic member in tuple type",NULL),ls);
+      }
       add_to_list(ls,e);
       tk=check();
       commas++;
@@ -345,7 +360,7 @@ AstNode* parse_stmt(){
     else if(specific(tk,TK_PAREN,"(")){
       AstNode* type=parse_type();
       if(type) node=parse_function(type,1);
-      else node=error(tk,"invalid statement",NULL);
+      else node=NULL;
     }else if(expect(tk,TK_FOR)){
       tk=check_ahead(3);
       if(specific(tk,TK_MISC,",") || expect(tk,TK_IN)) node=parse_forin();
@@ -484,6 +499,12 @@ static List* parse_function_params(){
   List* args=new_default_list();
   while(tk && !specific(tk,TK_PAREN,")")){
     AstNode* arg_type=NULL;
+    tk=check();
+    if(expect(tk,TK_DOTS)){
+      add_to_list(args,new_string_ast_node(tk->text,NULL));
+      consume();
+      break;
+    }
     tk=check_ahead(2);
     if(!specific(tk,TK_MISC,",") && !specific(tk,TK_PAREN,")")){
       arg_type=parse_type();

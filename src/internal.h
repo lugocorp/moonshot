@@ -177,7 +177,7 @@ enum TOKENS{
 // List of all grammar rules
 enum RULES{
   // NULL,
-  AST_BREAK, AST_TYPE_ANY,
+  AST_BREAK, AST_TYPE_ANY, AST_TYPE_VARARG,
 
   // char*
   AST_LABEL, AST_GOTO, AST_ID, AST_TYPE_BASIC,
@@ -310,6 +310,7 @@ void init_types();
 void dealloc_types();
 int is_primitive(AstNode* node,const char* type);
 AstNode* get_type(AstNode* node);
+int is_variadic_function(List* args);
 int typed_match(AstNode* l,AstNode* r);
 void register_type(char* name);
 void register_class(ClassNode* node);
