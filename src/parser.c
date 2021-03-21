@@ -608,7 +608,7 @@ AstNode* parse_call(AstNode* lhs){
   return new_node(AST_CALL,new_ast_ast_node(lhs,args));
 }
 
-// Conditional statements
+// Conditional loop statements
 AstNode* parse_repeat(){
   Token* tk=consume();
   if(!expect(tk,TK_REPEAT)) return error(tk,"invalid repeat statement",NULL);
@@ -635,19 +635,72 @@ AstNode* parse_while(){
   DEBUG("while\n");
   return new_node(AST_WHILE,new_ast_list_node(expr,(List*)(body->data)));
 }
+
+// If statements
 AstNode* parse_if(){
   Token* tk=consume();
+  AstNode* next=NULL;
   if(!expect(tk,TK_IF)) return error(tk,"invalid if statement",NULL);
   AstNode* expr=parse_expr();
   if(!expr) return NULL;
   tk=consume();
-  if(!expect(tk,TK_THEN)) FREE_AST_NODE(error(tk,"invalid if statement",NULL),expr);
+  if(!expect(tk,TK_THEN)) FREE_AST_NODE(error(tk,"invalid expression in if statement",NULL),expr);
   AstNode* body=parse_stmt();
   if(!body) FREE_AST_NODE(NULL,expr);
+  tk=check();
+  if(expect(tk,TK_ELSEIF)){
+    next=parse_elseif();
+    if(!next) FREE_2_AST_NODES(NULL,expr,body);
+  }else if(expect(tk,TK_ELSE)){
+      next=parse_else();
+      if(!next) FREE_2_AST_NODES(NULL,expr,body);
+  }else if(expect(tk,TK_END)){
+    consume();
+  }else{
+    FREE_2_AST_NODES(error(tk,"unclosed if statement",NULL),expr,body);
+  }
+  List* ls=(List*)(body->data);
+  free(body);
+  return new_node(AST_IF,new_if_node(expr,next,ls));
+}
+AstNode* parse_elseif(){
+  Token* tk=consume();
+  AstNode* next=NULL;
+  if(!expect(tk,TK_ELSEIF)) return error(tk,"invalid elseif clause",NULL);
+  AstNode* expr=parse_expr();
+  if(!expr) return NULL;
   tk=consume();
-  if(!expect(tk,TK_END)) FREE_2_AST_NODES(error(tk,"unclosed if statement",NULL),expr,body);
-  DEBUG("if\n");
-  return new_node(AST_IF,new_ast_list_node(expr,(List*)(body->data)));
+  if(!expect(tk,TK_THEN)) FREE_AST_NODE(error(tk,"invalid expression in elseif clause",NULL),expr);
+  AstNode* body=parse_stmt();
+  if(!body) FREE_AST_NODE(NULL,expr);
+  tk=check();
+  if(expect(tk,TK_ELSEIF)){
+    next=parse_elseif();
+    if(!next) FREE_2_AST_NODES(NULL,expr,body);
+  }else if(expect(tk,TK_ELSE)){
+    next=parse_else();
+    if(!next) FREE_2_AST_NODES(NULL,expr,body);
+  }else if(expect(tk,TK_END)){
+    consume();
+  }else{
+    FREE_2_AST_NODES(error(tk,"unclosed elseif clause",NULL),expr,body);
+  }
+  List* ls=(List*)(body->data);
+  free(body);
+  return new_node(AST_ELSEIF,new_if_node(expr,next,ls));
+}
+AstNode* parse_else(){
+  Token* tk=consume();
+  if(!expect(tk,TK_ELSE)) return error(tk,"invalid else clause",NULL);
+  AstNode* body=parse_stmt();
+  if(!body) return NULL;
+  tk=consume();
+  if(!expect(tk,TK_END)){
+    FREE_AST_NODE(error(tk,"unclosed else clause",NULL),body);
+  }
+  List* ls=(List*)(body->data);
+  free(body);
+  return new_node(AST_ELSE,ls);
 }
 
 // For statements

@@ -35,7 +35,7 @@ void dealloc_ast_node(AstNode* node){
     dealloc_ast_type(node);
     return;
   }
-  if(node->type==AST_STMT || node->type==AST_DO){
+  if(node->type==AST_STMT || node->type==AST_DO || node->type==AST_ELSE){
     List* ls=(List*)(node->data);
     for(int a=0;a<ls->n;a++){
       AstNode* e=(AstNode*)get_from_list(ls,a);
@@ -108,7 +108,7 @@ void dealloc_ast_node(AstNode* node){
     if(data->r) dealloc_ast_node(data->r);
     free(data);
   }
-  else if(node->type==AST_REPEAT || node->type==AST_WHILE || node->type==AST_IF || node->type==AST_TUPLE){
+  else if(node->type==AST_REPEAT || node->type==AST_WHILE || node->type==AST_TUPLE){
     AstListNode* data=(AstListNode*)(node->data);
     if(data->node) dealloc_ast_node(data->node);
     for(int a=0;a<data->list->n;a++){
@@ -117,6 +117,15 @@ void dealloc_ast_node(AstNode* node){
     }
     dealloc_list(data->list);
     free(data);
+  }
+  else if(node->type==AST_IF || node->type==AST_ELSEIF){
+    IfNode* data=(IfNode*)(node->data);
+    if(data->next) dealloc_ast_node(data->next);
+    dealloc_ast_node(data->expr);
+    for(int a=0;a<data->body->n;a++){
+      AstNode* e=get_from_list(data->body,a);
+      dealloc_ast_node(e);
+    }
   }
   else if(node->type==AST_CALL || node->type==AST_SET || node->type==AST_SUB){
     AstAstNode* data=(AstAstNode*)(node->data);
@@ -307,6 +316,17 @@ ClassNode* new_class_node(char* name,char* parent,List* interfaces,List* ls){
   node->parent=parent;
   node->name=name;
   node->ls=ls;
+  return node;
+}
+
+/*
+  Creates an IfNode, which is used for both if and elseif statements
+*/
+IfNode* new_if_node(AstNode* expr,AstNode* next,List* body){
+  IfNode* node=(IfNode*)malloc(sizeof(IfNode));
+  node->expr=expr;
+  node->next=next;
+  node->body=body;
   return node;
 }
 

@@ -149,6 +149,7 @@ void process_node(AstNode* node){
     case AST_RETURN: process_return(node); return;
     case AST_BINARY: process_binary(node); return;
     case AST_FORNUM: process_fornum(node); return;
+    case AST_ELSEIF: process_elseif(node); return;
     case AST_CLASS: process_class(node); return;
     case AST_BREAK: process_break(node); return;
     case AST_FORIN: process_forin(node); return;
@@ -162,6 +163,7 @@ void process_node(AstNode* node){
     case AST_LABEL: process_label(node); return;
     case AST_GOTO: process_goto(node); return;
     case AST_CALL: process_call(node); return;
+    case AST_ELSE: process_else(node); return;
     case AST_SET: process_set(node); return;
     case AST_SUB: process_sub(node); return;
     case AST_IF: process_if(node); return;
@@ -544,13 +546,36 @@ void process_while(AstNode* node){
   write("end\n");
 }
 void process_if(AstNode* node){
-  AstListNode* data=(AstListNode*)(node->data);
+  IfNode* data=(IfNode*)(node->data);
   write("if ");
-  process_node(data->node);
+  process_node(data->expr);
   write(" then\n");
   indent(1);
   push_scope();
-  process_list(data->list);
+  process_list(data->body);
+  pop_scope();
+  indent(-1);
+  if(data->next) process_node(data->next);
+  else write("end\n");
+}
+void process_elseif(AstNode* node){
+  IfNode* data=(IfNode*)(node->data);
+  write("elseif ");
+  process_node(data->expr);
+  write(" then\n");
+  indent(1);
+  push_scope();
+  process_list(data->body);
+  pop_scope();
+  indent(-1);
+  if(data->next) process_node(data->next);
+  else write("end\n");
+}
+void process_else(AstNode* node){
+  write("else\n");
+  indent(1);
+  push_scope();
+  process_list((List*)(node->data));
   pop_scope();
   indent(-1);
   write("end\n");

@@ -123,6 +123,12 @@ typedef struct{
   List* ls;
 } ClassNode;
 
+typedef struct{
+  AstNode* expr;
+  AstNode* next;
+  List* body;
+} IfNode;
+
 // Traversal algorithm structs
 typedef struct{
   AstNode* type;
@@ -183,10 +189,10 @@ enum RULES{
   AST_LABEL, AST_GOTO, AST_ID, AST_TYPE_BASIC,
 
   // List*
-  AST_STMT, AST_DO, AST_LTUPLE, AST_TYPE_TUPLE,
+  AST_STMT, AST_DO, AST_LTUPLE, AST_TYPE_TUPLE, AST_ELSE,
 
   // AstListNode*
-  AST_REPEAT, AST_WHILE, AST_IF, AST_TYPE_FUNC, AST_TUPLE,
+  AST_REPEAT, AST_WHILE, AST_TYPE_FUNC, AST_TUPLE,
 
   // ClassNode*
   AST_CLASS,
@@ -216,7 +222,7 @@ enum RULES{
   AST_FORNUM,
 
   // ForinNode*
-  AST_FORIN,
+  AST_FORIN, AST_ELSEIF, AST_IF,
 
   // Miscellaneous
   AST_UNKNOWN
@@ -252,14 +258,16 @@ AstNode* parse_string();
 AstNode* parse_number();
 AstNode* parse_return();
 AstNode* parse_fornum();
+AstNode* parse_elseif();
 AstNode* parse_tuple();
-AstNode* parse_list();
 AstNode* parse_while();
 AstNode* parse_local();
 AstNode* parse_table();
 AstNode* parse_forin();
 AstNode* parse_label();
 AstNode* parse_break();
+AstNode* parse_else();
+AstNode* parse_list();
 AstNode* parse_goto();
 AstNode* parse_expr();
 AstNode* parse_lhs();
@@ -281,6 +289,7 @@ ForinNode* new_forin_node(AstNode* lhs,AstNode* tuple,List* body);
 BinaryNode* new_binary_node(char* text,AstNode* l,AstNode* r);
 InterfaceNode* new_interface_node(char* name,char* parent,List* ls);
 ClassNode* new_class_node(char* name,char* parent,List* interfaces,List* ls);
+IfNode* new_if_node(AstNode* expr,AstNode* next,List* body);
 EqualTypesNode* new_equal_types_node(char* name,AstNode* type,int relation);
 BinaryNode* new_unary_node(char* op,AstNode* e);
 
@@ -356,6 +365,7 @@ void process_ltuple(AstNode* node);
 void process_return(AstNode* node);
 void process_binary(AstNode* node);
 void process_fornum(AstNode* node);
+void process_elseif(AstNode* node);
 void process_break(AstNode* node);
 void process_paren(AstNode* node);
 void process_forin(AstNode* node);
@@ -368,6 +378,7 @@ void process_field(AstNode* node);
 void process_label(AstNode* node);
 void process_goto(AstNode* node);
 void process_call(AstNode* node);
+void process_else(AstNode* node);
 void process_set(AstNode* node);
 void process_sub(AstNode* node);
 void process_if(AstNode* node);
