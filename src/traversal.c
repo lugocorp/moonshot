@@ -9,10 +9,10 @@ static FILE* _output; // The configured output as desired by the developer
 static int validate; // The traversal phase you're running
 static int line_written; // Zero if there's no content on the current output line yet
 static int num_indents; // Number of tabs on the output line
-AstNode* float_type; // AstNode constant representing the FLOAT type
-AstNode* bool_type; // AstNode constant representing the BOOL type
-AstNode* int_type; // AstNode constant representing the INT type
-AstNode* any_type; // AstNode constant representing the ANY type
+static AstNode* float_type; // AstNode constant representing the FLOAT type
+static AstNode* bool_type; // AstNode constant representing the BOOL type
+static AstNode* int_type; // AstNode constant representing the INT type
+static AstNode* any_type; // AstNode constant representing the ANY type
 
 // Constant primitive type AstNodes access
 AstNode* float_type_const(){
@@ -151,6 +151,7 @@ void process_node(AstNode* node){
     case AST_FORNUM: process_fornum(node); return;
     case AST_ELSEIF: process_elseif(node); return;
     case AST_CLASS: process_class(node); return;
+    case AST_SUPER: process_super(node); return;
     case AST_BREAK: process_break(node); return;
     case AST_FORIN: process_forin(node); return;
     case AST_PAREN: process_paren(node); return;
@@ -236,15 +237,20 @@ void process_class(AstNode* node){
   write(")\n");
   indent(1);
   write("local %s={}\n",instance_str);
-  if(fdata) process_list(fdata->body);
+  if(fdata){
+    push_function_scope(fdata);
+    process_list(fdata->body);
+    pop_scope();
+  }
   if(fields){
     for(int a=0;a<fields->n;a++){
       AstNode* child=(AstNode*)iterate_from_map(fields,a);
       if(child->type==AST_FUNCTION){
         fdata=(FunctionNode*)(child->data);
         if(fdata->is_constructor) continue;
+        push_function_scope(fdata);
         char* funcname=(char*)(fdata->name->data);
-        add_scoped_var(new_string_ast_node(funcname,get_type(child)));
+        //add_scoped_var(new_string_ast_node(funcname,get_type(child)));
         write("%s.%s=function(",instance_str,funcname);
         if(fdata->args){
           for(int a=0;a<fdata->args->n;a++){
@@ -258,6 +264,7 @@ void process_class(AstNode* node){
         process_list(fdata->body);
         indent(-1);
         write("end\n");
+        pop_scope();
       }else if(child->type==AST_DEFINE){
         BinaryNode* cdata=(BinaryNode*)(child->data);
         add_scoped_var(new_string_ast_node(cdata->text,cdata->l));
@@ -298,29 +305,77 @@ void process_do(AstNode* node){
 }
 
 /*
-  Traverses through miscellaneous value nodes
+  Returns 1 if the provided arguments can be accepted by the function definition
+  target is whatever entity you want represented in any potential error messages
+  func is the AST_FUNCTION node you're calling
+  args_node is the AST_TUPLE node that represents your arguments
+*/
+static int validate_function_parameters(char* target,AstNode* func,AstNode* args_node){
+  if(!func){
+    if(args_node){
+      List* args=((AstListNode*)(args_node->data))->list;
+      return args->n==0;
+    }
+    return 1;
+  }
+  AstNode* functype=get_type(func);
+  List* funcargs=functype->data?((AstListNode*)(functype->data))->list:NULL;
+  if(args_node){
+    List* args=((AstListNode*)(args_node->data))->list;
+    if(!funcargs){
+      add_error(-1,"too many arguments for %s",target);
+      return 0;
+    }
+    int max=funcargs->n;
+    if(is_variadic_function(funcargs)){
+      if(args->n<funcargs->n-1){
+        add_error(-1,"not enough arguments for %s",target);
+        return 0;
+      }
+      max=funcargs->n-1;
+    }else if(args->n!=funcargs->n){
+      add_error(-1,"invalid number of arguments for %s",target);
+      return 0;
+    }
+    for(int a=0;a<max;a++){
+      AstNode* type1=get_type((AstNode*)get_from_list(args,a));
+      AstNode* type2=(AstNode*)get_from_list(funcargs,a);
+      if(!typed_match(type1,type2)){
+        add_error(-1,"invalid argument provided for %s",target);
+        return 0;
+      }
+    }
+  }else if(funcargs && funcargs->n && !(funcargs->n==1 && is_variadic_function(funcargs))){
+    add_error(-1,"not enough arguments for %s",target);
+    return 0;
+  }
+  return 1;
+}
+
+/*
+  Traverses through function call nodes
 */
 void process_call(AstNode* node){
   AstAstNode* data=(AstAstNode*)(node->data);
   if(validate){
     char* name=NULL;
     AstNode* functype=NULL;
+    AstNode* funcnode=NULL;
+    FunctionNode* func=NULL;
     AstNode* dummy_constructor_type=NULL;
     if(data->l->type==AST_ID){
       name=(char*)(data->l->data);
-      FunctionNode* func=function_exists(name);
+      func=function_exists(name);
       if(func){
-        AstNode* funcnode=new_node(AST_FUNCTION,func);
+        funcnode=new_node(AST_FUNCTION,func);
         functype=get_type(funcnode);
-        free(funcnode);
       }else{
         ClassNode* clas=class_exists(name);
         if(clas){
           FunctionNode* constructor=get_constructor(clas);
           if(constructor){
-            AstNode* funcnode=new_node(AST_FUNCTION,constructor);
+            funcnode=new_node(AST_FUNCTION,constructor);
             functype=get_type(funcnode);
-            free(funcnode);
           }else{
             dummy_constructor_type=new_node(AST_TYPE_FUNC,new_ast_list_node(new_node(AST_TYPE_BASIC,name),new_default_list()));
             functype=dummy_constructor_type;
@@ -332,28 +387,14 @@ void process_call(AstNode* node){
       functype=get_type(data->l);
     }
     if(functype){
-      List* funcargs=functype->data?((AstListNode*)(functype->data))->list:NULL;
-      if(data->r){
-        List* args=((AstListNode*)(data->r->data))->list;
-        ERROR(!funcargs,"too many arguments for function %s",name);
-        int max=funcargs->n;
-        if(is_variadic_function(funcargs)){
-          ERROR(args->n<funcargs->n-1,"not enough arguments for function %s",name);
-          max=funcargs->n-1;
-        }else{
-          ERROR(args->n!=funcargs->n,"invalid number of arguments for function %s",name);
-        }
-        for(int a=0;a<max;a++){
-          AstNode* type1=get_type((AstNode*)get_from_list(args,a));
-          AstNode* type2=(AstNode*)get_from_list(funcargs,a);
-          ERROR(!typed_match(type1,type2),"invalid argument provided for function %s",name);
-        }
-      }else if(funcargs && !(funcargs->n==1 && is_variadic_function(funcargs))){
-        ERROR(funcargs->n,"not enough arguments for function %s",name);
-      }
+      char* target=(char*)malloc(sizeof(char)*(strlen(name)+10));
+      sprintf(target,"function %s",name);
+      validate_function_parameters(target,funcnode,data->r);
       if(dummy_constructor_type){
         dealloc_ast_type(dummy_constructor_type);
       }
+      if(funcnode) free(funcnode);
+      free(target);
     }
   }
   process_node(data->l);
@@ -361,6 +402,42 @@ void process_call(AstNode* node){
   if(data->r) process_node(data->r);
   write(")");
 }
+void process_super(AstNode* node){
+  AstNode* data=(AstNode*)(node->data);
+  ClassNode* clas=get_class_scope();
+  FunctionNode* func=get_method_scope();
+  if(validate){
+    ERROR(!clas,"cannot use super methods outside of a class",NULL);
+    ERROR(!func,"must use super keyword within a class method",NULL);
+    ERROR(!clas->parent,"cannot use super methods because %s is not a child class",clas->name);
+  }
+  ClassNode* parent=class_exists(clas->parent);
+  FunctionNode* method=get_parent_method(parent,func);
+  if(validate){
+    // I'm assuming func->name is of type AST_ID
+    ERROR(!method && func->is_constructor,"constructor in class %s does not override a super constructor",clas->name);
+    ERROR(!method && !func->is_constructor,"method %s in class %s does not override a super method",(char*)(func->name->data),clas->name);
+    char* target=(char*)malloc(sizeof(char)*(strlen(clas->name)+22));
+    sprintf(target,"constructor of class %s",clas->name);
+    AstNode* fnode=new_node(AST_FUNCTION,method);
+    validate_function_parameters(target,fnode,data);
+    free(target);
+    free(fnode);
+  }
+  push_class_scope(parent);
+  push_function_scope(method);
+  for(int a=0;a<method->body->n;a++){
+    AstNode* child=(AstNode*)get_from_list(method->body,a);
+    process_node(child);
+    conditional_newline(child);
+  }
+  pop_scope();
+  pop_scope();
+}
+
+/*
+  Traverses through miscellaneous value nodes
+*/
 void process_set(AstNode* node){
   AstAstNode* data=(AstAstNode*)(node->data);
   if(validate){

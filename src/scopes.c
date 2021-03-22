@@ -93,6 +93,23 @@ FunctionNode* get_function_scope(){
 }
 
 /*
+  Returns the innermost class's method scope
+  Returns NULL if the current scope is not within any class's method
+*/
+FunctionNode* get_method_scope(){
+  for(int a=scopes->n-1;a>=0;a--){
+    Scope* scope=(Scope*)get_from_list(scopes,a);
+    if(scope->type==SCOPE_FUNCTION){
+      return (FunctionNode*)(scope->data);
+    }
+    if(scope->type==SCOPE_CLASS){
+      break;
+    }
+  }
+  return NULL;
+}
+
+/*
   Enters a new inner class scope
 */
 void push_class_scope(ClassNode* node){

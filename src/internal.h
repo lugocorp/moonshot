@@ -176,14 +176,14 @@ enum TOKENS{
   // New tokens specific to Moonshot
   TK_NEW, TK_FINAL, TK_TYPEDEF, TK_VAR,
   TK_INTERFACE, TK_CLASS, TK_EXTENDS, TK_IMPLEMENTS,
-  TK_WHERE, TK_CONSTRUCTOR
+  TK_WHERE, TK_CONSTRUCTOR, TK_SUPER
 
 };
 
 // List of all grammar rules
 enum RULES{
   // NULL,
-  AST_BREAK, AST_TYPE_ANY, AST_TYPE_VARARG,
+  AST_NONE, AST_BREAK, AST_TYPE_ANY, AST_TYPE_VARARG,
 
   // char*
   AST_LABEL, AST_GOTO, AST_ID, AST_TYPE_BASIC,
@@ -213,7 +213,7 @@ enum RULES{
   AST_BINARY, AST_UNARY, AST_DEFINE,
 
   // AstNode*
-  AST_RETURN, AST_PAREN, AST_REQUIRE,
+  AST_RETURN, AST_PAREN, AST_REQUIRE, AST_SUPER,
 
   // StringAstNode*
   AST_FIELD, AST_LOCAL, AST_TYPEDEF, AST_PRIMITIVE,
@@ -229,29 +229,26 @@ enum RULES{
 };
 
 // Global and/or important functions
-void add_error(int line,const char* msg,...);
 void add_error_internal(int line,const char* msg,va_list args);
+void add_error(int line,const char* msg,...);
 void traverse(AstNode* node,int validate);
+void dealloc_token(Token* tk);
 AstNode* parse(List* ls);
-void init_traverse();
 void dealloc_traverse();
 List* tokenize(FILE* f);
-void dealloc_token(Token* tk);
+void init_traverse();
 
 // parser.c
-AstNode* parse_interface();
-AstNode* parse_typedef();
-AstNode* parse_define(AstNode* type);
-AstNode* parse_class();
-AstNode* parse_type();
-AstNode* parse_stmt();
-AstNode* parse_call(AstNode* lhs);
-AstNode* parse_set_or_call();
-AstNode* parse_function_or_define();
 AstNode* parse_function(AstNode* type,int include_body);
 AstNode* parse_constructor(char* classname);
 AstNode* parse_paren_or_tuple_function();
 AstNode* parse_potential_tuple_lhs();
+AstNode* parse_define(AstNode* type);
+AstNode* parse_function_or_define();
+AstNode* parse_call(AstNode* lhs);
+AstNode* parse_set_or_call();
+AstNode* parse_interface();
+AstNode* parse_typedef();
 AstNode* parse_require();
 AstNode* parse_repeat();
 AstNode* parse_string();
@@ -259,6 +256,7 @@ AstNode* parse_number();
 AstNode* parse_return();
 AstNode* parse_fornum();
 AstNode* parse_elseif();
+AstNode* parse_super();
 AstNode* parse_tuple();
 AstNode* parse_while();
 AstNode* parse_local();
@@ -266,6 +264,9 @@ AstNode* parse_table();
 AstNode* parse_forin();
 AstNode* parse_label();
 AstNode* parse_break();
+AstNode* parse_class();
+AstNode* parse_type();
+AstNode* parse_stmt();
 AstNode* parse_else();
 AstNode* parse_list();
 AstNode* parse_goto();
@@ -278,19 +279,19 @@ AstNode* parse_do();
 void dealloc_ast_type(AstNode* node);
 void dealloc_ast_node(AstNode* node);
 AstNode* new_node(int type,void* data);
-FunctionNode* new_function_node(AstNode* name,AstNode* type,List* args,List* body);
-AstListNode* new_ast_list_node(AstNode* ast,List* list);
-TableNode* new_table_node(List* keys,List* vals);
-AstAstNode* new_ast_ast_node(AstNode* l,AstNode* r);
-StringAstNode* new_string_ast_node(char* text,AstNode* ast);
-StringAstNode* new_primitive_node(char* text,const char* type);
 FornumNode* new_fornum_node(char* name,AstNode* num1,AstNode* num2,AstNode* num3,List* body);
-ForinNode* new_forin_node(AstNode* lhs,AstNode* tuple,List* body);
-BinaryNode* new_binary_node(char* text,AstNode* l,AstNode* r);
-InterfaceNode* new_interface_node(char* name,char* parent,List* ls);
+FunctionNode* new_function_node(AstNode* name,AstNode* type,List* args,List* body);
 ClassNode* new_class_node(char* name,char* parent,List* interfaces,List* ls);
-IfNode* new_if_node(AstNode* expr,AstNode* next,List* body);
 EqualTypesNode* new_equal_types_node(char* name,AstNode* type,int relation);
+InterfaceNode* new_interface_node(char* name,char* parent,List* ls);
+ForinNode* new_forin_node(AstNode* lhs,AstNode* tuple,List* body);
+StringAstNode* new_primitive_node(char* text,const char* type);
+BinaryNode* new_binary_node(char* text,AstNode* l,AstNode* r);
+StringAstNode* new_string_ast_node(char* text,AstNode* ast);
+IfNode* new_if_node(AstNode* expr,AstNode* next,List* body);
+AstListNode* new_ast_list_node(AstNode* ast,List* list);
+AstAstNode* new_ast_ast_node(AstNode* l,AstNode* r);
+TableNode* new_table_node(List* keys,List* vals);
 BinaryNode* new_unary_node(char* op,AstNode* e);
 
 /*
@@ -301,49 +302,51 @@ BinaryNode* new_unary_node(char* op,AstNode* e);
 #ifndef MOONSHOT_PARSING
 
 // scopes.c
+void dealloc_scopes();
 void preempt_scopes();
 void init_scopes();
-void dealloc_scopes();
 void push_scope();
 void pop_scope();
 void push_function_scope(FunctionNode* node);
-FunctionNode* get_function_scope();
-void push_class_scope(ClassNode* node);
-ClassNode* get_class_scope();
-int add_scoped_var(StringAstNode* node);
 StringAstNode* get_scoped_var(char* name);
+int add_scoped_var(StringAstNode* node);
 int field_defined_in_class(char* name);
+void push_class_scope(ClassNode* node);
+FunctionNode* get_function_scope();
+FunctionNode* get_method_scope();
+ClassNode* get_class_scope();
 
 // types.c
 void init_types();
 void dealloc_types();
-int is_primitive(AstNode* node,const char* type);
-AstNode* get_type(AstNode* node);
-int is_variadic_function(List* args);
-int typed_match(AstNode* l,AstNode* r);
-void register_type(char* name);
-void register_class(ClassNode* node);
-void register_function(FunctionNode* node);
-void register_interface(InterfaceNode* node);
-void register_primitive(const char* name);
-int type_exists(char* name);
-ClassNode* class_exists(char* name);
-FunctionNode* function_exists(char* name);
-InterfaceNode* interface_exists(char* name);
-int compound_type_exists(AstNode* node);
-int add_child_type(char* child,char* parent,int relation);
 int add_type_equivalence(char* name,AstNode* type,int relation);
-List* get_equivalent_types(char* name);
+int add_child_type(char* child,char* parent,int relation);
+int is_primitive(AstNode* node,const char* type);
 int types_equivalent(char* name,AstNode* type);
+void register_interface(InterfaceNode* node);
+InterfaceNode* interface_exists(char* name);
+void register_function(FunctionNode* node);
+FunctionNode* function_exists(char* name);
+void register_primitive(const char* name);
+int compound_type_exists(AstNode* node);
+List* get_equivalent_types(char* name);
+int typed_match(AstNode* l,AstNode* r);
+int is_variadic_function(List* args);
+void register_class(ClassNode* node);
+ClassNode* class_exists(char* name);
 char* stringify_type(AstNode* node);
+AstNode* get_type(AstNode* node);
+void register_type(char* name);
+int type_exists(char* name);
 
 // entities.c
-int num_constructors(ClassNode* data);
-FunctionNode* get_constructor(ClassNode* data);
-List* get_missing_class_methods(ClassNode* node);
+FunctionNode* get_parent_method(ClassNode* clas,FunctionNode* method);
 int methods_equivalent(FunctionNode* f1,FunctionNode* f2);
-List* get_all_class_fields(ClassNode* data);
+List* get_missing_class_methods(ClassNode* node);
+FunctionNode* get_constructor(ClassNode* data);
 Map* collapse_ancestor_class_fields(List* ls);
+List* get_all_class_fields(ClassNode* data);
+int num_constructors(ClassNode* data);
 
 // traversal.c
 AstNode* any_type_const();
@@ -357,7 +360,6 @@ void process_define(AstNode* node);
 void process_typedef(AstNode* node);
 void process_primitive(AstNode* node);
 void process_interface(AstNode* node);
-void process_class(AstNode* node);
 void process_function(AstNode* node);
 void process_require(AstNode* node);
 void process_repeat(AstNode* node);
@@ -366,6 +368,8 @@ void process_return(AstNode* node);
 void process_binary(AstNode* node);
 void process_fornum(AstNode* node);
 void process_elseif(AstNode* node);
+void process_class(AstNode* node);
+void process_super(AstNode* node);
 void process_break(AstNode* node);
 void process_paren(AstNode* node);
 void process_forin(AstNode* node);

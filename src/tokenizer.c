@@ -92,6 +92,7 @@ static void discover_tokens(List* ls,int line,char* buffer,int n,int char_class)
       KEY_TOKEN("where",TK_WHERE)
       KEY_TOKEN("require",TK_REQUIRE)
       KEY_TOKEN("trust",TK_UNARY)
+      KEY_TOKEN("super",TK_SUPER)
       else{
         tk->type=TK_INT;
         for(int a=0;a<n;a++){

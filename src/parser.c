@@ -155,6 +155,65 @@ static int precedence(char* op){
   return 0;
 }
 
+// Statement block parsers
+AstNode* parse_stmt(){
+  Token* tk;
+  AstNode* node;
+  List* ls=new_default_list();
+  while(1){
+    tk=check();
+    if(!tk) break;
+    DEBUG("parsing %s (%i)\n",tk->text,tk->type);
+    if(expect(tk,TK_FUNCTION)) node=parse_function(NULL,1);
+    else if(expect(tk,TK_IF)) node=parse_if();
+    else if(expect(tk,TK_SUPER)) node=parse_super();
+    else if(expect(tk,TK_CLASS)) node=parse_class();
+    else if(expect(tk,TK_INTERFACE)) node=parse_interface();
+    else if(expect(tk,TK_TYPEDEF)) node=parse_typedef();
+    else if(expect(tk,TK_REQUIRE)) node=parse_require();
+    else if(expect(tk,TK_RETURN)) node=parse_return();
+    else if(expect(tk,TK_DBCOLON)) node=parse_label();
+    else if(expect(tk,TK_LOCAL)) node=parse_local();
+    else if(expect(tk,TK_BREAK)) node=parse_break();
+    else if(expect(tk,TK_REPEAT)) node=parse_repeat();
+    else if(expect(tk,TK_WHILE)) node=parse_while();
+    else if(expect(tk,TK_GOTO)) node=parse_goto();
+    else if(expect(tk,TK_DO)) node=parse_do();
+    else if(specific(tk,TK_BINARY,"*")) node=parse_function_or_define();
+    else if(expect(tk,TK_CONSTRUCTOR)) node=error(tk,"invalid constructor without a class",NULL);
+    else if(specific(tk,TK_PAREN,"(")){
+      AstNode* type=parse_type();
+      if(type) node=parse_function(type,1);
+      else node=NULL;
+    }else if(expect(tk,TK_FOR)){
+      tk=check_ahead(3);
+      if(specific(tk,TK_MISC,",") || expect(tk,TK_IN)) node=parse_forin();
+      else if(specific(tk,TK_MISC,"=")) node=parse_fornum();
+      else node=error(tk,"invalid loop",NULL);
+    }else if(expect(tk,TK_NAME) || expect(tk,TK_VAR)){
+      tk=check_ahead(2);
+      if(specific(tk,TK_PAREN,"(") || specific(tk,TK_SQUARE,"[") || specific(tk,TK_MISC,"=") || specific(tk,TK_MISC,".") || specific(tk,TK_MISC,",")) node=parse_set_or_call();
+      else if(expect(tk,TK_VAR) || expect(tk,TK_NAME)) node=parse_function_or_define();
+      else node=error(tk,"invalid statement",NULL);
+    }else{
+      break;
+    }
+    if(node) add_to_list(ls,node);
+    else FREE_AST_NODE_LIST(NULL,ls);
+  }
+  return new_node(AST_STMT,ls);
+}
+AstNode* parse_do(){
+  Token* tk=consume();
+  if(!expect(tk,TK_DO)) return error(tk,"invalid do block",NULL);
+  AstNode* node=parse_stmt();
+  if(!node) return NULL;
+  tk=consume();
+  if(!expect(tk,TK_END)) return error(tk,"unclosed do block",NULL);
+  DEBUG("do stmt\n");
+  return new_node(AST_DO,(List*)(node->data));
+}
+
 // Entity parsers (classes and interfaces)
 AstNode* parse_interface(){
   char* parent=NULL;
@@ -330,64 +389,6 @@ AstNode* parse_type(){
     return new_node(AST_TYPE_TUPLE,ls);
   }
   return parse_basic_type();
-}
-
-// Statement block parsers
-AstNode* parse_stmt(){
-  Token* tk;
-  AstNode* node;
-  List* ls=new_default_list();
-  while(1){
-    tk=check();
-    if(!tk) break;
-    DEBUG("parsing %s (%i)\n",tk->text,tk->type);
-    if(expect(tk,TK_FUNCTION)) node=parse_function(NULL,1);
-    else if(expect(tk,TK_IF)) node=parse_if();
-    else if(expect(tk,TK_CLASS)) node=parse_class();
-    else if(expect(tk,TK_INTERFACE)) node=parse_interface();
-    else if(expect(tk,TK_TYPEDEF)) node=parse_typedef();
-    else if(expect(tk,TK_REQUIRE)) node=parse_require();
-    else if(expect(tk,TK_RETURN)) node=parse_return();
-    else if(expect(tk,TK_DBCOLON)) node=parse_label();
-    else if(expect(tk,TK_LOCAL)) node=parse_local();
-    else if(expect(tk,TK_BREAK)) node=parse_break();
-    else if(expect(tk,TK_REPEAT)) node=parse_repeat();
-    else if(expect(tk,TK_WHILE)) node=parse_while();
-    else if(expect(tk,TK_GOTO)) node=parse_goto();
-    else if(expect(tk,TK_DO)) node=parse_do();
-    else if(specific(tk,TK_BINARY,"*")) node=parse_function_or_define();
-    else if(expect(tk,TK_CONSTRUCTOR)) node=error(tk,"invalid constructor without a class",NULL);
-    else if(specific(tk,TK_PAREN,"(")){
-      AstNode* type=parse_type();
-      if(type) node=parse_function(type,1);
-      else node=NULL;
-    }else if(expect(tk,TK_FOR)){
-      tk=check_ahead(3);
-      if(specific(tk,TK_MISC,",") || expect(tk,TK_IN)) node=parse_forin();
-      else if(specific(tk,TK_MISC,"=")) node=parse_fornum();
-      else node=error(tk,"invalid loop",NULL);
-    }else if(expect(tk,TK_NAME) || expect(tk,TK_VAR)){
-      tk=check_ahead(2);
-      if(specific(tk,TK_PAREN,"(") || specific(tk,TK_SQUARE,"[") || specific(tk,TK_MISC,"=") || specific(tk,TK_MISC,".") || specific(tk,TK_MISC,",")) node=parse_set_or_call();
-      else if(expect(tk,TK_VAR) || expect(tk,TK_NAME)) node=parse_function_or_define();
-      else node=error(tk,"invalid statement",NULL);
-    }else{
-      break;
-    }
-    if(node) add_to_list(ls,node);
-    else FREE_AST_NODE_LIST(NULL,ls);
-  }
-  return new_node(AST_STMT,ls);
-}
-AstNode* parse_do(){
-  Token* tk=consume();
-  if(!expect(tk,TK_DO)) return error(tk,"invalid do block",NULL);
-  AstNode* node=parse_stmt();
-  if(!node) return NULL;
-  tk=consume();
-  if(!expect(tk,TK_END)) return error(tk,"unclosed do block",NULL);
-  DEBUG("do stmt\n");
-  return new_node(AST_DO,(List*)(node->data));
 }
 
 // Variable parse functions
@@ -593,7 +594,7 @@ AstNode* parse_constructor(char* classname){
   free(node);
   return new_node(AST_FUNCTION,data);
 }
-AstNode* parse_call(AstNode* lhs){
+static AstNode* parse_arg_tuple(){
   AstNode* args=NULL;
   Token* tk=consume_next();
   if(!specific(tk,TK_PAREN,"(")) return error(tk,"invalid function call",NULL);
@@ -601,10 +602,37 @@ AstNode* parse_call(AstNode* lhs){
   if(tk && !specific(tk,TK_PAREN,")")){
     args=parse_tuple();
     if(!args) return NULL;
+  }else{
+    args=new_node(AST_NONE,NULL);
   }
   tk=consume();
-  if(!specific(tk,TK_PAREN,")")) FREE_AST_NODE(error(tk,"unclosed function call",NULL),args);
-  DEBUG("call node\n");
+  if(!specific(tk,TK_PAREN,")")){
+    error(tk,"unclosed function call",NULL);
+    if(args){
+      FREE_AST_NODE(NULL,args);
+    }
+    return NULL;
+  }
+  return args;
+}
+AstNode* parse_super(){
+  Token* tk=consume();
+  if(!expect(tk,TK_SUPER)) return error(tk,"invalid super method invocation",NULL);
+  AstNode* args=parse_arg_tuple();
+  if(!args) return NULL;
+  if(args->type==AST_NONE){
+    free(args);
+    args=NULL;
+  }
+  return new_node(AST_SUPER,args);
+}
+AstNode* parse_call(AstNode* lhs){
+  AstNode* args=parse_arg_tuple();
+  if(!args) return NULL;
+  if(args->type==AST_NONE){
+    free(args);
+    args=NULL;
+  }
   return new_node(AST_CALL,new_ast_ast_node(lhs,args));
 }
 

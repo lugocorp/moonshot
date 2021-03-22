@@ -148,7 +148,6 @@ Map* collapse_ancestor_class_fields(List* ls){
   for(int a=0;a<ls->n;a++){
     AstNode* node=(AstNode*)get_from_list(ls,a);
     char* name=NULL;
-    fflush(stdout);
     if(node->type==AST_DEFINE) name=((BinaryNode*)(node->data))->text;
     if(node->type==AST_FUNCTION){
       FunctionNode* data=(FunctionNode*)(node->data);
@@ -168,4 +167,35 @@ Map* collapse_ancestor_class_fields(List* ls){
     }
   }
   return m;
+}
+
+/*
+  Grabs the FunctionNode that corresponds to the child class's function
+  clas should be the parent of the class who has the function method
+*/
+FunctionNode* get_parent_method(ClassNode* clas,FunctionNode* method){
+  while(clas){
+    for(int a=0;a<clas->ls->n;a++){
+      AstNode* e=(AstNode*)get_from_list(clas->ls,a);
+      if(e->type!=AST_FUNCTION) continue;
+      FunctionNode* func=(FunctionNode*)(e->data);
+      if(method->is_constructor){
+        if(func->is_constructor) return func;
+      }else if(func->is_constructor){
+        continue;
+      }else {
+        // I'm assuming both method->name and func->name are AST_ID types
+        if(strcmp((char*)(method->name->data),(char*)(func->name->data))) continue;
+        AstNode* func_type=get_type(e);
+        AstNode* m=new_node(AST_FUNCTION,method);
+        AstNode* method_type=get_type(m);
+        free(m);
+        if(typed_match(func_type,method_type)){
+          return func;
+        }
+      }
+    }
+    clas=class_exists(clas->parent);
+  }
+  return NULL;
 }
