@@ -31,8 +31,7 @@ class Test extends OldTest where
   end
 
   int number()
-    super()
-    return 0
+    return super()
   end
 end
 

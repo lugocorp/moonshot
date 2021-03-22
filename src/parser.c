@@ -1012,26 +1012,19 @@ AstNode* parse_expr(){
   Token* tk=check();
   AstNode* node=NULL;
   if(!tk) return error(tk,"incomplete expression",NULL);
-  if(tk->type==TK_NIL){
-    node=parse_nil();
-  }else if(expect(tk,TK_TRUE) || expect(tk,TK_FALSE)){
-    node=parse_boolean();
-  }else if(expect(tk,TK_INT)){
-    node=parse_number();
-  }else if(expect(tk,TK_QUOTE)){
-    node=parse_string();
-  }else if(expect(tk,TK_REQUIRE)){
-    node=parse_require();
-  }else if(expect(tk,TK_FUNCTION)){
-    node=parse_function(NULL,1);
-  }else if(specific(tk,TK_BINARY,"*")){
+  if(tk->type==TK_NIL) node=parse_nil();
+  else if(expect(tk,TK_TRUE) || expect(tk,TK_FALSE)) node=parse_boolean();
+  else if(specific(tk,TK_PAREN,"(")) node=parse_paren_or_tuple_function();
+  else if(expect(tk,TK_FUNCTION)) node=parse_function(NULL,1);
+  else if(specific(tk,TK_CURLY,"{")) node=parse_table();
+  else if(expect(tk,TK_REQUIRE)) node=parse_require();
+  else if(expect(tk,TK_QUOTE)) node=parse_string();
+  else if(expect(tk,TK_SUPER)) node=parse_super();
+  else if(expect(tk,TK_INT)) node=parse_number();
+  else if(specific(tk,TK_BINARY,"*")){
     AstNode* type=parse_type();
     if(!type) return NULL;
     node=parse_function(type,1);
-  }else if(specific(tk,TK_CURLY,"{")){
-    node=parse_table();
-  }else if(specific(tk,TK_PAREN,"(")){
-    node=parse_paren_or_tuple_function();
   }else if(tk->type==TK_NAME){
     tk=check_ahead(2);
     if(expect(tk,TK_FUNCTION)){

@@ -142,6 +142,14 @@ static AstNode* get_function_type(FunctionNode* data){
   }
   return data->functype;
 }
+static AstNode* get_super_type(){
+  FunctionNode* method=get_method_scope();
+  if(!method) return any_type_const();
+  AstNode* node=new_node(AST_FUNCTION,method);
+  AstListNode* functype=(AstListNode*)(get_type(node)->data);
+  free(node);
+  return functype->node;
+}
 static AstNode* get_call_type(AstAstNode* data){
   AstNode* l=data->l;
   if(l->type==AST_ID){
@@ -216,6 +224,7 @@ AstNode* get_type(AstNode* node){
     case AST_DEFINE: return ((BinaryNode*)(node->data))->l;
     case AST_UNARY: return ((BinaryNode*)(node->data))->r;
     case AST_REQUIRE: return any_type_const();
+    case AST_SUPER: return get_super_type();
     case AST_SUB: return any_type_const();
     case AST_ID: return get_id_type(node);
     default: return any_type_const();
