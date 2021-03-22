@@ -99,11 +99,12 @@ FunctionNode* get_function_scope(){
 FunctionNode* get_method_scope(){
   for(int a=scopes->n-1;a>=0;a--){
     Scope* scope=(Scope*)get_from_list(scopes,a);
-    if(scope->type==SCOPE_FUNCTION){
-      return (FunctionNode*)(scope->data);
-    }
-    if(scope->type==SCOPE_CLASS){
-      break;
+    if(scope->type==SCOPE_FUNCTION && a){
+      FunctionNode* func=(FunctionNode*)(scope->data);
+      scope=(Scope*)get_from_list(scopes,a-1);
+      if(scope->type==SCOPE_CLASS){
+        return func;
+      }
     }
   }
   return NULL;
