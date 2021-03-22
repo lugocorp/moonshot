@@ -35,3 +35,17 @@ class Test extends OldTest where
     return 0
   end
 end
+
+class YoOld where
+  int a
+
+  constructor(int a)
+    this.a=a
+  end
+end
+
+class YoChild extends YoOld where
+  constructor()
+    super(123)
+  end
+end

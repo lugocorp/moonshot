@@ -237,6 +237,22 @@ void process_class(AstNode* node){
   write(")\n");
   indent(1);
   write("local %s={}\n",instance_str);
+  if(fields){
+    for(int a=0;a<fields->n;a++){
+      AstNode* child=(AstNode*)iterate_from_map(fields,a);
+      if(child->type==AST_DEFINE){
+        BinaryNode* cdata=(BinaryNode*)(child->data);
+        add_scoped_var(new_string_ast_node(cdata->text,cdata->l));
+        if(cdata->r){
+          write("%s.%s=",instance_str,cdata->text);
+          process_node(cdata->r);
+        }else{
+          write("%s.%s=nil",instance_str,cdata->text);
+        }
+        write("\n");
+      }
+    }
+  }
   if(fdata){
     push_function_scope(fdata);
     process_list(fdata->body);
@@ -265,17 +281,7 @@ void process_class(AstNode* node){
         indent(-1);
         write("end\n");
         pop_scope();
-      }else if(child->type==AST_DEFINE){
-        BinaryNode* cdata=(BinaryNode*)(child->data);
-        add_scoped_var(new_string_ast_node(cdata->text,cdata->l));
-        if(cdata->r){
-          write("%s.%s=",instance_str,cdata->text);
-          process_node(cdata->r);
-        }else{
-          write("%s.%s=nil",instance_str,cdata->text);
-        }
-        write("\n");
-      }else{
+      }else if(child->type!=AST_DEFINE){
         add_error(-1,"invalid child node in class %s",data->name);
         break;
       }
@@ -426,11 +432,29 @@ void process_super(AstNode* node){
   }
   push_class_scope(parent);
   push_function_scope(method);
+  write("(function(");
+  for(int a=0;a<method->args->n;a++){
+    StringAstNode* e=(StringAstNode*)get_from_list(method->args,a);
+    if(a) write(",");
+    write("%s",e->text);
+  }
+  write(")\n");
+  indent(1);
   for(int a=0;a<method->body->n;a++){
     AstNode* child=(AstNode*)get_from_list(method->body,a);
     process_node(child);
     conditional_newline(child);
   }
+  indent(-1);
+  write("end)(");
+  if(data){
+    List* args=((AstListNode*)(data->data))->list;
+    for(int a=0;a<args->n;a++){
+      if(a) write(",");
+      process_node((AstNode*)get_from_list(args,a));
+    }
+  }
+  write(")\n");
   pop_scope();
   pop_scope();
 }
