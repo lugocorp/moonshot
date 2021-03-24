@@ -406,6 +406,7 @@ InterfaceNode* interface_exists(char* name){
   Returns 0 if a non-existent type if referenced in type node
 */
 int compound_type_exists(AstNode* node){
+  if(!node) return 1;
   switch(node->type){
     case AST_TYPE_ANY: return 1;
     case AST_TYPE_VARARG: return 1;
