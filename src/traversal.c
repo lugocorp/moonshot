@@ -538,12 +538,25 @@ void process_id(AstNode* node){
 */
 void process_require(AstNode* node){
   AstNode* data=(AstNode*)(node->data); // data is AST_PRIMITIVE with type string
+  StringAstNode* primitive=(StringAstNode*)(data->data);
+  char* filename=primitive->text;
   if(validate){
-    StringAstNode* primitive=(StringAstNode*)(data->data);
-    require_file(primitive->text);
+    require_file(filename);
   }
   write("require ");
-  process_node(data);
+  int l=strlen(filename);
+  if(l>=6 && !strncmp(filename+l-6,".moon",5)){
+    char* filename1=(char*)malloc(sizeof(char)*l);
+    strncpy(filename1,filename,l-5);
+    filename1[l-5]=0;
+    strcat(filename1,"lua");
+    filename1[l-2]=filename1[0];
+    filename1[l-1]=0;
+    write("%s",filename1);
+    free(filename1);
+  }else{
+    write("%s",filename);
+  }
 }
 void process_local(AstNode* node){
   StringAstNode* data=(StringAstNode*)(node->data);
