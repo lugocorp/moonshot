@@ -595,7 +595,9 @@ void process_function(AstNode* node){
   write("(");
   for(int a=0;a<data->args->n;a++){
     if(a) write(",");
-    write("%s",((StringAstNode*)get_from_list(data->args,a))->text);
+    StringAstNode* e=(StringAstNode*)get_from_list(data->args,a);
+    ERROR(!compound_type_exists(e->node),"reference to nonexistent type %t",e->node);
+    write("%s",e->text);
   }
   write(")\n");
   indent(1);
