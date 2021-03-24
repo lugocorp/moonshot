@@ -40,6 +40,10 @@ void init_traverse(){
   sprintf(instance_str,"__obj");
   line_written=0;
   num_indents=0;
+  preempt_scopes();
+  init_types();
+  init_scopes();
+  push_scope();
 }
 
 /*
@@ -50,12 +54,6 @@ void init_traverse(){
 */
 void traverse(AstNode* root,int valid){
   validate=valid;
-  if(validate){
-    preempt_scopes();
-    init_types();
-    init_scopes();
-    push_scope();
-  }
   process_stmt(root);
 }
 
@@ -539,7 +537,11 @@ void process_id(AstNode* node){
   Traverses through nodes that define new things
 */
 void process_require(AstNode* node){
-  AstNode* data=(AstNode*)(node->data);
+  AstNode* data=(AstNode*)(node->data); // data is AST_PRIMITIVE with type string
+  if(validate){
+    StringAstNode* primitive=(StringAstNode*)(data->data);
+    require_file(primitive->text);
+  }
   write("require ");
   process_node(data);
 }

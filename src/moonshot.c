@@ -11,7 +11,7 @@ static FILE* _input; // Input for source code
 static int _write; // whether or not to output Lua code
 
 /*
-  Retursn the number of compilation errors
+  Return the number of compilation errors
 */
 int moonshot_num_errors(){
   return errors->n;
@@ -111,7 +111,7 @@ void add_error_internal(int line,const char* msg,va_list args){
 /*
   Deallocates all tokens within the token list and the list itself
 */
-static void dealloc_token_buffer(List* ls){
+void dealloc_token_buffer(List* ls){
   for(int a=0;a<ls->n;a++) dealloc_token((Token*)get_from_list(ls,a));
   dealloc_list(ls);
 }
@@ -177,10 +177,12 @@ int moonshot_compile(){
   }
 
   // AST traversal
+  init_requires();
   init_traverse();
   traverse(root,1);
   if(_write && !errors->n) traverse(root,0);
   dealloc_traverse();
+  dealloc_requires();
   dealloc_ast_node(root);
   dealloc_token_buffer(ls);
   return (errors->n)?0:1;

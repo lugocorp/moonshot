@@ -142,6 +142,13 @@ typedef struct{
   int type; // The type of this scope
 } Scope;
 
+// File requirements
+typedef struct{
+  char* filename;
+  AstNode* tree;
+  List* tokens;
+} Require;
+
 // List of all scope types
 enum SCOPE_TYPES{
   SCOPE_FUNCTION, SCOPE_CLASS, SCOPE_NONE
@@ -228,14 +235,21 @@ enum RULES{
   AST_UNKNOWN
 };
 
-// Global and/or important functions
+// moonshot.c
 void add_error_internal(int line,const char* msg,va_list args);
 void add_error(int line,const char* msg,...);
-void traverse(AstNode* node,int validate);
+void dealloc_token_buffer(List* ls);
+
+// tokenizer.c
 void dealloc_token(Token* tk);
-AstNode* parse(List* ls);
-void dealloc_traverse();
 List* tokenize(FILE* f);
+
+// parser.c
+AstNode* parse(List* ls);
+
+// traverse.c
+void traverse(AstNode* node,int validate);
+void dealloc_traverse();
 void init_traverse();
 
 // parser.c
@@ -300,6 +314,11 @@ BinaryNode* new_unary_node(char* op,AstNode* e);
 *   cause a segmentation fault
 */
 #ifndef MOONSHOT_PARSING
+
+// requires.c
+void require_file(char* filename);
+void dealloc_requires();
+void init_requires();
 
 // scopes.c
 void dealloc_scopes();
