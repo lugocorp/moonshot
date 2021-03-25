@@ -49,7 +49,6 @@ void require_file(char* filename){
   }
   FILE* f=fopen(copy,"r");
   if(!f){
-    printf("%i\n",errno);
     add_error(-1,"cannot open file %s",copy);
     free(copy);
     return;

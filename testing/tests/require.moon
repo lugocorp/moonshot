@@ -1,3 +1,3 @@
-require "testing/tests/types-reference.moon"
+require "testing/tests/reference.moon"
 Messenger msngr
 print("Hello!")

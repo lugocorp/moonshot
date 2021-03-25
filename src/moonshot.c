@@ -8,7 +8,6 @@ static char* error_error; // Error message for when ERROR_BUFFER_LENGTH is overf
 static List* errors; // List of error strings
 static int error_i; // Index of currently consumed error
 static FILE* _input; // Input for source code
-static int _write; // whether or not to output Lua code
 
 /*
   Return the number of compilation errors
@@ -132,7 +131,6 @@ void moonshot_init(){
   sprintf(error_error,"error buffer overflow");
   errors=NULL;
   _input=NULL;
-  _write=1;
   error_i=0;
 }
 
@@ -148,9 +146,8 @@ void moonshot_destroy(){
   Sets source code and output I/O
   Also controls whether or not to write any output
 */
-void moonshot_configure(FILE* input,FILE* output,int write){
+void moonshot_configure(FILE* input,FILE* output){
   set_output(output);
-  _write=write;
   _input=input;
 }
 
@@ -181,7 +178,7 @@ int moonshot_compile(){
   init_traverse();
   traverse(root,1);
   check_broken_promises();
-  if(_write && !errors->n) traverse(root,0);
+  if(!errors->n) traverse(root,0);
   dealloc_traverse();
   dealloc_requires();
   dealloc_ast_node(root);

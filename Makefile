@@ -11,6 +11,9 @@ clean:
 moonshot: $(BUILD)/cli
 	mv bin/cli moonshot
 
+install: moonshot
+	cp moonshot $(HOME)/bin
+
 $(BUILD):
 	mkdir $(BUILD)
 
