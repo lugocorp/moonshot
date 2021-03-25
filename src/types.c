@@ -6,11 +6,13 @@ static List* functions_registry; // List of FunctionNodes
 static List* classes_registry; // List of ClassNodes
 static List* types_registry; // List of strings
 static List* types_graph; // List of EqualTypesNodes
+static List* promises; // List of promised types
 
 /*
   Initialize the data structures used in this module
 */
 void init_types(){
+  promises=new_default_list();
   types_graph=new_default_list();
   types_registry=new_default_list();
   classes_registry=new_default_list();
@@ -42,6 +44,7 @@ void dealloc_types(){
   dealloc_list(classes_registry);
   dealloc_list(types_registry);
   dealloc_list(types_graph);
+  dealloc_list(promises);
 }
 
 /*
@@ -316,6 +319,7 @@ static char* base_type(char* name){
 */
 void register_type(char* name){
   add_to_list(types_registry,name);
+  uphold_promise(name);
 }
 
 /*
@@ -401,32 +405,63 @@ InterfaceNode* interface_exists(char* name){
 }
 
 /*
-  Checks recursively through a compound type (tuple or function) or singular type
-  Ensures that every type referenced is in fact registered
-  Returns 0 if a non-existent type if referenced in type node
+  Goes recursively through a compound type (tuple or function) or singular type
+  Makes a promise that every referenced type has to be defined in the future
 */
-int compound_type_exists(AstNode* node){
-  if(!node) return 1;
+void make_type_promise(AstNode* node){
+  if(!node) return;
   switch(node->type){
-    case AST_TYPE_ANY: return 1;
-    case AST_TYPE_VARARG: return 1;
-    case AST_TYPE_BASIC: return type_exists((char*)(node->data));
+    case AST_TYPE_ANY: return;
+    case AST_TYPE_VARARG: return;
+    case AST_TYPE_BASIC:{
+      char* t=(char*)(node->data);
+      if(!type_exists(t)){
+        add_to_list(promises,t);
+      }
+      return;
+    }
     case AST_TYPE_TUPLE:{
       List* ls=(List*)(node->data);
       for(int a=0;a<ls->n;a++){
-        if(!compound_type_exists((AstNode*)get_from_list(ls,a))) return 0;
+        make_type_promise((AstNode*)get_from_list(ls,a));
       }
-      return 1;
+      return;
     }
     case AST_TYPE_FUNC:{
       AstListNode* data=(AstListNode*)(node->data);
-      if(!compound_type_exists(data->node)) return 0;
+      make_type_promise(data->node);
       for(int a=0;a<data->list->n;a++){
-        if(!compound_type_exists((AstNode*)get_from_list(data->list,a))) return 0;
+        make_type_promise((AstNode*)get_from_list(data->list,a));
       }
-      return 1;
+      return;
     }
-    default: return 0;
+  }
+}
+
+/*
+  Removes all promises about this type from the promises list
+  Call this when a type gets defined
+*/
+void uphold_promise(char* type){
+  int a=0;
+  while(a<promises->n){
+    char* t=(char*)get_from_list(promises,a);
+    if(!strcmp(t,type)){
+      remove_from_list(promises,a);
+    }else{
+      a++;
+    }
+  }
+}
+
+/*
+  Check if there are any promises left over
+  Throw errors if any referenced types remain undefined after compilation
+*/
+void check_broken_promises(){
+  for(int a=0;a<promises->n;a++){
+    char* type=(char*)get_from_list(promises,a);
+    add_error(-1,"reference to undefined type %s",type);
   }
 }
 

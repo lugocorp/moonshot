@@ -347,15 +347,17 @@ InterfaceNode* interface_exists(char* name);
 void register_function(FunctionNode* node);
 FunctionNode* function_exists(char* name);
 void register_primitive(const char* name);
-int compound_type_exists(AstNode* node);
 List* get_equivalent_types(char* name);
 int typed_match(AstNode* l,AstNode* r);
+void make_type_promise(AstNode* node);
 int is_variadic_function(List* args);
 void register_class(ClassNode* node);
 ClassNode* class_exists(char* name);
 char* stringify_type(AstNode* node);
 AstNode* get_type(AstNode* node);
+void uphold_promise(char* type);
 void register_type(char* name);
+void check_broken_promises();
 int type_exists(char* name);
 
 // entities.c

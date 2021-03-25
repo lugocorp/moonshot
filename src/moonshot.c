@@ -180,6 +180,7 @@ int moonshot_compile(){
   init_requires();
   init_traverse();
   traverse(root,1);
+  check_broken_promises();
   if(_write && !errors->n) traverse(root,0);
   dealloc_traverse();
   dealloc_requires();

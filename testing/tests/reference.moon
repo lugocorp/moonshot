@@ -6,3 +6,11 @@ class Messenger where
 
   end
 end
+
+class Hello where
+  Goodbye gb
+end
+
+class Goodbye where
+  Hello h
+end

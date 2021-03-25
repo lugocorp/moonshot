@@ -570,7 +570,8 @@ void process_local(AstNode* node){
 void process_define(AstNode* node){
   BinaryNode* data=(BinaryNode*)(node->data);
   if(validate){
-    ERROR(!compound_type_exists(data->l),"reference to nonexistent type %t",data->l);
+    //ERROR(!compound_type_exists(data->l),"reference to nonexistent type %t",data->l);
+    make_type_promise(data->l);
     if(data->r){
       AstNode* tr=get_type(data->r);
       ERROR(!typed_match(data->l,tr),"expression of type %t cannot be assigned to variable of type %t",tr,data->l);
@@ -590,7 +591,8 @@ void process_typedef(AstNode* node){
   StringAstNode* data=(StringAstNode*)(node->data);
   if(validate){
     ERROR(type_exists(data->text),"type %s is already declared",data->text);
-    ERROR(!compound_type_exists(data->node),"type %t does not exist",data->node);
+    //ERROR(!compound_type_exists(data->node),"type %t does not exist",data->node);
+    make_type_promise(data->node);
     ERROR(!add_type_equivalence(data->text,data->node,RL_EQUALS),"co-dependent typedef %s detected",data->text);
     register_type(data->text);
   }
@@ -611,7 +613,8 @@ void process_function(AstNode* node){
   for(int a=0;a<data->args->n;a++){
     if(a) write(",");
     StringAstNode* e=(StringAstNode*)get_from_list(data->args,a);
-    ERROR(!compound_type_exists(e->node),"reference to nonexistent type %t",e->node);
+    //ERROR(!compound_type_exists(e->node),"reference to nonexistent type %t",e->node);
+    make_type_promise(e->node);
     write("%s",e->text);
   }
   write(")\n");
