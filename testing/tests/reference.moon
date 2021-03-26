@@ -14,3 +14,5 @@ end
 class Goodbye where
   Hello h
 end
+
+print("Reference here")

@@ -237,6 +237,7 @@ enum RULES{
 
 // moonshot.c
 void add_error_internal(int line,const char* msg,va_list args);
+int require_file(char* filename,int validate);
 void add_error(int line,const char* msg,...);
 void dealloc_token_buffer(List* ls);
 
@@ -314,11 +315,6 @@ BinaryNode* new_unary_node(char* op,AstNode* e);
 *   cause a segmentation fault
 */
 #ifndef MOONSHOT_PARSING
-
-// requires.c
-void require_file(char* filename);
-void dealloc_requires();
-void init_requires();
 
 // scopes.c
 void dealloc_scopes();

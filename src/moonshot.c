@@ -1,10 +1,12 @@
 #include "./moonshot.h"
 #include "./internal.h"
-#include <stdarg.h>
-#include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
+#include <stdarg.h>
 #define ERROR_BUFFER_LENGTH 256 // Maximum length for an error message
 static char* error_error; // Error message for when ERROR_BUFFER_LENGTH is overflows
+static List* requires; // List of required files
 static List* errors; // List of error strings
 static int error_i; // Index of currently consumed error
 static FILE* _input; // Input for source code
@@ -121,6 +123,104 @@ void dealloc_token_buffer(List* ls){
 static void dealloc_errors(){
   for(int a=0;a<errors->n;a++) free(get_from_list(errors,a));
   dealloc_list(errors);
+  errors=NULL;
+}
+
+/*
+  Initializes this module
+*/
+void init_requires(){
+  requires=new_default_list();
+}
+
+/*
+  Deallocates a list of required files
+*/
+static void dealloc_requires(){
+  for(int a=requires->n-1;a>=0;a--){
+    Require* r=(Require*)get_from_list(requires,a);
+    if(r->tree) dealloc_ast_node(r->tree);
+    if(r->tokens) dealloc_token_buffer(r->tokens);
+    free(r->filename);
+    free(r);
+  }
+  dealloc_list(requires);
+  requires=NULL;
+}
+
+/*
+  Manually adds a dummy node for the given filename
+*/
+void dummy_required_file(char* filename){
+  char* copy=(char*)malloc(sizeof(char)*(strlen(filename)+1));
+  strcpy(copy,filename);
+  Require* r=(Require*)malloc(sizeof(Require));
+  r->filename=copy;
+  r->tokens=NULL;
+  r->tree=NULL;
+  add_to_list(requires,r);
+}
+
+/*
+  Tokenizes, parses and traverses another file to import external Moon types
+  Will only bother if the filename ends in .moon (is Moonshot source code)
+  Also checks to ensure that we're not processing a file we've already processed
+  Returns 1 if the required file is a Moonshot source file
+*/
+int require_file(char* filename,int validate){
+  char* copy=(char*)malloc(sizeof(char)*(strlen(filename)-1));
+  strncpy(copy,filename+1,strlen(filename)-2);
+  copy[strlen(filename)-2]=0;
+  int l=strlen(copy);
+  if(l<5 || strcmp(copy+l-5,".moon")){
+    free(copy);
+    return 0;
+  }
+  if(validate){
+    for(int a=0;a<requires->n;a++){
+      Require* r=(Require*)get_from_list(requires,a);
+      if(!strcmp(r->filename,copy)){
+        free(copy);
+        return 1;
+      }
+    }
+    FILE* f=fopen(copy,"r");
+    if(!f){
+      add_error(-1,"cannot open file %s",copy);
+      free(copy);
+      return 1;
+    }
+    List* ls=tokenize(f);
+    fclose(f);
+    if(!ls){
+      add_error(-1,"tokenization buffer overflow");
+      free(copy);
+      return 1;
+    }
+    AstNode* root=parse(ls);
+    if(!root){
+      dealloc_token_buffer(ls);
+      free(copy);
+      return 1;
+    }
+    traverse(root,1);
+    Require* r=(Require*)malloc(sizeof(Require));
+    r->filename=copy;
+    r->tokens=ls;
+    r->tree=root;
+    add_to_list(requires,r);
+  }else{
+    for(int a=0;a<requires->n;a++){
+      Require* r=(Require*)get_from_list(requires,a);
+      if(!strcmp(r->filename,copy)){
+        traverse(r->tree,0);
+        free(copy);
+        return 1;
+      }
+    }
+    free(copy); // Should never get here
+  }
+  return 1;
 }
 
 /*
@@ -129,6 +229,7 @@ static void dealloc_errors(){
 void moonshot_init(){
   error_error=(char*)malloc(sizeof(char)*22);
   sprintf(error_error,"error buffer overflow");
+  requires=NULL;
   errors=NULL;
   _input=NULL;
   error_i=0;
@@ -156,6 +257,7 @@ void moonshot_configure(FILE* input,FILE* output){
   Will only write Lua code to output if it's set in the configuration
 */
 int moonshot_compile(){
+  if(!requires) init_requires();
   if(errors) dealloc_errors();
   errors=new_default_list();
 
@@ -174,7 +276,6 @@ int moonshot_compile(){
   }
 
   // AST traversal
-  init_requires();
   init_traverse();
   traverse(root,1);
   check_broken_promises();

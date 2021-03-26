@@ -120,7 +120,15 @@ static void write(const char* msg,...){
 static void conditional_newline(AstNode* node){
   if(node->type==AST_FUNCTION) write("\n");
   if(node->type==AST_CALL) write("\n");
-  if(node->type==AST_REQUIRE) write("\n");
+  if(node->type==AST_REQUIRE){
+    AstNode* data=(AstNode*)(node->data); // data is AST_PRIMITIVE with type string
+    StringAstNode* primitive=(StringAstNode*)(data->data);
+    char* filename=primitive->text;
+    int l=strlen(filename);
+    if(l>=6 && strncmp(filename+l-6,".moon",5)){
+      write("\n");
+    }
+  }
 }
 static void process_list(List* ls){
   for(int a=0;a<ls->n;a++){
@@ -168,7 +176,7 @@ void process_node(AstNode* node){
     case AST_IF: process_if(node); return;
     case AST_DO: process_do(node); return;
     case AST_ID: process_id(node); return;
-    default: add_error(-1,"invalid Moonshot AST detected (node ID %i)\n",node->type);
+    default: add_error(-1,"invalid Moonshot AST detected (node ID %i)",node->type);
   }
 }
 
@@ -539,23 +547,8 @@ void process_id(AstNode* node){
 void process_require(AstNode* node){
   AstNode* data=(AstNode*)(node->data); // data is AST_PRIMITIVE with type string
   StringAstNode* primitive=(StringAstNode*)(data->data);
-  char* filename=primitive->text;
-  if(validate){
-    require_file(filename);
-  }
-  write("require ");
-  int l=strlen(filename);
-  if(l>=6 && !strncmp(filename+l-6,".moon",5)){
-    char* filename1=(char*)malloc(sizeof(char)*l);
-    strncpy(filename1,filename,l-5);
-    filename1[l-5]=0;
-    strcat(filename1,"lua");
-    filename1[l-2]=filename1[0];
-    filename1[l-1]=0;
-    write("%s",filename1);
-    free(filename1);
-  }else{
-    write("%s",filename);
+  if(!require_file(primitive->text,validate)){
+    write("require %s",primitive->text);
   }
 }
 void process_local(AstNode* node){
