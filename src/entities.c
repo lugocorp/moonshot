@@ -116,6 +116,7 @@ List* get_missing_class_methods(ClassNode* c){
 */
 int methods_equivalent(FunctionNode* f1,FunctionNode* f2){
   // Assumes the two methods belong to clases (name nodes are of type AST_ID)
+  if(!f1->name || !f2->name) return 0;
   AstNode* node=new_node(AST_FUNCTION,f1);
   AstNode* type1=get_type(node);
   free(node);

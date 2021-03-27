@@ -355,6 +355,7 @@ void uphold_promise(char* type);
 void register_type(char* name);
 void check_broken_promises();
 int type_exists(char* name);
+void print_types_graph();
 
 // entities.c
 FunctionNode* get_parent_method(ClassNode* clas,FunctionNode* method);

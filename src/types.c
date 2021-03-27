@@ -95,8 +95,10 @@ static AstNode* get_type_of_field(char* name,void* node,int is_interface){
     AstNode* e=(AstNode*)get_from_list(body,a);
     if(e->type==AST_FUNCTION){
       FunctionNode* func=(FunctionNode*)(e->data);
-      char* funcname=(char*)(func->name->data);
-      if(!strcmp(funcname,name)) return get_type(e);
+      if(func->name){
+        char* funcname=(char*)(func->name->data);
+        if(!strcmp(funcname,name)) return get_type(e);
+      }
     }else{
       BinaryNode* def=(BinaryNode*)(e->data);
       if(!strcmp(def->text,name)) return def->l;
@@ -163,7 +165,9 @@ static AstNode* get_call_type(AstAstNode* data){
     if(cnode) return cnode->type;
     return any_type_const();
   }
-  return ((AstListNode*)(get_type(l)->data))->node;
+  AstNode* type=get_type(l);
+  if(type->type==AST_TYPE_ANY) return any_type_const();
+  return ((AstListNode*)(type->data))->node;
 }
 static AstNode* get_id_type(AstNode* node){
   char* name=(char*)(node->data);
@@ -495,9 +499,7 @@ static int path_exists(char* name,AstNode* type){
 */
 int add_child_type(char* child,char* parent,int relation){
   AstNode* r=new_node(AST_TYPE_BASIC,child);
-  int cycle=add_type_equivalence(parent,r,relation);
-  free(r);
-  return cycle;
+  return add_type_equivalence(parent,r,relation);
 }
 
 /*
@@ -585,4 +587,16 @@ char* stringify_type(AstNode* node){
   for(int a=0;a<ls->n;a++) strcat(type,(char*)get_from_list(ls,a));
   dealloc_list(ls);
   return type;
+}
+
+/*
+  Print out types equivalence graph
+*/
+void print_types_graph(){
+  for(int a=0;a<types_graph->n;a++){
+    EqualTypesNode* e=(EqualTypesNode*)get_from_list(types_graph,a);
+    char* type=stringify_type(e->type);
+    printf("%i: %s -> %s\n",e->relation,e->name,type);
+    free(type);
+  }
 }

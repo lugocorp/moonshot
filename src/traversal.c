@@ -352,7 +352,7 @@ static int validate_function_parameters(char* target,AstNode* func,AstNode* args
     for(int a=0;a<max;a++){
       AstNode* type1=get_type((AstNode*)get_from_list(args,a));
       AstNode* type2=(AstNode*)get_from_list(funcargs,a);
-      if(!typed_match(type1,type2)){
+      if(!typed_match(type2,type1)){
         add_error(-1,"invalid argument provided for %s",target);
         return 0;
       }
@@ -430,7 +430,7 @@ void process_super(AstNode* node){
     ERROR(!method && func->is_constructor,"constructor in class %s does not override a super constructor",clas->name);
     ERROR(!method && !func->is_constructor,"method %s in class %s does not override a super method",(char*)(func->name->data),clas->name);
     char* target=(char*)malloc(sizeof(char)*(strlen(clas->name)+22));
-    sprintf(target,"constructor of class %s",clas->name);
+    sprintf(target,"constructor of class %s",parent->name);
     AstNode* fnode=new_node(AST_FUNCTION,method);
     validate_function_parameters(target,fnode,data);
     free(target);

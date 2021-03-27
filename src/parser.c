@@ -741,18 +741,14 @@ AstNode* parse_fornum(){
   char* name=tk->text;
   tk=consume();
   if(!specific(tk,TK_MISC,"=")) return error(tk,"invalid for loop with counter %s",name);
-  num1=parse_number();
-  if(!num1) return NULL;
-  tk=consume();
-  if(!specific(tk,TK_MISC,",")) FREE_AST_NODE(error(tk,"invalid for loop with counter %s",name),num1);
-  num2=parse_number();
-  if(!num2) FREE_AST_NODE(NULL,num1);
-  tk=check();
-  if(specific(tk,TK_MISC,",")){
-    consume();
-    num3=parse_number();
-    if(!num3) FREE_2_AST_NODES(NULL,num1,num2);
-  }
+  AstNode* node=parse_tuple();
+  if(!node) return NULL;
+  AstListNode* tuple=(AstListNode*)(node->data);
+  if(tuple->list->n<2) FREE_AST_NODE(error(NULL,"Not enough values in for loop",NULL),node);
+  if(tuple->list->n>3) FREE_AST_NODE(error(NULL,"Too many values in for loop",NULL),node);
+  num1=(AstNode*)get_from_list(tuple->list,0);
+  num2=(AstNode*)get_from_list(tuple->list,1);
+  if(tuple->list->n==3) num3=(AstNode*)get_from_list(tuple->list,2);
   tk=consume();
   if(!expect(tk,TK_DO)){
     if(num3) dealloc_ast_node(num3);

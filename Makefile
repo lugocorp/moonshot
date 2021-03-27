@@ -12,7 +12,8 @@ moonshot: $(BUILD)/cli
 	mv bin/cli moonshot
 
 install: moonshot
-	cp moonshot $(HOME)/bin
+	cp $(LIBNAME) $(HOME)/bin
+	gcc $(BUILD)/cli.o $(HOME)/bin/libmoonshot.so -o $(HOME)/bin/moonshot
 
 $(BUILD):
 	mkdir $(BUILD)
