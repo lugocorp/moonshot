@@ -20,8 +20,5 @@ make install
 - [ ] Create a VSCode syntax highlighting plugin
 - [ ] Create an Atom syntax highlighting package
 
-## Bugs
-- [ ] Infinite loop when a file requires itself (or there's a loop in requires)
-
 ## Developers
 Moonshot was developed by [LugoCorp](http://lugocorp.net)

@@ -157,6 +157,7 @@ void dummy_required_file(char* filename){
   Require* r=(Require*)malloc(sizeof(Require));
   r->filename=copy;
   r->tokens=NULL;
+  r->written=1;
   r->tree=NULL;
   add_to_list(requires,r);
 }
@@ -203,22 +204,24 @@ int require_file(char* filename,int validate){
       free(copy);
       return 1;
     }
-    traverse(root,1);
     Require* r=(Require*)malloc(sizeof(Require));
     r->filename=copy;
+    r->written=0;
     r->tokens=ls;
     r->tree=root;
     add_to_list(requires,r);
+    traverse(root,1);
   }else{
     for(int a=0;a<requires->n;a++){
       Require* r=(Require*)get_from_list(requires,a);
-      if(!strcmp(r->filename,copy)){
-        traverse(r->tree,0);
+      if(!strcmp(r->filename,copy) && !r->written){
+        r->written=1;
+        if(r->tree) traverse(r->tree,0);
         free(copy);
         return 1;
       }
     }
-    free(copy); // Should never get here
+    free(copy);
   }
   return 1;
 }

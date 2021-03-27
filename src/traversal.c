@@ -429,7 +429,7 @@ void process_super(AstNode* node){
     // I'm assuming func->name is of type AST_ID
     ERROR(!method && func->is_constructor,"constructor in class %s does not override a super constructor",clas->name);
     ERROR(!method && !func->is_constructor,"method %s in class %s does not override a super method",(char*)(func->name->data),clas->name);
-    char* target=(char*)malloc(sizeof(char)*(strlen(clas->name)+22));
+    char* target=(char*)malloc(sizeof(char)*(strlen(parent->name)+22));
     sprintf(target,"constructor of class %s",parent->name);
     AstNode* fnode=new_node(AST_FUNCTION,method);
     validate_function_parameters(target,fnode,data);

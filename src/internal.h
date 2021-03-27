@@ -147,6 +147,7 @@ typedef struct{
   char* filename;
   AstNode* tree;
   List* tokens;
+  int written;
 } Require;
 
 // List of all scope types
