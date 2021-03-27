@@ -17,7 +17,7 @@ static void help(){
   indent(1,"-o <file>");
   indent(2,"Set output file\n");
   indent(1,"--version");
-  indent(5," Print Moonshot version\n");
+  indent(2,"Print Moonshot version\n");
   indent(1,"--print");
   indent(3,"Write Lua code to stdout\n");
   indent(1,"--help");
