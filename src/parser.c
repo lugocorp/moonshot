@@ -234,8 +234,11 @@ AstNode* parse_interface(){
   tk=check();
   List* ls=new_default_list();
   while(tk && !expect(tk,TK_END)){
-    AstNode* type=parse_type();
-    if(!type) FREE_AST_NODE_LIST(NULL,ls);
+    AstNode* type=NULL;
+    if(!expect(tk,TK_FUNCTION)){
+      type=parse_type();
+      if(!type) FREE_AST_NODE_LIST(NULL,ls);
+    }
     AstNode* func=parse_function(type,0);
     if(!func){
       dealloc_ast_type(type);
@@ -285,6 +288,7 @@ AstNode* parse_class(){
   while(tk && !expect(tk,TK_END)){
     AstNode* node;
     if(expect(tk,TK_CONSTRUCTOR)) node=parse_constructor(name);
+    else if(expect(tk,TK_FUNCTION)) node=parse_function(NULL,1);
     else node=parse_function_or_define();
     if(!node){
       for(int a=0;a<ls->n;a++) dealloc_ast_node((AstNode*)get_from_list(ls,a));
