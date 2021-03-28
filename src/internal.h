@@ -221,7 +221,7 @@ enum RULES{
   AST_BINARY, AST_UNARY, AST_DEFINE,
 
   // AstNode*
-  AST_RETURN, AST_PAREN, AST_REQUIRE, AST_SUPER,
+  AST_RETURN, AST_PAREN, AST_REQUIRE, AST_SUPER, AST_LIST,
 
   // StringAstNode*
   AST_FIELD, AST_LOCAL, AST_TYPEDEF, AST_PRIMITIVE,
@@ -262,6 +262,7 @@ AstNode* parse_potential_tuple_lhs();
 AstNode* parse_define(AstNode* type);
 AstNode* parse_function_or_define();
 AstNode* parse_call(AstNode* lhs);
+AstNode* parse_table_or_list();
 AstNode* parse_set_or_call();
 AstNode* parse_interface();
 AstNode* parse_typedef();
@@ -281,6 +282,7 @@ AstNode* parse_forin();
 AstNode* parse_label();
 AstNode* parse_break();
 AstNode* parse_class();
+AstNode* parse_list();
 AstNode* parse_type();
 AstNode* parse_stmt();
 AstNode* parse_else();
@@ -378,6 +380,7 @@ void process_stmt(AstNode* node);
 void process_define(AstNode* node);
 void process_typedef(AstNode* node);
 void process_primitive(AstNode* node);
+void process_list_node(AstNode* node);
 void process_interface(AstNode* node);
 void process_function(AstNode* node);
 void process_require(AstNode* node);

@@ -46,7 +46,7 @@ void dealloc_ast_node(AstNode* node){
   else if(node->type==AST_LTUPLE){
     dealloc_list((List*)(node->data));
   }
-  else if(node->type==AST_RETURN || node->type==AST_PAREN || node->type==AST_REQUIRE){
+  else if(node->type==AST_RETURN || node->type==AST_PAREN || node->type==AST_REQUIRE || node->type==AST_SUPER || node->type==AST_LIST){
     if(node->data) dealloc_ast_node((AstNode*)(node->data));
   }
   else if(node->type==AST_FIELD || node->type==AST_LOCAL || node->type==AST_TYPEDEF){

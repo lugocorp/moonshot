@@ -855,6 +855,70 @@ AstNode* parse_return(){
   return new_node(AST_RETURN,node);
 }
 
+// Parse tables and lists
+AstNode* parse_table_or_list(){
+  Token* tk=consume();
+  if(!specific(tk,TK_CURLY,"{")) return error(tk,"invalid table",NULL);
+  tk=check();
+  if(specific(tk,TK_CURLY,"}")){
+    consume();
+    return new_node(AST_LIST,NULL);
+  }
+  tk=check_ahead(2);
+  if(specific(tk,TK_MISC,"=")){
+    return parse_table();
+  }
+  return parse_list();
+}
+AstNode* parse_list(){
+  AstNode* tuple=parse_tuple();
+  if(!tuple) return NULL;
+  Token* tk=consume();
+  if(!specific(tk,TK_CURLY,"}")) FREE_AST_NODE(error(tk,"unclosed table",NULL),tuple);
+  return new_node(AST_LIST,tuple);
+}
+AstNode* parse_table(){
+  List* keys=new_default_list();
+  List* vals=new_default_list();
+  Token* tk=consume();
+  //if(!specific(tk,TK_CURLY,"{")) return error(tk,"invalid table",NULL);
+  //tk=consume();
+  while(tk && !specific(tk,TK_CURLY,"}")){
+    if(!expect(tk,TK_NAME)){
+      dealloc_list(keys);
+      FREE_AST_NODE_LIST(error(tk,"invalid table key",NULL),vals);
+    }
+    char* k=tk->text;
+    add_to_list(keys,k);
+    DEBUG("key: %s\n",k);
+    tk=consume();
+    if(!specific(tk,TK_MISC,"=")){
+      dealloc_list(keys);
+      FREE_AST_NODE_LIST(error(tk,"table key %s missing equals sign",k),vals);
+    }
+    AstNode* node=parse_expr();
+    if(!node){
+      dealloc_list(keys);
+      FREE_AST_NODE_LIST(NULL,vals);
+    }
+    add_to_list(vals,node);
+    tk=consume();
+    if(!specific(tk,TK_CURLY,"}")){
+      if(!specific(tk,TK_MISC,",")){
+        dealloc_list(keys);
+        FREE_AST_NODE_LIST(error(tk,"invalid table",NULL),vals);
+      }
+      tk=consume();
+    }
+  }
+  if(!tk){
+    dealloc_list(keys);
+    FREE_AST_NODE_LIST(error(tk,"unclosed table",NULL),vals);
+  }
+  DEBUG("table\n");
+  return new_node(AST_TABLE,new_table_node(keys,vals));
+}
+
 // Primitive types parse functions
 AstNode* parse_string(){
   int l=0;
@@ -911,47 +975,6 @@ AstNode* parse_nil(){
   if(!expect(tk,TK_NIL)) return error(tk,"invalid nil",NULL);
   DEBUG("nil\n");
   return new_node(AST_PRIMITIVE,new_primitive_node("nil",PRIMITIVE_NIL));
-}
-AstNode* parse_table(){
-  Token* tk=consume();
-  if(!specific(tk,TK_CURLY,"{")) return error(tk,"invalid table",NULL);
-  List* keys=new_default_list();
-  List* vals=new_default_list();
-  tk=consume();
-  while(tk && !specific(tk,TK_CURLY,"}")){
-    if(!expect(tk,TK_NAME)){
-      dealloc_list(keys);
-      FREE_AST_NODE_LIST(error(tk,"invalid table key",NULL),vals);
-    }
-    char* k=tk->text;
-    add_to_list(keys,k);
-    DEBUG("key: %s\n",k);
-    tk=consume();
-    if(!specific(tk,TK_MISC,"=")){
-      dealloc_list(keys);
-      FREE_AST_NODE_LIST(error(tk,"table key %s missing equals sign",k),vals);
-    }
-    AstNode* node=parse_expr();
-    if(!node){
-      dealloc_list(keys);
-      FREE_AST_NODE_LIST(NULL,vals);
-    }
-    add_to_list(vals,node);
-    tk=consume();
-    if(!specific(tk,TK_CURLY,"}")){
-      if(!specific(tk,TK_MISC,",")){
-        dealloc_list(keys);
-        FREE_AST_NODE_LIST(error(tk,"invalid table",NULL),vals);
-      }
-      tk=consume();
-    }
-  }
-  if(!tk){
-    dealloc_list(keys);
-    FREE_AST_NODE_LIST(error(tk,"unclosed table",NULL),vals);
-  }
-  DEBUG("table\n");
-  return new_node(AST_TABLE,new_table_node(keys,vals));
 }
 
 // Expression parse functions
@@ -1012,7 +1035,7 @@ AstNode* parse_expr(){
   else if(expect(tk,TK_TRUE) || expect(tk,TK_FALSE)) node=parse_boolean();
   else if(specific(tk,TK_PAREN,"(")) node=parse_paren_or_tuple_function();
   else if(expect(tk,TK_FUNCTION)) node=parse_function(NULL,1);
-  else if(specific(tk,TK_CURLY,"{")) node=parse_table();
+  else if(specific(tk,TK_CURLY,"{")) node=parse_table_or_list();
   else if(expect(tk,TK_REQUIRE)) node=parse_require();
   else if(expect(tk,TK_QUOTE)) node=parse_string();
   else if(expect(tk,TK_SUPER)) node=parse_super();

@@ -149,6 +149,7 @@ void process_node(AstNode* node){
     case AST_FUNCTION: process_function(node); return;
     case AST_TYPEDEF: process_typedef(node); return;
     case AST_REQUIRE: process_require(node); return;
+    case AST_LIST: process_list_node(node); return;
     case AST_DEFINE: process_define(node); return;
     case AST_REPEAT: process_repeat(node); return;
     case AST_LTUPLE: process_ltuple(node); return;
@@ -745,11 +746,8 @@ void process_goto(AstNode* node){
 }
 
 /*
-  Traverses through primitive value nodes
+  Traverses through table and list nodes
 */
-void process_primitive(AstNode* node){
-  write("%s",((StringAstNode*)(node->data))->text);
-}
 void process_table(AstNode* node){
   TableNode* data=(TableNode*)(node->data);
   write("{");
@@ -759,6 +757,19 @@ void process_table(AstNode* node){
     process_node((AstNode*)get_from_list(data->vals,a));
   }
   write("}");
+}
+void process_list_node(AstNode* node){
+  AstNode* data=(AstNode*)(node->data);
+  write("{");
+  if(data) process_tuple(data);
+  write("}");
+}
+
+/*
+  Traverses through primitive value nodes
+*/
+void process_primitive(AstNode* node){
+  write("%s",((StringAstNode*)(node->data))->text);
 }
 void process_tuple(AstNode* node){
   AstListNode* data=(AstListNode*)(node->data);
