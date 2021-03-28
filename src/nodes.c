@@ -173,8 +173,9 @@ void dealloc_ast_node(AstNode* node){
 /*
   Creates a new AstNode
 */
-AstNode* new_node(int type,void* data){
+AstNode* new_node(int type,int line,void* data){
   AstNode* node=(AstNode*)malloc(sizeof(AstNode));
+  node->line=line;
   node->type=type;
   node->data=data;
   return node;
@@ -250,7 +251,7 @@ StringAstNode* new_primitive_node(char* text,const char* type){
   strcpy(stype,type);
   char* stext=(char*)malloc(strlen(text)+1);
   strcpy(stext,text);
-  return new_string_ast_node(stext,new_node(AST_TYPE_BASIC,stype));
+  return new_string_ast_node(stext,new_node(AST_TYPE_BASIC,-1,stype));
 }
 
 /*
@@ -298,7 +299,7 @@ BinaryNode* new_binary_node(char* text,AstNode* l,AstNode* r){
 */
 InterfaceNode* new_interface_node(char* name,char* parent,List* ls){
   InterfaceNode* node=(InterfaceNode*)malloc(sizeof(InterfaceNode));
-  node->type=new_node(AST_TYPE_BASIC,name);
+  node->type=new_node(AST_TYPE_BASIC,-1,name);
   node->parent=parent;
   node->name=name;
   node->ls=ls;
@@ -313,7 +314,7 @@ InterfaceNode* new_interface_node(char* name,char* parent,List* ls){
 */
 ClassNode* new_class_node(char* name,char* parent,List* interfaces,List* ls){
   ClassNode* node=(ClassNode*)malloc(sizeof(ClassNode));
-  node->type=new_node(AST_TYPE_BASIC,name);
+  node->type=new_node(AST_TYPE_BASIC,-1,name);
   node->interfaces=interfaces;
   node->parent=parent;
   node->name=name;
@@ -350,8 +351,8 @@ EqualTypesNode* new_equal_types_node(char* name,AstNode* type,int relation){
 */
 BinaryNode* new_unary_node(char* op,AstNode* e){
   AstNode* type;
-  if(!strcmp(op,"trust")) type=new_node(AST_TYPE_BASIC,PRIMITIVE_NIL);
-  else if(!strcmp(op,"#")) type=new_node(AST_TYPE_BASIC,PRIMITIVE_INT);
-  else type=new_node(AST_TYPE_BASIC,PRIMITIVE_BOOL);
+  if(!strcmp(op,"trust")) type=new_node(AST_TYPE_BASIC,-1,PRIMITIVE_NIL);
+  else if(!strcmp(op,"#")) type=new_node(AST_TYPE_BASIC,-1,PRIMITIVE_INT);
+  else type=new_node(AST_TYPE_BASIC,-1,PRIMITIVE_BOOL);
   return new_binary_node(op,e,type);
 }

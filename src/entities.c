@@ -44,13 +44,13 @@ List* get_all_expected_fields(AstNode* node){
     append_all(ls,clas->ls);
     for(int a=0;a<clas->interfaces->n;a++){
       InterfaceNode* inter=interface_exists((char*)get_from_list(clas->interfaces,a));
-      AstNode* node1=new_node(AST_INTERFACE,inter);
+      AstNode* node1=new_node(AST_INTERFACE,-1,inter);
       append_all(ls,get_all_expected_fields(node1));
       free(node1);
     }
     clas=class_exists(clas->parent);
     if(clas){
-      AstNode* node1=new_node(AST_CLASS,clas);
+      AstNode* node1=new_node(AST_CLASS,-1,clas);
       append_all(ls,get_all_expected_fields(node1));
       free(node1);
     }
@@ -74,7 +74,7 @@ static List* get_interface_ancestor_methods(AstNode* node){
   List* ls=new_default_list();
   if(node->type==AST_CLASS){
     ClassNode* c=(ClassNode*)(node->data);
-    AstNode* inode=new_node(AST_INTERFACE,NULL);
+    AstNode* inode=new_node(AST_INTERFACE,-1,NULL);
     while(c){
       for(int a=0;a<c->interfaces->n;a++){
         name=(char*)get_from_list(c->interfaces,a);
@@ -119,7 +119,7 @@ static List* get_class_ancestor_methods(ClassNode* node){
   Then subtracts the two lists, returning any missing implementations in a List
 */
 List* get_missing_class_methods(ClassNode* c){
-  AstNode* node=new_node(AST_CLASS,c);
+  AstNode* node=new_node(AST_CLASS,-1,c);
   List* missing=get_interface_ancestor_methods(node);
   List* found=get_class_ancestor_methods(c);
   free(node);
@@ -148,10 +148,10 @@ List* get_missing_class_methods(ClassNode* c){
 int methods_equivalent(FunctionNode* f1,FunctionNode* f2){
   // Assumes the two methods belong to clases (name nodes are of type AST_ID)
   if(!f1->name || !f2->name) return 0;
-  AstNode* node=new_node(AST_FUNCTION,f1);
+  AstNode* node=new_node(AST_FUNCTION,-1,f1);
   AstNode* type1=get_type(node);
   free(node);
-  node=new_node(AST_FUNCTION,f2);
+  node=new_node(AST_FUNCTION,-1,f2);
   AstNode* type2=get_type(node);
   free(node);
   return !strcmp((char*)(f1->name->data),(char*)(f2->name->data)) && typed_match(type1,type2);
@@ -219,7 +219,7 @@ FunctionNode* get_parent_method(ClassNode* clas,FunctionNode* method){
         // I'm assuming both method->name and func->name are AST_ID types
         if(strcmp((char*)(method->name->data),(char*)(func->name->data))) continue;
         AstNode* func_type=get_type(e);
-        AstNode* m=new_node(AST_FUNCTION,method);
+        AstNode* m=new_node(AST_FUNCTION,-1,method);
         AstNode* method_type=get_type(m);
         free(m);
         if(typed_match(func_type,method_type)){

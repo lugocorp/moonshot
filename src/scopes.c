@@ -119,7 +119,7 @@ void push_class_scope(ClassNode* node){
   add_to_list(scopes,new_scope(SCOPE_CLASS,node));
   char* this=(char*)malloc(sizeof(char)*5);
   sprintf(this,"this");
-  AstNode* type=new_node(AST_TYPE_BASIC,node->name);
+  AstNode* type=new_node(AST_TYPE_BASIC,-1,node->name);
   StringAstNode* var=new_string_ast_node(this,type);
   if(!add_scoped_var(var)){
     // This should never ever happen

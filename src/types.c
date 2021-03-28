@@ -52,9 +52,9 @@ void dealloc_types(){
 */
 static AstNode* copy_type(AstNode* node){
   switch(node->type){
-    case AST_TYPE_ANY: return new_node(AST_TYPE_ANY,NULL);
-    case AST_TYPE_VARARG: return new_node(AST_TYPE_VARARG,NULL);
-    case AST_TYPE_BASIC: return new_node(AST_TYPE_BASIC,node->data);
+    case AST_TYPE_ANY: return new_node(AST_TYPE_ANY,-1,NULL);
+    case AST_TYPE_VARARG: return new_node(AST_TYPE_VARARG,-1,NULL);
+    case AST_TYPE_BASIC: return new_node(AST_TYPE_BASIC,-1,node->data);
     case AST_TYPE_TUPLE:{
       List* data=(List*)(node->data);
       List* ls=new_default_list();
@@ -62,7 +62,7 @@ static AstNode* copy_type(AstNode* node){
         AstNode* copy=copy_type((AstNode*)get_from_list(data,a));
         add_to_list(ls,copy);
       }
-      return new_node(AST_TYPE_TUPLE,ls);
+      return new_node(AST_TYPE_TUPLE,-1,ls);
     }
     case AST_TYPE_FUNC:{
       AstListNode* data=(AstListNode*)(node->data);
@@ -71,7 +71,7 @@ static AstNode* copy_type(AstNode* node){
         AstNode* e=copy_type((AstNode*)get_from_list(data->list,a));
         add_to_list(ls,e);
       }
-      return new_node(AST_TYPE_FUNC,new_ast_list_node(copy_type(data->node),ls));
+      return new_node(AST_TYPE_FUNC,-1,new_ast_list_node(copy_type(data->node),ls));
     }
   }
 }
@@ -88,7 +88,7 @@ int is_primitive(AstNode* node,const char* type){
   node is either a ClassNode or InterfaceNode, as specified by is_interface
 */
 static AstNode* get_type_of_field(char* name,void* data,int is_interface){
-  AstNode* node=new_node(is_interface?AST_INTERFACE:AST_CLASS,data);
+  AstNode* node=new_node(is_interface?AST_INTERFACE:AST_CLASS,-1,data);
   List* body=get_all_expected_fields(node);
   free(node);
   for(int a=0;a<body->n;a++){
@@ -116,7 +116,7 @@ static AstNode* get_ltuple_type(AstListNode* data){
       AstNode* e=(AstNode*)get_from_list(ls,a);
       add_to_list(types,copy_type(get_type(e)));
     }
-    data->node=new_node(AST_TYPE_TUPLE,types);
+    data->node=new_node(AST_TYPE_TUPLE,-1,types);
   }
   return data->node;
 }
@@ -128,7 +128,7 @@ static AstNode* get_tuple_type(AstListNode* data){
       AstNode* e=(AstNode*)get_from_list(ls,a);
       add_to_list(types,copy_type(get_type(e)));
     }
-    data->node=new_node(AST_TYPE_TUPLE,types);
+    data->node=new_node(AST_TYPE_TUPLE,-1,types);
   }
   return data->node;
 }
@@ -139,18 +139,18 @@ static AstNode* get_function_type(FunctionNode* data){
       AstNode* e;
       StringAstNode* arg=(StringAstNode*)get_from_list(data->args,a);
       if(arg->node) e=copy_type(arg->node);
-      else if(!strcmp(arg->text,"...")) e=new_node(AST_TYPE_VARARG,NULL);
-      else e=new_node(AST_TYPE_ANY,NULL);
+      else if(!strcmp(arg->text,"...")) e=new_node(AST_TYPE_VARARG,-1,NULL);
+      else e=new_node(AST_TYPE_ANY,-1,NULL);
       add_to_list(ls,e);
     }
-    data->functype=new_node(AST_TYPE_FUNC,new_ast_list_node(copy_type(data->type),ls));
+    data->functype=new_node(AST_TYPE_FUNC,-1,new_ast_list_node(copy_type(data->type),ls));
   }
   return data->functype;
 }
 static AstNode* get_super_type(){
   FunctionNode* method=get_method_scope();
   if(!method) return any_type_const();
-  AstNode* node=new_node(AST_FUNCTION,method);
+  AstNode* node=new_node(AST_FUNCTION,-1,method);
   AstListNode* functype=(AstListNode*)(get_type(node)->data);
   free(node);
   return functype->node;
@@ -501,7 +501,7 @@ static int path_exists(char* name,AstNode* type){
   Just a wrapper around add_type_equivalence
 */
 int add_child_type(char* child,char* parent,int relation){
-  AstNode* r=new_node(AST_TYPE_BASIC,child);
+  AstNode* r=new_node(AST_TYPE_BASIC,-1,child);
   return add_type_equivalence(parent,r,relation);
 }
 
@@ -512,7 +512,7 @@ int add_child_type(char* child,char* parent,int relation){
 */
 int add_type_equivalence(char* name,AstNode* type,int relation){
   if(type->type==AST_TYPE_BASIC){
-    AstNode* r=new_node(AST_TYPE_BASIC,name);
+    AstNode* r=new_node(AST_TYPE_BASIC,-1,name);
     char* l=(char*)(type->data);
     int cycle=path_exists(l,r);
     free(r);

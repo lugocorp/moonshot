@@ -3,7 +3,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
-#define ERROR(cond,msg,...) if(cond){add_error(-1,msg,__VA_ARGS__);return;}
+#define ERROR(cond,line,msg,...) if(cond){add_error(line,msg,__VA_ARGS__);return;}
 static char* instance_str; // The variable used for the produced object in constructors
 static FILE* _output; // The configured output as desired by the developer
 static int validate; // The traversal phase you're running
@@ -37,10 +37,10 @@ AstNode* any_type_const(){
 */
 void init_traverse(){
   instance_str=(char*)malloc(sizeof(char)*6);
-  float_type=new_node(AST_TYPE_BASIC,PRIMITIVE_FLOAT);
-  bool_type=new_node(AST_TYPE_BASIC,PRIMITIVE_BOOL);
-  int_type=new_node(AST_TYPE_BASIC,PRIMITIVE_INT);
-  any_type=new_node(AST_TYPE_ANY,NULL);
+  float_type=new_node(AST_TYPE_BASIC,-1,PRIMITIVE_FLOAT);
+  bool_type=new_node(AST_TYPE_BASIC,-1,PRIMITIVE_BOOL);
+  int_type=new_node(AST_TYPE_BASIC,-1,PRIMITIVE_INT);
+  any_type=new_node(AST_TYPE_ANY,-1,NULL);
   sprintf(instance_str,"__obj");
   num_indents=0;
   preempt_scopes();
@@ -164,7 +164,7 @@ void process_node(AstNode* node){
     case AST_IF: process_if(node); return;
     case AST_DO: process_do(node); return;
     case AST_ID: process_id(node); return;
-    default: add_error(-1,"invalid Moonshot AST detected (node ID %i)",node->type);
+    default: add_error(node->line,"invalid Moonshot AST detected (node ID %i)",node->type);
   }
 }
 
@@ -175,10 +175,10 @@ void process_interface(AstNode* node){
   InterfaceNode* data=(InterfaceNode*)(node->data);
   if(validate){
     if(data->parent){
-      ERROR(!interface_exists(data->parent),"parent interface %s does not exist",data->parent);
-      ERROR(!add_child_type(data->name,data->parent,RL_EXTENDS),"co-dependent interface %s detected",data->name);
+      ERROR(!interface_exists(data->parent),node->line,"parent interface %s does not exist",data->parent);
+      ERROR(!add_child_type(data->name,data->parent,RL_EXTENDS),node->line,"co-dependent interface %s detected",data->name);
     }
-    ERROR(type_exists(data->name),"type %s is already declared",data->name);
+    ERROR(type_exists(data->name),node->line,"type %s is already declared",data->name);
     register_type(data->name);
     register_interface(data);
   }
@@ -188,22 +188,22 @@ void process_class(AstNode* node){
   push_class_scope(data);
   if(validate){
     if(data->parent){
-      ERROR(!class_exists(data->parent),"parent class %s does not exist",data->parent);
-      ERROR(!add_child_type(data->name,data->parent,RL_EXTENDS),"co-dependent class %s detected",data->name);
+      ERROR(!class_exists(data->parent),node->line,"parent class %s does not exist",data->parent);
+      ERROR(!add_child_type(data->name,data->parent,RL_EXTENDS),node->line,"co-dependent class %s detected",data->name);
     }
     for(int a=0;a<data->interfaces->n;a++){
       char* interface=(char*)get_from_list(data->interfaces,a);
-      ERROR(!interface_exists(interface),"interface %s does not exist",interface);
+      ERROR(!interface_exists(interface),node->line,"interface %s does not exist",interface);
       add_child_type(data->name,interface,RL_IMPLEMENTS);
     }
-    ERROR(type_exists(data->name),"type %s is already declared",data->name);
+    ERROR(type_exists(data->name),node->line,"type %s is already declared",data->name);
     int num_cons=num_constructors(data);
-    ERROR(num_cons>1,"class %s has %i constructors, should have only 1",data->name,num_cons);
+    ERROR(num_cons>1,node->line,"class %s has %i constructors, should have only 1",data->name,num_cons);
     List* missing=get_missing_class_methods(data);
     if(missing->n){
       for(int a=0;a<missing->n;a++){
         FunctionNode* f=(FunctionNode*)get_from_list(missing,a);
-        add_error(-1,"Class %s does not implement method %s",data->name,(char*)(f->name->data));
+        add_error(node->line,"Class %s does not implement method %s",data->name,(char*)(f->name->data));
       }
       dealloc_list(missing);
       return;
@@ -218,7 +218,7 @@ void process_class(AstNode* node){
   List* all_fields=get_all_class_fields(data);
   Map* fields=collapse_ancestor_class_fields(all_fields);
   dealloc_list(all_fields);
-  ERROR(validate && !fields,"class %s has colliding names",data->name);
+  ERROR(validate && !fields,node->line,"class %s has colliding names",data->name);
   write("function %s(",data->name);
   FunctionNode* fdata=get_constructor(data);
   if(fdata){
@@ -276,7 +276,7 @@ void process_class(AstNode* node){
         write("end\n");
         pop_scope();
       }else if(child->type!=AST_DEFINE){
-        add_error(-1,"invalid child node in class %s",data->name);
+        add_error(child->line,"invalid child node in class %s",data->name);
         break;
       }
     }
@@ -323,30 +323,30 @@ static int validate_function_parameters(char* target,AstNode* func,AstNode* args
   if(args_node){
     List* args=((AstListNode*)(args_node->data))->list;
     if(!funcargs){
-      add_error(-1,"too many arguments for %s",target);
+      add_error(func->line,"too many arguments for %s",target);
       return 0;
     }
     int max=funcargs->n;
     if(is_variadic_function(funcargs)){
       if(args->n<funcargs->n-1){
-        add_error(-1,"not enough arguments for %s",target);
+        add_error(func->line,"not enough arguments for %s",target);
         return 0;
       }
       max=funcargs->n-1;
     }else if(args->n!=funcargs->n){
-      add_error(-1,"invalid number of arguments for %s",target);
+      add_error(func->line,"invalid number of arguments for %s",target);
       return 0;
     }
     for(int a=0;a<max;a++){
       AstNode* type1=get_type((AstNode*)get_from_list(args,a));
       AstNode* type2=(AstNode*)get_from_list(funcargs,a);
       if(!typed_match(type2,type1)){
-        add_error(-1,"invalid argument provided for %s",target);
+        add_error(func->line,"invalid argument provided for %s",target);
         return 0;
       }
     }
   }else if(funcargs && funcargs->n && !(funcargs->n==1 && is_variadic_function(funcargs))){
-    add_error(-1,"not enough arguments for %s",target);
+    add_error(func->line,"not enough arguments for %s",target);
     return 0;
   }
   return 1;
@@ -367,17 +367,17 @@ void process_call(AstNode* node){
       name=(char*)(data->l->data);
       func=function_exists(name);
       if(func){
-        funcnode=new_node(AST_FUNCTION,func);
+        funcnode=new_node(AST_FUNCTION,-1,func);
         functype=get_type(funcnode);
       }else{
         ClassNode* clas=class_exists(name);
         if(clas){
           FunctionNode* constructor=get_constructor(clas);
           if(constructor){
-            funcnode=new_node(AST_FUNCTION,constructor);
+            funcnode=new_node(AST_FUNCTION,-1,constructor);
             functype=get_type(funcnode);
           }else{
-            dummy_constructor_type=new_node(AST_TYPE_FUNC,new_ast_list_node(new_node(AST_TYPE_BASIC,name),new_default_list()));
+            dummy_constructor_type=new_node(AST_TYPE_FUNC,-1,new_ast_list_node(new_node(AST_TYPE_BASIC,-1,name),new_default_list()));
             functype=dummy_constructor_type;
           }
         }
@@ -407,19 +407,19 @@ void process_super(AstNode* node){
   ClassNode* clas=get_class_scope();
   FunctionNode* func=get_method_scope();
   if(validate){
-    ERROR(!clas,"cannot use super methods outside of a class",NULL);
-    ERROR(!func,"must use super keyword within a class method",NULL);
-    ERROR(!clas->parent,"cannot use super methods because %s is not a child class",clas->name);
+    ERROR(!clas,node->line,"cannot use super methods outside of a class",NULL);
+    ERROR(!func,node->line,"must use super keyword within a class method",NULL);
+    ERROR(!clas->parent,node->line,"cannot use super methods because %s is not a child class",clas->name);
   }
   ClassNode* parent=class_exists(clas->parent);
   FunctionNode* method=get_parent_method(parent,func);
   if(validate){
     // I'm assuming func->name is of type AST_ID
-    ERROR(!method && func->is_constructor,"constructor in class %s does not override a super constructor",clas->name);
-    ERROR(!method && !func->is_constructor,"method %s in class %s does not override a super method",(char*)(func->name->data),clas->name);
+    ERROR(!method && func->is_constructor,node->line,"constructor in class %s does not override a super constructor",clas->name);
+    ERROR(!method && !func->is_constructor,node->line,"method %s in class %s does not override a super method",(char*)(func->name->data),clas->name);
     char* target=(char*)malloc(sizeof(char)*(strlen(parent->name)+22));
     sprintf(target,"constructor of class %s",parent->name);
-    AstNode* fnode=new_node(AST_FUNCTION,method);
+    AstNode* fnode=new_node(AST_FUNCTION,-1,method);
     validate_function_parameters(target,fnode,data);
     free(target);
     free(fnode);
@@ -465,7 +465,7 @@ void process_set(AstNode* node){
       List* ls=(List*)(tr->data);
       if(ls->n==1) tr=(AstNode*)get_from_list(ls,0);
     }
-    ERROR(!typed_match(tl,tr),"expression of type %t cannot be assigned to variable of type %t",tr,tl);
+    ERROR(!typed_match(tl,tr),node->line,"expression of type %t cannot be assigned to variable of type %t",tr,tl);
   }
   process_node(data->l);
   write("=");
@@ -484,7 +484,7 @@ void process_return(AstNode* node){
           type2=(AstNode*)get_from_list(ls,0);
         }
       }
-      ERROR(!typed_match(type1,type2),"function of type %t cannot return type %t",type1,type2);
+      ERROR(!typed_match(type1,type2),node->line,"function of type %t cannot return type %t",type1,type2);
     }
   }
   write("return");
@@ -555,11 +555,11 @@ void process_define(AstNode* node){
     make_type_promise(data->l);
     if(data->r){
       AstNode* tr=get_type(data->r);
-      ERROR(!typed_match(data->l,tr),"expression of type %t cannot be assigned to variable of type %t",tr,data->l);
+      ERROR(!typed_match(data->l,tr),node->line,"expression of type %t cannot be assigned to variable of type %t",tr,data->l);
     }
     StringAstNode* data1=new_string_ast_node(data->text,data->l);
     if(!add_scoped_var(data1)){
-      add_error(-1,"variable %s was already declared in this scope",data->text);
+      add_error(node->line,"variable %s was already declared in this scope",data->text);
       free(data1);
     }
   }
@@ -571,10 +571,10 @@ void process_define(AstNode* node){
 void process_typedef(AstNode* node){
   StringAstNode* data=(StringAstNode*)(node->data);
   if(validate){
-    ERROR(type_exists(data->text),"type %s is already declared",data->text);
+    ERROR(type_exists(data->text),node->line,"type %s is already declared",data->text);
     //ERROR(!compound_type_exists(data->node),"type %t does not exist",data->node);
     make_type_promise(data->node);
-    ERROR(!add_type_equivalence(data->text,data->node,RL_EQUALS),"co-dependent typedef %s detected",data->text);
+    ERROR(!add_type_equivalence(data->text,data->node,RL_EQUALS),node->line,"co-dependent typedef %s detected",data->text);
     register_type(data->text);
   }
 }
@@ -610,9 +610,9 @@ void process_function(AstNode* node){
       conditional_newline(child);
     }
     if(data->is_constructor){
-      ERROR(num_returns,"constructors cannot have return statements",NULL);
+      ERROR(num_returns,node->line,"constructors cannot have return statements",NULL);
     }else if(!is_primitive(data->type,PRIMITIVE_NIL) && data->type->type!=AST_TYPE_ANY){
-      ERROR(!num_returns,"function of type %t cannot return nil",data->type);
+      ERROR(!num_returns,node->line,"function of type %t cannot return nil",data->type);
     }
     indent(-1);
     write("end");

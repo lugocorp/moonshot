@@ -57,6 +57,7 @@ void deallocate_token(Token* token);
 typedef struct{
   void* data;
   int type;
+  int line;
 } AstNode;
 
 typedef struct{
@@ -294,7 +295,7 @@ AstNode* parse_do();
 // nodes.c
 void dealloc_ast_type(AstNode* node);
 void dealloc_ast_node(AstNode* node);
-AstNode* new_node(int type,void* data);
+AstNode* new_node(int type,int line,void* data);
 FornumNode* new_fornum_node(char* name,AstNode* num1,AstNode* num2,AstNode* num3,List* body);
 FunctionNode* new_function_node(AstNode* name,AstNode* type,List* args,List* body);
 ClassNode* new_class_node(char* name,char* parent,List* interfaces,List* ls);
