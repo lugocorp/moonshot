@@ -1,6 +1,7 @@
 #include "./internal.h"
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 
 /*
   Deallocates an AstNode with type AST_TYPE_*
@@ -213,6 +214,7 @@ AstListNode* new_ast_list_node(AstNode* ast,List* list){
 */
 TableNode* new_table_node(List* keys,List* vals){
   TableNode* node=(TableNode*)malloc(sizeof(TableNode));
+  assert(keys->n==vals->n);
   node->keys=keys;
   node->vals=vals;
   return node;

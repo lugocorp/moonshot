@@ -1,6 +1,7 @@
 #include "./internal.h"
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 static List* scopes;
 
 /*
@@ -73,6 +74,7 @@ void push_function_scope(FunctionNode* node){
     StringAstNode* var=new_string_ast_node(arg->text,arg->node);
     if(!add_scoped_var(var)){
       // This should never ever happen
+      assert(0);
       free(var);
     }
   }
@@ -121,6 +123,7 @@ void push_class_scope(ClassNode* node){
   StringAstNode* var=new_string_ast_node(this,type);
   if(!add_scoped_var(var)){
     // This should never ever happen
+    assert(0);
     free(type);
     free(this);
     free(var);
