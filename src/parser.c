@@ -145,6 +145,7 @@ static int specific(Token* tk,int type,const char* val){
   Returns the precedence level of a binary operator
 */
 static int precedence(char* op){
+  if(!strcmp(op,"as")) return 8;
   if(!strcmp(op,"^")) return 7;
   if(!strcmp(op,"*") || !strcmp(op,"/")) return 5;
   if(!strcmp(op,"+") || !strcmp(op,"-")) return 4;
@@ -1048,11 +1049,15 @@ AstNode* parse_expr(){
       }else node=new_node(AST_UNARY,new_unary_node(text,node));
     }else node=new_node(AST_UNARY,new_unary_node(text,node));
   }
+
+  // Check for binary expressions
   tk=check();
   if(expect(tk,TK_BINARY) || specific(tk,TK_MISC,"-")){
     char* op=tk->text;
+    AstNode* r;
     consume();
-    AstNode* r=parse_expr();
+    if(!strcmp(op,"as")) r=parse_type();
+    else r=parse_expr();
     if(!r) FREE_AST_NODE(NULL,node);
     node=precede_expr_tree(new_binary_node(op,node,r));
   }

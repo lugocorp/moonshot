@@ -196,6 +196,9 @@ static AstNode* get_field_type(StringAstNode* data){
   return any_type_const();
 }
 static AstNode* get_binary_type(BinaryNode* data){
+  if(!strcmp(data->text,"as")){
+    return data->r;
+  }
   AstNode* tl=get_type(data->l);
   AstNode* tr=get_type(data->r);
   if(!strcmp(data->text,"..")){

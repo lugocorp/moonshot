@@ -778,8 +778,10 @@ void process_unary(AstNode* node){
 void process_binary(AstNode* node){
   BinaryNode* data=(BinaryNode*)(node->data);
   process_node(data->l);
-  write(" %s ",data->text);
-  process_node(data->r);
+  if(strcmp(data->text,"as")){
+    write(" %s ",data->text);
+    process_node(data->r);
+  }
 }
 void process_paren(AstNode* node){
   write("(");
