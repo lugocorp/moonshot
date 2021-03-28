@@ -923,7 +923,6 @@ AstNode* parse_table(){
 
 // Primitive types parse functions
 AstNode* parse_string(){
-  int l=0;
   Token* tk=consume();
   if(!expect(tk,TK_QUOTE)) return error(tk,"invalid string",NULL);
   List* buffer=new_default_list();
@@ -936,13 +935,7 @@ AstNode* parse_string(){
   }
   if(tk) add_to_list(buffer,begin->text);
   else FREE_LIST(error(begin,"unclosed string",NULL),buffer);
-  for(int a=0;a<buffer->n;a++) l+=strlen((char*)get_from_list(buffer,a));
-  char* string=(char*)malloc(sizeof(char)*(l+1));
-  for(int a=0;a<buffer->n;a++){
-    char* part=(char*)get_from_list(buffer,a);
-    if(a) strcat(string,part);
-    else strcpy(string,part);
-  }
+  char* string=collapse_string_list(buffer);
   dealloc_list(buffer);
   DEBUG("string %s\n",string);
   AstNode* node=new_node(AST_PRIMITIVE,new_primitive_node(string,PRIMITIVE_STRING));

@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #define ERROR_BUFFER_LENGTH 256 // Maximum length for an error message
-static char* error_error; // Error message for when ERROR_BUFFER_LENGTH is overflows
+static int line_written; // Zero if there's no content on the current output line yet
 static List* srcs; // Stack of files you're parsing/traversing
 static List* requires; // List of required files
 static List* errors; // List of error strings
@@ -29,6 +29,55 @@ char* moonshot_next_error(){
 }
 
 /*
+  Custom string format function
+*/
+char* format_string(const char* msg,va_list args){
+  List* ls=new_default_list();
+  char symbol[2]={0,0};
+  int n=strlen(msg);
+  for(int a=0;a<n;a++){
+    if(msg[a]=='\n'){
+      line_written=0;
+    }else if(!line_written){
+      line_written=1;
+      for(int a=0;a<get_num_indents();a++){
+        char* tab=(char*)malloc(sizeof(char)*3);
+        sprintf(tab,"\t");
+        add_to_list(ls,tab);
+      }
+    }
+    if(a<n-1 && msg[a]=='%'){
+      if(msg[a+1]=='s'){
+        char* str=va_arg(args,char*);
+        add_to_list(ls,copy_string(str));
+        a++;
+        continue;
+      }
+      if(msg[a+1]=='t'){
+        AstNode* type=(AstNode*)va_arg(args,AstNode*);
+        char* str=stringify_type(type);
+        add_to_list(ls,str);
+        a++;
+        continue;
+      }
+      if(msg[a+1]=='i'){
+        int v=va_arg(args,int);
+        char* str=string_from_int(v);
+        add_to_list(ls,str);
+        a++;
+        continue;
+      }
+    }
+    symbol[0]=msg[a];
+    add_to_list(ls,copy_string(symbol));
+  }
+  char* str=collapse_string_list(ls);
+  for(int a=0;a<ls->n;a++) free(get_from_list(ls,a));
+  free(ls);
+  return str;
+}
+
+/*
   Adds an error into the compiler error stream
   Must include at least one parameter after msg or you'll get an error
   Exits with a special error if your msg and va_args cause the error buffer to overflow
@@ -40,79 +89,23 @@ void add_error(int line,const char* msg,...){
   va_end(args);
 }
 void add_error_internal(int line,const char* msg,va_list args){
-  char* err=(char*)malloc(sizeof(char)*ERROR_BUFFER_LENGTH);
-  char symbol[2]={0,0};
-  int n=strlen(msg);
-  int total=0;
-  err[0]=0;
-  for(int a=0;a<n;a++){
-    if(a<n-1 && msg[a]=='%'){
-      if(msg[a+1]=='s'){
-        char* str=va_arg(args,char*);
-        total+=strlen(str);
-        if(total+1>ERROR_BUFFER_LENGTH){
-          add_to_list(errors,error_error);
-          free(err);
-          return;
-        }
-        strcat(err,str);
-        a++;
-        continue;
-      }
-      if(msg[a+1]=='t'){
-        AstNode* type=(AstNode*)va_arg(args,AstNode*);
-        char* str=stringify_type(type);
-        total+=strlen(str);
-        if(total+1>ERROR_BUFFER_LENGTH){
-          add_to_list(errors,error_error);
-          free(err);
-          return;
-        }
-        strcat(err,str);
-        free(str);
-        a++;
-        continue;
-      }
-      if(msg[a+1]=='i'){
-        char str[4];
-        int v=va_arg(args,int);
-        if(v>=1000 || v<=-100){
-          add_to_list(errors,error_error);
-          free(err);
-          return;
-        }
-        sprintf(str,"%i",v);
-        total+=strlen(str);
-        if(total+1>ERROR_BUFFER_LENGTH){
-          add_to_list(errors,error_error);
-          free(err);
-          return;
-        }
-        strcat(err,str);
-        a++;
-        continue;
-      }
-    }
-    total++;
-    if(total+1>ERROR_BUFFER_LENGTH){
-      add_to_list(errors,error_error);
-      free(err);
-      return;
-    }
-    symbol[0]=msg[a];
-    strcat(err,symbol);
+  List* ls=new_default_list();
+  add_to_list(ls,format_string(msg,args));
+  if(srcs->n){
+    char* file=(char*)get_from_list(srcs,srcs->n-1);
+    char* suffix=(char*)malloc(sizeof(char)*(strlen(file)+5));
+    sprintf(suffix," in %s",file);
+    add_to_list(ls,suffix);
   }
   if(line>=0){
-    char suffix[256];
-    sprintf(suffix," on line %i",line);
-    strcat(err,suffix);
+    char* str=string_from_int(line);
+    char* suffix=(char*)malloc(sizeof(char)*(strlen(str)+9));
+    sprintf(suffix," (line %i)",line);
+    add_to_list(ls,suffix);
   }
-  if(srcs->n){
-    char suffix[256];
-    char* file=(char*)get_from_list(srcs,srcs->n-1);
-    sprintf(suffix," in file %s",file);
-    strcat(err,suffix);
-  }
+  char* err=collapse_string_list(ls);
+  for(int a=0;a<ls->n;a++) free(get_from_list(ls,a));
+  free(ls);
   add_to_list(errors,err);
 }
 
@@ -131,6 +124,50 @@ static void dealloc_errors(){
   for(int a=0;a<errors->n;a++) free(get_from_list(errors,a));
   dealloc_list(errors);
   errors=NULL;
+}
+
+/*
+  Takes a List of strings and collapses it into one single string
+*/
+char* collapse_string_list(List* ls){
+  int l=0;
+  for(int a=0;a<ls->n;a++) l+=strlen((char*)get_from_list(ls,a));
+  char* copy=(char*)malloc(sizeof(char)*(l+1));
+  copy[0]=0;
+  for(int a=0;a<ls->n;a++) strcat(copy,(char*)get_from_list(ls,a));
+  return copy;
+}
+
+/*
+  Copies a string but without the first and last characters (quotes)
+*/
+char* strip_quotes(char* str){
+  int l=strlen(str);
+  char* copy=(char*)malloc(sizeof(char)*(l-1));
+  strncpy(copy,str+1,l-2);
+  copy[l-2];
+  return copy;
+}
+
+/*
+  Copies a string
+*/
+char* copy_string(char* str){
+  int l=strlen(str);
+  char* copy=(char*)malloc(sizeof(char)*(l+1));
+  strcpy(copy,str);
+  return copy;
+}
+
+/*
+  Get string from int
+*/
+char* string_from_int(int a){
+  int n=(a/10)+1;
+  if(n<0) n++;
+  char* msg=(char*)malloc(sizeof(char)*(n+1));
+  sprintf(msg,"%i",a);
+  return msg;
 }
 
 /*
@@ -162,8 +199,7 @@ static void dealloc_requires(){
   Manually adds a dummy node for the given filename
 */
 void dummy_required_file(char* filename){
-  char* copy=(char*)malloc(sizeof(char)*(strlen(filename)+1));
-  strcpy(copy,filename);
+  char* copy=copy_string(filename);
   remove_from_list(srcs,srcs->n-1);
   Require* r=(Require*)malloc(sizeof(Require));
   r->filename=copy;
@@ -181,9 +217,7 @@ void dummy_required_file(char* filename){
   Returns 1 if the required file is a Moonshot source file
 */
 int require_file(char* filename,int validate){
-  char* copy=(char*)malloc(sizeof(char)*(strlen(filename)-1));
-  strncpy(copy,filename+1,strlen(filename)-2);
-  copy[strlen(filename)-2]=0;
+  char* copy=strip_quotes(filename);
   int l=strlen(copy);
   if(l<5 || strcmp(copy+l-5,".moon")){
     free(copy);
@@ -249,8 +283,7 @@ int require_file(char* filename,int validate){
   Initializes data used by the Moonshot library
 */
 void moonshot_init(){
-  error_error=(char*)malloc(sizeof(char)*22);
-  sprintf(error_error,"error buffer overflow");
+  line_written=0;
   requires=NULL;
   errors=NULL;
   _input=NULL;

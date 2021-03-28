@@ -238,9 +238,14 @@ enum RULES{
 
 // moonshot.c
 void add_error_internal(int line,const char* msg,va_list args);
+char* format_string(const char* msg,va_list args);
 int require_file(char* filename,int validate);
 void add_error(int line,const char* msg,...);
+char* collapse_string_list(List* ls);
 void dealloc_token_buffer(List* ls);
+char* strip_quotes(char* str);
+char* copy_string(char* str);
+char* string_from_int(int a);
 
 // tokenizer.c
 void dealloc_token(Token* tk);
@@ -248,13 +253,6 @@ List* tokenize(FILE* f);
 
 // parser.c
 AstNode* parse(List* ls);
-
-// traverse.c
-void traverse(AstNode* node,int validate);
-void dealloc_traverse();
-void init_traverse();
-
-// parser.c
 AstNode* parse_function(AstNode* type,int include_body);
 AstNode* parse_constructor(char* classname);
 AstNode* parse_paren_or_tuple_function();
@@ -371,6 +369,10 @@ List* get_all_class_fields(ClassNode* data);
 int num_constructors(ClassNode* data);
 
 // traversal.c
+void traverse(AstNode* node,int validate);
+void dealloc_traverse();
+void init_traverse();
+int get_num_indents();
 AstNode* any_type_const();
 AstNode* int_type_const();
 AstNode* bool_type_const();

@@ -7,12 +7,16 @@
 static char* instance_str; // The variable used for the produced object in constructors
 static FILE* _output; // The configured output as desired by the developer
 static int validate; // The traversal phase you're running
-static int line_written; // Zero if there's no content on the current output line yet
 static int num_indents; // Number of tabs on the output line
 static AstNode* float_type; // AstNode constant representing the FLOAT type
 static AstNode* bool_type; // AstNode constant representing the BOOL type
 static AstNode* int_type; // AstNode constant representing the INT type
 static AstNode* any_type; // AstNode constant representing the ANY type
+
+// Get number of indents
+int get_num_indents(){
+  return num_indents;
+}
 
 // Constant primitive type AstNodes access
 AstNode* float_type_const(){
@@ -38,7 +42,6 @@ void init_traverse(){
   int_type=new_node(AST_TYPE_BASIC,PRIMITIVE_INT);
   any_type=new_node(AST_TYPE_ANY,NULL);
   sprintf(instance_str,"__obj");
-  line_written=0;
   num_indents=0;
   preempt_scopes();
   init_types();
@@ -91,26 +94,10 @@ static void indent(int a){
 static void write(const char* msg,...){
   if(validate) return;
   va_list args;
-  int n=strlen(msg);
   va_start(args,msg);
-  for(int a=0;a<n;a++){
-    if(msg[a]=='\n'){
-      line_written=0;
-    }else if(!line_written){
-      line_written=1;
-      for(int a=0;a<num_indents;a++){
-        fprintf(_output,"\t");
-      }
-    }
-    if(a<n-1 && msg[a]=='%'){
-      if(msg[a+1]=='s'){
-        fprintf(_output,"%s",va_arg(args,char*));
-        a++;
-        continue;
-      }
-    }
-    fprintf(_output,"%c",msg[a]);
-  }
+  char* str=format_string(msg,args);
+  fprintf(_output,"%s",str);
+  free(str);
   va_end(args);
 }
 
