@@ -107,15 +107,19 @@ static void discover_tokens(List* ls,int line,char* buffer,int n,int char_class)
   }else{ // Special class tokenization
     int a=0;
     while(a<n){
-      if(multiline_comment && n-a>=2 && !strncmp(buffer+a,"]]",2)){
-        multiline_comment=0;
-        a+=2;
+      if(multiline_comment){
+        if(n-a>=2 && !strncmp(buffer+a,"]]",2)){
+          multiline_comment=0;
+          a++;
+        }
+        a++;
         continue;
       }
-      if(comment || multiline_comment) break;
+      if(comment) break;
       if(n-a>=4 && !strncmp(buffer+a,"--[[",4)){
         multiline_comment=1;
-        break;
+        a+=4;
+        continue;
       }
       if(n-a>=2 && !strncmp(buffer+a,"--",2)){
         comment=1;
