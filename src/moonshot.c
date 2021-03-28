@@ -243,7 +243,7 @@ int require_file(char* filename,int validate){
     List* ls=tokenize(f);
     fclose(f);
     if(!ls){
-      add_error(-1,"tokenization buffer overflow");
+      add_error(-1,"tokenization buffer overflow",NULL);
       remove_from_list(srcs,srcs->n-1);
       free(copy);
       return 1;
@@ -320,7 +320,7 @@ int moonshot_compile(){
   // Tokenize
   List* ls=tokenize(_input);
   if(!ls){
-    add_error(-1,"tokenization buffer overflow");
+    add_error(-1,"tokenization buffer overflow",NULL);
     return 0;
   }
 
