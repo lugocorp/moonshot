@@ -878,15 +878,13 @@ AstNode* parse_list(){
   AstNode* tuple=parse_tuple();
   if(!tuple) return NULL;
   Token* tk=consume();
-  if(!specific(tk,TK_CURLY,"}")) FREE_AST_NODE(error(tk,"unclosed table",NULL),tuple);
+  if(!specific(tk,TK_CURLY,"}")) FREE_AST_NODE(error(tk,"unclosed list",NULL),tuple);
   return new_node(AST_LIST,tuple);
 }
 AstNode* parse_table(){
   List* keys=new_default_list();
   List* vals=new_default_list();
   Token* tk=consume();
-  //if(!specific(tk,TK_CURLY,"{")) return error(tk,"invalid table",NULL);
-  //tk=consume();
   while(tk && !specific(tk,TK_CURLY,"}")){
     if(!expect(tk,TK_NAME)){
       dealloc_list(keys);

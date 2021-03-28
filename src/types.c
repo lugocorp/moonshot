@@ -87,10 +87,10 @@ int is_primitive(AstNode* node,const char* type){
   Returns the type of some entity's field name
   node is either a ClassNode or InterfaceNode, as specified by is_interface
 */
-static AstNode* get_type_of_field(char* name,void* node,int is_interface){
-  List* body=NULL;
-  if(is_interface) body=((InterfaceNode*)node)->ls;
-  else body=((ClassNode*)node)->ls;
+static AstNode* get_type_of_field(char* name,void* data,int is_interface){
+  AstNode* node=new_node(is_interface?AST_INTERFACE:AST_CLASS,data);
+  List* body=get_all_expected_fields(node);
+  free(node);
   for(int a=0;a<body->n;a++){
     AstNode* e=(AstNode*)get_from_list(body,a);
     if(e->type==AST_FUNCTION){

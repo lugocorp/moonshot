@@ -366,6 +366,7 @@ int methods_equivalent(FunctionNode* f1,FunctionNode* f2);
 List* get_missing_class_methods(ClassNode* node);
 FunctionNode* get_constructor(ClassNode* data);
 Map* collapse_ancestor_class_fields(List* ls);
+List* get_all_expected_fields(AstNode* node);
 List* get_all_class_fields(ClassNode* data);
 int num_constructors(ClassNode* data);
 

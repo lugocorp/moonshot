@@ -34,6 +34,37 @@ FunctionNode* get_constructor(ClassNode* data){
 }
 
 /*
+  Returns a list of all fields given a AST_CLASS or AST_INTERFACE node
+  The returned list is full of AstNodes
+*/
+List* get_all_expected_fields(AstNode* node){
+  List* ls=new_default_list();
+  if(node->type==AST_CLASS){
+    ClassNode* clas=(ClassNode*)(node->data);
+    append_all(ls,clas->ls);
+    for(int a=0;a<clas->interfaces->n;a++){
+      InterfaceNode* inter=interface_exists((char*)get_from_list(clas->interfaces,a));
+      AstNode* node1=new_node(AST_INTERFACE,inter);
+      append_all(ls,get_all_expected_fields(node1));
+      free(node1);
+    }
+    clas=class_exists(clas->parent);
+    if(clas){
+      AstNode* node1=new_node(AST_CLASS,clas);
+      append_all(ls,get_all_expected_fields(node1));
+      free(node1);
+    }
+  }else if(node->type==AST_INTERFACE){
+    InterfaceNode* inter=(InterfaceNode*)(node->data);
+    while(inter){
+      append_all(ls,inter->ls);
+      inter=interface_exists(inter->parent);
+    }
+  }
+  return ls;
+}
+
+/*
   Collects every method from a class or interface's interface ancestors
   Travels back in a straight path for interface nodes
   Travels in a branching path for class nodes
