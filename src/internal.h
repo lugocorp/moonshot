@@ -65,17 +65,17 @@ typedef struct{
 } AstListNode;
 
 typedef struct{
-  int is_constructor;
-  AstNode* functype;
-  AstNode* name;
-  AstNode* type;
-  List* body;
-  List* args;
+  int is_constructor; // 1 if the function is a constructor
+  AstNode* functype; // Overall function type
+  AstNode* name; // An AST_LHS or AST_ID node representing the name, or NULL for constructors
+  AstNode* type; // Return type of the function (part of functype)
+  List* body; // List of AstNodes for the function body
+  List* args; // List of StringAstNodes for function parameters
 } FunctionNode;
 
 typedef struct{
-  List* keys;
-  List* vals;
+  List* keys; // List of strings
+  List* vals; // List of AstNodes
 } TableNode;
 
 typedef struct{
@@ -109,18 +109,18 @@ typedef struct{
 } BinaryNode;
 
 typedef struct{
-  AstNode* type;
-  char* parent;
-  char* name;
-  List* ls;
+  AstNode* type; // Type representing the interface itself
+  char* parent; // Name of parent interface, or NULL if there is none
+  char* name; // Name of interface
+  List* ls; // List of AstNodes (AST_FUNCTION nodes)
 } InterfaceNode;
 
 typedef struct{
-  List* interfaces;
-  AstNode* type;
-  char* parent;
-  char* name;
-  List* ls;
+  List* interfaces; // List of strings
+  AstNode* type; // Type representing the class itself
+  char* parent; // Name of parent class, or NULL if there is none
+  char* name; // Name of class
+  List* ls; // List of AstNodes
 } ClassNode;
 
 typedef struct{
@@ -131,9 +131,9 @@ typedef struct{
 
 // Traversal algorithm structs
 typedef struct{
-  AstNode* type;
-  int relation;
-  char* name;
+  AstNode* type; // Type that the registered type is equivalent to
+  int relation; // Type equivalence type (check enum Relations)
+  char* name; // Name of the registered type
 } EqualTypesNode;
 
 typedef struct{
@@ -144,10 +144,10 @@ typedef struct{
 
 // File requirements
 typedef struct{
-  char* filename;
-  AstNode* tree;
-  List* tokens;
-  int written;
+  char* filename; // Filename of the required file
+  AstNode* tree; // Parsed AST tree
+  List* tokens; // Token list for file
+  int written; // 1 if the file was written to output yet
 } Require;
 
 // List of all scope types
