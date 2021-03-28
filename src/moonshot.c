@@ -6,6 +6,7 @@
 #include <stdarg.h>
 #define ERROR_BUFFER_LENGTH 256 // Maximum length for an error message
 static char* error_error; // Error message for when ERROR_BUFFER_LENGTH is overflows
+static List* srcs; // Stack of files you're parsing/traversing
 static List* requires; // List of required files
 static List* errors; // List of error strings
 static int error_i; // Index of currently consumed error
@@ -106,6 +107,12 @@ void add_error_internal(int line,const char* msg,va_list args){
     sprintf(suffix," on line %i",line);
     strcat(err,suffix);
   }
+  if(srcs->n){
+    char suffix[256];
+    char* file=(char*)get_from_list(srcs,srcs->n-1);
+    sprintf(suffix," in file %s",file);
+    strcat(err,suffix);
+  }
   add_to_list(errors,err);
 }
 
@@ -131,6 +138,7 @@ static void dealloc_errors(){
 */
 void init_requires(){
   requires=new_default_list();
+  srcs=new_default_list();
 }
 
 /*
@@ -145,7 +153,9 @@ static void dealloc_requires(){
     free(r);
   }
   dealloc_list(requires);
+  dealloc_list(srcs);
   requires=NULL;
+  srcs=NULL;
 }
 
 /*
@@ -154,12 +164,14 @@ static void dealloc_requires(){
 void dummy_required_file(char* filename){
   char* copy=(char*)malloc(sizeof(char)*(strlen(filename)+1));
   strcpy(copy,filename);
+  remove_from_list(srcs,srcs->n-1);
   Require* r=(Require*)malloc(sizeof(Require));
   r->filename=copy;
   r->tokens=NULL;
   r->written=1;
   r->tree=NULL;
   add_to_list(requires,r);
+  add_to_list(srcs,copy);
 }
 
 /*
@@ -177,10 +189,12 @@ int require_file(char* filename,int validate){
     free(copy);
     return 0;
   }
+  add_to_list(srcs,copy);
   if(validate){
     for(int a=0;a<requires->n;a++){
       Require* r=(Require*)get_from_list(requires,a);
       if(!strcmp(r->filename,copy)){
+        remove_from_list(srcs,srcs->n-1);
         free(copy);
         return 1;
       }
@@ -188,6 +202,7 @@ int require_file(char* filename,int validate){
     FILE* f=fopen(copy,"r");
     if(!f){
       add_error(-1,"cannot open file %s",copy);
+      remove_from_list(srcs,srcs->n-1);
       free(copy);
       return 1;
     }
@@ -195,11 +210,13 @@ int require_file(char* filename,int validate){
     fclose(f);
     if(!ls){
       add_error(-1,"tokenization buffer overflow");
+      remove_from_list(srcs,srcs->n-1);
       free(copy);
       return 1;
     }
     AstNode* root=parse(ls);
     if(!root){
+      remove_from_list(srcs,srcs->n-1);
       dealloc_token_buffer(ls);
       free(copy);
       return 1;
@@ -217,12 +234,14 @@ int require_file(char* filename,int validate){
       if(!strcmp(r->filename,copy) && !r->written){
         r->written=1;
         if(r->tree) traverse(r->tree,0);
+        remove_from_list(srcs,srcs->n-1);
         free(copy);
         return 1;
       }
     }
     free(copy);
   }
+  remove_from_list(srcs,srcs->n-1);
   return 1;
 }
 
@@ -235,6 +254,7 @@ void moonshot_init(){
   requires=NULL;
   errors=NULL;
   _input=NULL;
+  srcs=NULL;
   error_i=0;
 }
 
