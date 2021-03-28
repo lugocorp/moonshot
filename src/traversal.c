@@ -95,7 +95,7 @@ static void write(const char* msg,...){
   if(validate) return;
   va_list args;
   va_start(args,msg);
-  char* str=format_string(msg,args);
+  char* str=format_string(1,msg,args);
   fprintf(_output,"%s",str);
   free(str);
   va_end(args);

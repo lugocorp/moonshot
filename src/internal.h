@@ -239,7 +239,7 @@ enum RULES{
 
 // moonshot.c
 void add_error_internal(int line,const char* msg,va_list args);
-char* format_string(const char* msg,va_list args);
+char* format_string(int indent,const char* msg,va_list args);
 int require_file(char* filename,int validate);
 void add_error(int line,const char* msg,...);
 char* collapse_string_list(List* ls);

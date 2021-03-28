@@ -31,19 +31,21 @@ char* moonshot_next_error(){
 /*
   Custom string format function
 */
-char* format_string(const char* msg,va_list args){
+char* format_string(int indent,const char* msg,va_list args){
   List* ls=new_default_list();
   char symbol[2]={0,0};
   int n=strlen(msg);
   for(int a=0;a<n;a++){
-    if(msg[a]=='\n'){
-      line_written=0;
-    }else if(!line_written){
-      line_written=1;
-      for(int a=0;a<get_num_indents();a++){
-        char* tab=(char*)malloc(sizeof(char)*3);
-        sprintf(tab,"\t");
-        add_to_list(ls,tab);
+    if(indent){
+      if(msg[a]=='\n'){
+        line_written=0;
+      }else if(!line_written){
+        line_written=1;
+        for(int a=0;a<get_num_indents();a++){
+          char* tab=(char*)malloc(sizeof(char)*3);
+          sprintf(tab,"\t");
+          add_to_list(ls,tab);
+        }
       }
     }
     if(a<n-1 && msg[a]=='%'){
@@ -90,7 +92,7 @@ void add_error(int line,const char* msg,...){
 }
 void add_error_internal(int line,const char* msg,va_list args){
   List* ls=new_default_list();
-  add_to_list(ls,format_string(msg,args));
+  add_to_list(ls,format_string(0,msg,args));
   if(srcs->n){
     char* file=(char*)get_from_list(srcs,srcs->n-1);
     char* suffix=(char*)malloc(sizeof(char)*(strlen(file)+5));
