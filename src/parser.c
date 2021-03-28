@@ -878,7 +878,11 @@ AstNode* parse_list(){
   AstNode* tuple=parse_tuple();
   if(!tuple) return NULL;
   Token* tk=consume();
-  if(!specific(tk,TK_CURLY,"}")) FREE_AST_NODE(error(tk,"unclosed list",NULL),tuple);
+  if(!specific(tk,TK_CURLY,"}")){
+    if(tk) error(tk,"missing comma in list",NULL);
+    else error(tk,"unclosed list",NULL);
+    FREE_AST_NODE(NULL,tuple);
+  }
   return new_node(AST_LIST,tuple);
 }
 AstNode* parse_table(){
@@ -908,7 +912,7 @@ AstNode* parse_table(){
     if(!specific(tk,TK_CURLY,"}")){
       if(!specific(tk,TK_MISC,",")){
         dealloc_list(keys);
-        FREE_AST_NODE_LIST(error(tk,"invalid table",NULL),vals);
+        FREE_AST_NODE_LIST(error(tk,"missing comma in table",NULL),vals);
       }
       tk=consume();
     }
