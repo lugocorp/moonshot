@@ -147,7 +147,7 @@ char* strip_quotes(char* str){
   int l=strlen(str);
   char* copy=(char*)malloc(sizeof(char)*(l-1));
   strncpy(copy,str+1,l-2);
-  copy[l-2];
+  copy[l-2]=0;
   return copy;
 }
 
