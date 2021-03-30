@@ -1,22 +1,15 @@
-<img src="moonshot.svg" height="300px"/>
+<img src="res/moonshot.svg" height="300px"/>
 
-# Moonshot
-Moonshot is an optionally-typed object-oriented extension language for Lua. This project allows you to use your favorite Lua libraries and frameworks with a more organized and error-safe code base. Moonshot is lightweight, the library compiles to just under 110KB. It gives you full interop with vanilla Lua as well as a fully developed optional typing system.
-
-## Getting Started
-To build the project, simply run:
-```
-make moonshot
-```
-
-and then to install it globally, run:
-```
-make install
-```
-
-## Todo
-- [ ] Give AST nodes a line number for better traversal stage error messages
-- [ ] Create a VSCode syntax highlighting plugin
-
-## Developers
-Moonshot was developed by [LugoCorp](http://lugocorp.net)
+## Moonshot Website Todo List
+- [ ] Make the navbar links a bit smaller (75% as large as they are now)
+- [ ] Change the GitHub logo background to be Lua's dark blue color, not black
+- [ ] Lowercase every header, only capitalize the first letter of each word
+- [ ] Replace the moon in the navbar with res/moonshot.svg
+- [ ] Move Get Started to be left aligned
+- [ ] Change Lua Defined to Lua Redefined
+- [ ] Double the padding on the sides of the screen (so text isn't so close to the edge)
+- [ ] Remove the whitespace below the footer
+- [ ] The entire footer should be black
+- [ ] Give cursor:pointer; to the GitHub icons' CSS
+- [ ] Halve the vertical padding on the header
+- [ ] Fix the CodeMirror import paths (shouldn't start with ../ because the codemirror folder is on the same level as index.html)

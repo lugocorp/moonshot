@@ -1,0 +1,247 @@
+/* CSS variables for colors  */
+:root {
+  --white: #ffffff;
+  --blue: #030380;
+  --text-color: #030380;
+  --dark-text: black;
+  --white-text: #ffffff;
+}
+
+body {
+  font-family: sans-serif;
+  overflow-x: hidden;
+  margin: 0px;
+  padding: 0;
+}
+
+/* Navigation */
+.navigation {
+  grid-template-columns: 10% 70% 20%;
+  padding: 38px;
+  display: grid;
+}
+
+.navigation .right-side {
+  text-align: right;
+}
+
+.navigation .center a {
+  color: var(--blue);
+  display: inline;
+  text-decoration: none;
+  font-weight: bold;
+  font-size: 4vw;
+  padding: 20px;
+  align-items: center;
+  padding-top: 30px;
+}
+
+.navigation .center a:hover {
+  color: var(--dark-text);
+}
+
+.navigation .left-side img {
+  border-radius: 50%;
+}
+
+@media only screen and (max-width: 1000px) {
+  .navigation > .left-side,
+  .navigation > .right-side {
+    text-align: center;
+  }
+  .navigation .left-side * {
+    display: block;
+  }
+  .navigation .left-side img {
+    transform: translateX(-50%);
+    position: relative;
+    left: 50%;
+  }
+  .navigation .center a {
+    font-size: 4vw;
+    text-align: center;
+    display: inline-block;
+    padding-right: 42.5px;
+  }
+  .navigation {
+    grid-template-columns: 100%;
+  }
+}
+
+/* SPLASH */
+
+.splash h1 {
+  font-size: 40px;
+  align-self: left;
+  color: var(--white);
+  text-align: center;
+}
+.splash h2 {
+  font-size: 20px;
+  align-self: left;
+  color: var(--white);
+  text-align: left;
+}
+.splash p {
+  position: relative;
+  font-size: 20px;
+  color: var(--white);
+}
+.splash {
+  background-color: var(--blue);
+  position: relative;
+  padding: 10px 35px;
+}
+
+@media only screen and (max-width: 1000px) {
+  .splash {
+    padding-left: 0px;
+    padding-right: 0px;
+  }
+}
+
+/* LUA */
+
+.lua h1 {
+  font-size: 40px;
+  align-self: left;
+  color: var(--dark-text);
+  text-align: center;
+}
+.lua p {
+  position: relative;
+  font-size: 20px;
+  color: var(--dark-text);
+}
+.lua {
+  background-color: var(--white);
+  position: relative;
+  padding: 10px 35px;
+}
+
+@media only screen and (max-width: 1000px) {
+  .lua {
+    padding-left: 0px;
+    padding-right: 0px;
+  }
+}
+
+/* FEATURES  */
+
+.features {
+  background: var(--blue);
+  display: grid;
+  place-items: center center;
+}
+
+.features h1 {
+  font-size: 40px;
+  align-self: left;
+  color: var(--white-text);
+  text-align: center;
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  padding: 20px;
+  grid-gap: 40px;
+}
+
+.card {
+  background-color: var(--white);
+  border-radius: 20px;
+  box-shadow: 0 0 30px rgba(0, 0, 0, 0.18);
+}
+
+.container {
+  position: relative;
+}
+
+.card .container img {
+  width: 100%;
+  display: block;
+  border-radius: 20px 20px 0 0;
+}
+
+.card .details {
+  padding: 20px 10px;
+}
+
+.card .details > h4 {
+  color: var(--dark-text);
+  font-weight: 600;
+  font-size: 18px;
+  margin: 10px 0 15px 0;
+  text-align: center;
+}
+
+.card .details p {
+  color: var(--dark-text);
+  font-size: 15px;
+  line-height: 20px;
+  font-weight: 400;
+}
+
+/* Get Started  */
+
+.get-started {
+  background: var(--white);
+  position: relative;
+  padding: 10px 35px;
+  display: grid;
+}
+
+.get-started h1 {
+  font-size: 40px;
+  align-self: left;
+  color: var(--dark-text);
+  text-align: center;
+}
+
+.get-started .content {
+  display: grid;
+  grid-template-columns: 70% 30%;
+}
+
+.get-started .content p {
+  font-size: 20px;
+  color: var(--dark-text);
+  text-align: left;
+}
+
+.get-started .content img {
+  width: 100%;
+}
+
+@media only screen and (max-width: 1000px) {
+  .get-started {
+    padding-left: 0px;
+    padding-right: 0px;
+  }
+}
+
+/* FOOTER  */
+
+.footer {
+  background: black;
+  padding-top: 60px;
+  padding-bottom: 60px;
+}
+
+.footer .links {
+  padding: 86px;
+  margin: 50.2px;
+  text-decoration: none;
+  color: var(--white);
+}
+
+@media only screen and (max-width: 1000px) {
+  .footer {
+    text-align: center;
+  }
+  .footer .links {
+    /* padding-bottom: 60px; */
+    font-size: 4vw;
+  }
+}
