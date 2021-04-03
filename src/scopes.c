@@ -2,13 +2,18 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
-static List* scopes;
+static List* scopes; // List of Scopes
+static int first; // Flag to ensure we only register primitive types once
 
 /*
   Initialize a new scope object
 */
 static Scope* new_scope(int type,void* data){
   Scope* scope=(Scope*)malloc(sizeof(Scope));
+  scope->interfaces_registry=new_default_list();
+  scope->functions_registry=new_default_list();
+  scope->classes_registry=new_default_list();
+  scope->types_registry=new_default_list();
   scope->defs=new_default_list();
   scope->type=type;
   scope->data=data;
@@ -20,6 +25,7 @@ static Scope* new_scope(int type,void* data){
 */
 void preempt_scopes(){
   scopes=NULL;
+  first=1;
 }
 
 /*
@@ -41,6 +47,15 @@ void dealloc_scopes(){
 */
 void push_scope(){
   add_to_list(scopes,new_scope(SCOPE_NONE,NULL));
+  if(scopes->n==1){
+    assert(first); // This can only happen once
+    register_primitive(PRIMITIVE_STRING);
+    register_primitive(PRIMITIVE_FLOAT);
+    register_primitive(PRIMITIVE_BOOL);
+    register_primitive(PRIMITIVE_INT);
+    register_primitive(PRIMITIVE_NIL);
+    first=0;
+  }
 }
 
 /*
@@ -61,6 +76,16 @@ void pop_scope(){
     free(var);
   }
   dealloc_list(scope->defs);
+  for(int a=0;a<scope->types_registry->n;a++){
+    char* type=(char*)get_from_list(scope->types_registry,a);
+    if(!strcmp(type,PRIMITIVE_STRING) || !strcmp(type,PRIMITIVE_FLOAT) || !strcmp(type,PRIMITIVE_BOOL) || !strcmp(type,PRIMITIVE_INT) || !strcmp(type,PRIMITIVE_NIL)){
+      free(type);
+    }
+  }
+  dealloc_list(scope->interfaces_registry);
+  dealloc_list(scope->functions_registry);
+  dealloc_list(scope->classes_registry);
+  dealloc_list(scope->types_registry);
   free(scope);
 }
 
@@ -200,4 +225,128 @@ int field_defined_in_class(char* name){
 */
 int get_num_scopes(){
   return scopes->n;
+}
+
+/*
+  Returns the innermost scope
+*/
+Scope* get_scope(){
+  return (Scope*)get_from_list(scopes,scopes->n-1);
+}
+
+/*
+  Registers a new primitive type (a typedef, class or interface)
+*/
+void register_primitive(const char* name){
+  Scope* scope=get_scope();
+  char* type=(char*)malloc(sizeof(char)*(strlen(name)+1));
+  strcpy(type,name);
+  add_to_list(scope->types_registry,type);
+}
+
+/*
+  Registers a type
+*/
+void register_type(char* name){
+  Scope* scope=get_scope();
+  add_to_list(scope->types_registry,name);
+  uphold_promise(name);
+}
+
+/*
+  Registers a function
+*/
+void register_function(FunctionNode* node){
+  Scope* scope=get_scope();
+  add_to_list(scope->functions_registry,node);
+}
+
+/*
+  Registers an interface
+*/
+void register_interface(InterfaceNode* node){
+  Scope* scope=get_scope();
+  add_to_list(scope->interfaces_registry,node);
+}
+
+/*
+  Registers a class
+*/
+void register_class(ClassNode* node){
+  Scope* scope=get_scope();
+  add_to_list(scope->classes_registry,node);
+}
+
+/*
+  Returns 1 if type name is registered
+*/
+int type_exists(char* name){
+  for(int a=scopes->n-1;a>=0;a--){
+    Scope* scope=(Scope*)get_from_list(scopes,a);
+    List* ls=scope->types_registry;
+    for(int b=0;b<ls->n;b++){
+      if(!strcmp((char*)get_from_list(ls,b),name)) return 1;
+    }
+  }
+  return 0;
+}
+
+/*
+  Returns the registered FunctionNode if name is a registered function
+  Returns NULL if function name does not exist
+*/
+FunctionNode* function_exists(char* name){
+  if(!name) return NULL;
+  for(int a=scopes->n-1;a>=0;a--){
+    Scope* scope=(Scope*)get_from_list(scopes,a);
+    List* ls=scope->functions_registry;
+    for(int b=0;b<ls->n;b++){
+      FunctionNode* node=(FunctionNode*)get_from_list(ls,b);
+      char* funcname=(char*)(node->name->data); // I'm assuming func->name is of type AST_ID
+      if(node->name && !strcmp(name,funcname)){
+        return node;
+      }
+    }
+  }
+  return NULL;
+}
+
+/*
+  Returns the registered InterfaceNode if name is a registered interface
+  Returns NULL if interface name does not exist
+*/
+InterfaceNode* interface_exists(char* name){
+  if(!name) return NULL;
+  name=base_type(name);
+  for(int a=scopes->n-1;a>=0;a--){
+    Scope* scope=(Scope*)get_from_list(scopes,a);
+    List* ls=scope->interfaces_registry;
+    for(int b=0;b<ls->n;b++){
+      InterfaceNode* node=(InterfaceNode*)get_from_list(ls,b);
+      if(!strcmp(name,node->name)){
+        return node;
+      }
+    }
+  }
+  return NULL;
+}
+
+/*
+  Returns the registered ClassNode if name is a registered class
+  Returns NULL if class name does not exist
+*/
+ClassNode* class_exists(char* name){
+  if(!name) return NULL;
+  name=base_type(name);
+  for(int a=scopes->n-1;a>=0;a--){
+    Scope* scope=(Scope*)get_from_list(scopes,a);
+    List* ls=scope->classes_registry;
+    for(int b=0;b<ls->n;b++){
+      ClassNode* node=(ClassNode*)get_from_list(ls,b);
+      if(!strcmp(name,node->name)){
+        return node;
+      }
+    }
+  }
+  return NULL;
 }

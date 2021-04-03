@@ -1,10 +1,6 @@
 #include "./internal.h"
 #include <stdlib.h>
 #include <string.h>
-static List* interfaces_registry; // List of InterfaceNodes
-static List* functions_registry; // List of FunctionNodes
-static List* classes_registry; // List of ClassNodes
-static List* types_registry; // List of strings
 static List* types_graph; // List of EqualTypesNodes
 static List* promises; // List of promised types
 
@@ -12,17 +8,8 @@ static List* promises; // List of promised types
   Initialize the data structures used in this module
 */
 void init_types(){
-  promises=new_default_list();
   types_graph=new_default_list();
-  types_registry=new_default_list();
-  classes_registry=new_default_list();
-  functions_registry=new_default_list();
-  interfaces_registry=new_default_list();
-  register_primitive(PRIMITIVE_STRING);
-  register_primitive(PRIMITIVE_FLOAT);
-  register_primitive(PRIMITIVE_BOOL);
-  register_primitive(PRIMITIVE_INT);
-  register_primitive(PRIMITIVE_NIL);
+  promises=new_default_list();
 }
 
 /*
@@ -33,16 +20,6 @@ void dealloc_types(){
     EqualTypesNode* node=(EqualTypesNode*)get_from_list(types_graph,a);
     free(node);
   }
-  for(int a=0;a<types_registry->n;a++){
-    char* type=(char*)get_from_list(types_registry,a);
-    if(!strcmp(type,PRIMITIVE_STRING) || !strcmp(type,PRIMITIVE_FLOAT) || !strcmp(type,PRIMITIVE_BOOL) || !strcmp(type,PRIMITIVE_INT) || !strcmp(type,PRIMITIVE_NIL)){
-      free(type);
-    }
-  }
-  dealloc_list(interfaces_registry);
-  dealloc_list(functions_registry);
-  dealloc_list(classes_registry);
-  dealloc_list(types_registry);
   dealloc_list(types_graph);
   dealloc_list(promises);
 }
@@ -307,7 +284,7 @@ int typed_match(AstNode* l,AstNode* r){
   Boils a typedef type down into its lowest-level typedef
   Returns the input type if it is already at its lowest typedef link
 */
-static char* base_type(char* name){
+char* base_type(char* name){
   while(1){
     for(int a=0;a<types_graph->n;a++){
       EqualTypesNode* node=(EqualTypesNode*)get_from_list(types_graph,a);
@@ -319,96 +296,6 @@ static char* base_type(char* name){
     break;
   }
   return name;
-}
-
-/*
-  Registers a type
-*/
-void register_type(char* name){
-  add_to_list(types_registry,name);
-  uphold_promise(name);
-}
-
-/*
-  Registers a class
-*/
-void register_class(ClassNode* node){
-  add_to_list(classes_registry,node);
-}
-
-/*
-  Registers a function
-*/
-void register_function(FunctionNode* node){
-  add_to_list(functions_registry,node);
-}
-
-/*
-  Registers an interface
-*/
-void register_interface(InterfaceNode* node){
-  add_to_list(interfaces_registry,node);
-}
-
-/*
-  Registers a new primitive type (a typedef, class or interface)
-*/
-void register_primitive(const char* name){
-  char* type=(char*)malloc(sizeof(char)*(strlen(name)+1));
-  strcpy(type,name);
-  add_to_list(types_registry,type);
-}
-
-/*
-  Returns 1 if type name is registered
-*/
-int type_exists(char* name){
-  for(int a=0;a<types_registry->n;a++){
-    if(!strcmp((char*)get_from_list(types_registry,a),name)) return 1;
-  }
-  return 0;
-}
-
-/*
-  Returns the registered ClassNode if name is a registered class
-  Returns NULL if class name does not exist
-*/
-ClassNode* class_exists(char* name){
-  if(!name) return NULL;
-  name=base_type(name);
-  for(int a=0;a<classes_registry->n;a++){
-    ClassNode* node=(ClassNode*)get_from_list(classes_registry,a);
-    if(!strcmp(node->name,name)) return node;
-  }
-  return NULL;
-}
-
-/*
-  Returns the registered FunctionNode if name is a registered function
-  Returns NULL if function name does not exist
-*/
-FunctionNode* function_exists(char* name){
-  if(!name) return NULL;
-  for(int a=0;a<functions_registry->n;a++){
-    FunctionNode* func=(FunctionNode*)get_from_list(functions_registry,a);
-    char* funcname=(char*)(func->name->data);
-    if(!strcmp(funcname,name)) return func;
-  }
-  return NULL;
-}
-
-/*
-  Returns the registered InterfaceNode if name is a registered interface
-  Returns NULL if interface name does not exist
-*/
-InterfaceNode* interface_exists(char* name){
-  if(!name) return NULL;
-  name=base_type(name);
-  for(int a=0;a<interfaces_registry->n;a++){
-    InterfaceNode* node=(InterfaceNode*)get_from_list(interfaces_registry,a);
-    if(!strcmp(node->name,name)) return node;
-  }
-  return NULL;
 }
 
 /*

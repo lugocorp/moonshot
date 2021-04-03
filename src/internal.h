@@ -138,6 +138,10 @@ typedef struct{
 } EqualTypesNode;
 
 typedef struct{
+  List* interfaces_registry; // List of InterfaceNodes
+  List* functions_registry; // List of FunctionNodes
+  List* classes_registry; // List of ClassNodes
+  List* types_registry; // List of strings
   List* defs; // List of StringAstNodes representing local definitions
   void* data; // Context node attached to this scope
   int type; // The type of this scope
@@ -319,12 +323,6 @@ BinaryNode* new_unary_node(char* op,AstNode* e);
 #ifndef MOONSHOT_PARSING
 
 // scopes.c
-void pop_scope();
-void push_scope();
-void init_scopes();
-int get_num_scopes();
-void preempt_scopes();
-void dealloc_scopes();
 void push_function_scope(FunctionNode* node);
 StringAstNode* get_scoped_var(char* name);
 int add_scoped_var(StringAstNode* node);
@@ -333,32 +331,41 @@ void push_class_scope(ClassNode* node);
 FunctionNode* get_function_scope();
 FunctionNode* get_method_scope();
 ClassNode* get_class_scope();
-
-// types.c
-void init_types();
-void dealloc_types();
-int add_type_equivalence(char* name,AstNode* type,int relation);
-int add_child_type(char* child,char* parent,int relation);
-int is_primitive(AstNode* node,const char* type);
-int types_equivalent(char* name,AstNode* type);
+void preempt_scopes();
+void dealloc_scopes();
+int get_num_scopes();
+Scope* get_scope();
+void init_scopes();
+void push_scope();
+void pop_scope();
 void register_interface(InterfaceNode* node);
 InterfaceNode* interface_exists(char* name);
 void register_function(FunctionNode* node);
 FunctionNode* function_exists(char* name);
 void register_primitive(const char* name);
+void register_class(ClassNode* node);
+ClassNode* class_exists(char* name);
+void register_type(char* name);
+int type_exists(char* name);
+
+
+// types.c
+int add_type_equivalence(char* name,AstNode* type,int relation);
+int add_child_type(char* child,char* parent,int relation);
+int is_primitive(AstNode* node,const char* type);
+int types_equivalent(char* name,AstNode* type);
 List* get_equivalent_types(char* name);
 int typed_match(AstNode* l,AstNode* r);
 void make_type_promise(AstNode* node);
 int is_variadic_function(List* args);
-void register_class(ClassNode* node);
-ClassNode* class_exists(char* name);
 char* stringify_type(AstNode* node);
 AstNode* get_type(AstNode* node);
 void uphold_promise(char* type);
-void register_type(char* name);
 void check_broken_promises();
-int type_exists(char* name);
+char* base_type(char* name);
 void print_types_graph();
+void dealloc_types();
+void init_types();
 
 // entities.c
 FunctionNode* get_parent_method(ClassNode* clas,FunctionNode* method);

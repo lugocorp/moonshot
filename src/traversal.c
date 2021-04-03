@@ -188,6 +188,11 @@ void process_interface(AstNode* node){
 }
 void process_class(AstNode* node){
   ClassNode* data=(ClassNode*)(node->data);
+  if(validate){
+    ERROR(type_exists(data->name),node->line,"type %s is already declared",data->name);
+    register_type(data->name);
+    register_class(data);
+  }
   push_class_scope(data);
   if(validate){
     if(data->parent){
@@ -199,7 +204,6 @@ void process_class(AstNode* node){
       ERROR(!interface_exists(interface),node->line,"interface %s does not exist",interface);
       add_child_type(data->name,interface,RL_IMPLEMENTS);
     }
-    ERROR(type_exists(data->name),node->line,"type %s is already declared",data->name);
     int num_cons=num_constructors(data);
     ERROR(num_cons>1,node->line,"class %s has %i constructors, should have only 1",data->name,num_cons);
     List* missing=get_missing_class_methods(data);
@@ -215,8 +219,6 @@ void process_class(AstNode* node){
       process_node((AstNode*)get_from_list(data->ls,a));
     }
     dealloc_list(missing);
-    register_type(data->name);
-    register_class(data);
   }
   List* all_fields=get_all_class_fields(data);
   Map* fields=collapse_ancestor_class_fields(all_fields);
