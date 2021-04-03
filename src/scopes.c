@@ -194,3 +194,10 @@ int field_defined_in_class(char* name){
   }
   return 0;
 }
+
+/*
+  Returns the number of scopes
+*/
+int get_num_scopes(){
+  return scopes->n;
+}

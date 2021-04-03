@@ -319,11 +319,12 @@ BinaryNode* new_unary_node(char* op,AstNode* e);
 #ifndef MOONSHOT_PARSING
 
 // scopes.c
-void dealloc_scopes();
-void preempt_scopes();
-void init_scopes();
-void push_scope();
 void pop_scope();
+void push_scope();
+void init_scopes();
+int get_num_scopes();
+void preempt_scopes();
+void dealloc_scopes();
 void push_function_scope(FunctionNode* node);
 StringAstNode* get_scoped_var(char* name);
 int add_scoped_var(StringAstNode* node);

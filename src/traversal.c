@@ -1,4 +1,5 @@
 #include "./internal.h"
+#include <assert.h>
 #include <stdarg.h>
 #include <string.h>
 #include <stdlib.h>
@@ -12,6 +13,7 @@ static AstNode* float_type; // AstNode constant representing the FLOAT type
 static AstNode* bool_type; // AstNode constant representing the BOOL type
 static AstNode* int_type; // AstNode constant representing the INT type
 static AstNode* any_type; // AstNode constant representing the ANY type
+static int num_stmts; // Internal tracker of nested stmt nodes
 
 // Get number of indents
 int get_num_indents(){
@@ -43,6 +45,7 @@ void init_traverse(){
   any_type=new_node(AST_TYPE_ANY,-1,NULL);
   sprintf(instance_str,"__obj");
   num_indents=0;
+  num_stmts=0;
   preempt_scopes();
   init_types();
   init_scopes();
@@ -292,7 +295,13 @@ void process_class(AstNode* node){
   Traverses through node groups
 */
 void process_stmt(AstNode* node){
+
+  // Each nested stmt node should correspond to a different nested scope
+  // This way we can break up 2-step type validation here
+  assert(++num_stmts==get_num_scopes());
+
   process_list((List*)(node->data));
+  num_stmts--;
 }
 void process_do(AstNode* node){
   write("do\n");
