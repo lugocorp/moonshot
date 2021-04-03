@@ -202,7 +202,9 @@ static void dealloc_requires(){
 */
 void dummy_required_file(char* filename){
   char* copy=copy_string(filename);
-  remove_from_list(srcs,srcs->n-1);
+  if(srcs->n){
+    remove_from_list(srcs,srcs->n-1);
+  }
   Require* r=(Require*)malloc(sizeof(Require));
   r->filename=copy;
   r->tokens=NULL;

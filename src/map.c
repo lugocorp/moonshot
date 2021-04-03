@@ -1,6 +1,7 @@
 #include "./internal.h"
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 
 /*
   Instantiates a new Map object with some initial max capacity
@@ -37,8 +38,8 @@ void* get_from_map(Map* m,char* k){
   Used in traversal algorithms
 */
 void* iterate_from_map(Map* m,int i){
-  if(i<m->n && i>=0) return (m->data[i]).v;
-  return NULL;
+  assert(i<m->n && i>=0); // Safety check
+  return (m->data[i]).v;
 }
 
 /*

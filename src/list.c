@@ -1,6 +1,7 @@
 #include "./internal.h"
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 
 /*
   Instantiates a new List object with some initial max capacity
@@ -26,16 +27,15 @@ List* new_default_list(){
   returns null if i is out of range
 */
 void* get_from_list(List* ls,int i){
-  if(i<ls->n && i>=0) return ls->items[i];
-  return NULL;
+  assert(i<ls->n && i>=0); // Safety check
+  return ls->items[i];
 }
 
 void* remove_from_list(List* ls,int i){
+  assert(i<ls->n && i>=0); // Safety check
   void* e=get_from_list(ls,i);
-  if(e){
-    for(int a=i+1;a<ls->n;a++) ls->items[a-1]=ls->items[a];
-    ls->items[--(ls->n)]=NULL;
-  }
+  for(int a=i+1;a<ls->n;a++) ls->items[a-1]=ls->items[a];
+  ls->items[--(ls->n)]=NULL;
   return e;
 }
 
@@ -58,8 +58,9 @@ int add_to_list(List* ls,void* e){
   Appends every element from ls1 to ls
 */
 void append_all(List* ls,List* ls1){
-  int n=ls1->n;
-  for(int a=0;a<n;a++) add_to_list(ls,get_from_list(ls1,a));
+  for(int a=0;a<ls1->n;a++){
+    add_to_list(ls,get_from_list(ls1,a));
+  }
 }
 
 /*

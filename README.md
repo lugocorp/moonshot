@@ -17,7 +17,7 @@ make install
 ## Todo
 - [x] Make sure each nested stmt node has a corresponding scope
 - [x] Add types to scopes, use that for type lookup instead of searching the equivalence graph
-- [ ] Add asserts to basic map and list types
+- [x] Add asserts to basic map and list types
 - [ ] In the validation step, process type definitions first in a stmt, then check promises and then process all other nodes
 - [ ] Give AST nodes a line number for better traversal stage error messages
 - [ ] Create a VSCode syntax highlighting plugin
