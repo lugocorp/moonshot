@@ -12,12 +12,13 @@ body {
   overflow-x: hidden;
   margin: 0px;
   padding: 0;
+  color: var(--white);
 }
 
 /* Navigation */
 .navigation {
   grid-template-columns: 10% 70% 20%;
-  padding: 38px;
+  padding: 19px;
   display: grid;
 }
 
@@ -25,23 +26,22 @@ body {
   text-align: right;
 }
 
+.navigation .right-side img {
+  cursor: pointer;
+}
+
 .navigation .center a {
   color: var(--blue);
   display: inline;
   text-decoration: none;
   font-weight: bold;
-  font-size: 4vw;
+  font-size: 3vw;
   padding: 20px;
   align-items: center;
-  padding-top: 30px;
 }
 
 .navigation .center a:hover {
   color: var(--dark-text);
-}
-
-.navigation .left-side img {
-  border-radius: 50%;
 }
 
 @media only screen and (max-width: 1000px) {
@@ -112,6 +112,8 @@ body {
   position: relative;
   font-size: 20px;
   color: var(--dark-text);
+  padding-left: 50px;
+  padding-right: 50px;
 }
 .lua {
   background-color: var(--white);
@@ -196,7 +198,7 @@ body {
   font-size: 40px;
   align-self: left;
   color: var(--dark-text);
-  text-align: center;
+  text-align: left;
 }
 
 .get-started .content {
@@ -208,10 +210,12 @@ body {
   font-size: 20px;
   color: var(--dark-text);
   text-align: left;
+  padding-left: 50px;
 }
 
 .get-started .content img {
   width: 100%;
+  cursor: pointer;
 }
 
 @media only screen and (max-width: 1000px) {
@@ -225,12 +229,13 @@ body {
 
 .footer {
   background: black;
-  padding-top: 60px;
-  padding-bottom: 60px;
+  padding-top: 20px;
+  padding-bottom: 20px;
+  margin-bottom: 0px;
 }
 
 .footer .links {
-  padding: 86px;
+  padding-left: 125px;
   margin: 50.2px;
   text-decoration: none;
   color: var(--white);

@@ -5,111 +5,100 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="stylesheet" href="css/style.css" />
-    <link rel="stylesheet" href="../codemirror/lib/codemirror.css" />
-    <link rel="stylesheet" href="../codemirror/theme/neo.css" />
-    <script src="../codemirror/lib/codemirror.js"></script>
-    <script src="../codemirror/mode/lua/lua.js"></script>
+    <link rel="stylesheet" href="codemirror/lib/codemirror.css" />
+    <link rel="stylesheet" href="codemirror/theme/neo.css" />
+    <script src="codemirror/lib/codemirror.js"></script>
+    <script src="codemirror/mode/lua/lua.js"></script>
     <title>MoonShot</title>
   </head>
   <body>
-    <div class="container small-enabled">
-      <div class="navigation">
-        <div class="left-side">
-          <img
-            src="images/moonshot.jpg"
-            alt="MOONSHOT"
-            width="75"
-            height="75"
-          />
-        </div>
-        <div class="center">
-          <a href="/">Home</a>
-          <a href="/">Reference</a>
-          <a href="/">Install</a>
-        </div>
-        <div class="right-side">
-          <div class="brand small-enabled">
-            <a>
-              <img
-                src="images/github.svg"
-                alt="GITHUB"
-                width="75"
-                height="75"
-              />
-            </a>
-          </div>
+    <div class="navigation">
+      <div class="left-side">
+        <img src="res/moonshot.svg" alt="MOONSHOT" width="60" height="60" />
+      </div>
+      <div class="center">
+        <a href="/">Home</a>
+        <a href="/">Reference</a>
+        <a href="/">Install</a>
+      </div>
+      <div class="right-side">
+        <div class="brand small-enabled">
+          <a>
+            <img src="images/github.svg" alt="GITHUB" width="75" height="75" />
+          </a>
         </div>
       </div>
-      <div class="splash small-enabled">
-        <h1>Optional Static Typing Over Lua</h1>
-        <h2>SPLASH / EXAMPLES</h2>
-        <div id="section"></div>
-        <script>
-          var editor = CodeMirror(document.getElementById("section"), {
-            value:
-              " function Chips() \n\tThis_line_gets_poorly_indented() \nend",
-            mode: "lua",
-            theme: "neo",
-            lineNumbers: true,
-            readOnly: true,
-          });
-        </script>
-      </div>
-      <div class="lua small-enabled">
-        <h1>LUA Defined</h1>
-        <p>
-          Lorem Ipsum is simply dummy text of the printing and typesetting
-          industry. Lorem Ipsum has been the industry's standard dummy text ever
-          since the 1500s, when an unknown printer took a galley of type and
-          scrambled it to make a type specimen book. It has survived not only
-          five centuries, but also the leap into electronic typesetting,
-          remaining essentially unchanged. It was popularised in the 1960s with
-          the release of Letraset sheets containing Lorem Ipsum passages, and
-          more recently with desktop publishing software like Aldus PageMaker
-          including versions of Lorem Ipsum. It is a long established fact that
-          a reader will be distracted by the readable content of a page when
-          looking at its layout. The point of using Lorem Ipsum is that it has a
-          more-or-less normal distribution of letters, as opposed to using
-          'Content here, content here', making it look like readable English.
-          Many desktop publishing packages and web page editors now use Lorem
-          Ipsum as their default model text, and a search for 'lorem ipsum' will
-          uncover many web sites still in their infancy. Various versions have
-          evolved over the years, sometimes by accident, sometimes on purpose
-          (injected humour and the like).
-        </p>
-      </div>
-      <div class="features small-enabled">
-        <h1> Features</h1>
-        <div class="cards">
-          <div class="card card1">
-            <div class="container">
-              <img src="images/moon1.jpg" alt="" />
-            </div>
-            <div class="details">
-              <h4>MoonShot</h4>
-              <p>
-                Lorem ipsum dolor sit, amet consectetur adipisicing elit. Fugit,
-                commodi molestias perferendis quia, nulla accusamus voluptatem
-                iure hic ipsa, blanditiis ea. Ipsa eos nobis sequi eaque quam
-                numquam repellendus ab pariatur?
-            </div>
+    </div>
+    <div class="splash small-enabled">
+      <h1>Optional static typing over lua</h1>
+      <h2>SPLASH / EXAMPLES</h2>
+      <div id="section"></div>
+      <script>
+        var editor = CodeMirror(document.getElementById("section"), {
+          value: " function Chips() \n\tThis_line_gets_poorly_indented() \nend",
+          mode: "lua",
+          theme: "neo",
+          lineNumbers: true,
+          readOnly: true,
+        });
+      </script>
+    </div>
+    <div class="lua small-enabled">
+      <h1>LUA Redefined</h1>
+      <p>
+        Lorem Ipsum is simply dummy text of the printing and typesetting
+        industry. Lorem Ipsum has been the industry's standard dummy text ever
+        since the 1500s, when an unknown printer took a galley of type and
+        scrambled it to make a type specimen book. It has survived not only five
+        centuries, but also the leap into electronic typesetting, remaining
+        essentially unchanged. It was popularised in the 1960s with the release
+        of Letraset sheets containing Lorem Ipsum passages, and more recently
+        with desktop publishing software like Aldus PageMaker including versions
+        of Lorem Ipsum. It is a long established fact that a reader will be
+        distracted by the readable content of a page when looking at its layout.
+        The point of using Lorem Ipsum is that it has a more-or-less normal
+        distribution of letters, as opposed to using 'Content here, content
+        here', making it look like readable English. Many desktop publishing
+        packages and web page editors now use Lorem Ipsum as their default model
+        text, and a search for 'lorem ipsum' will uncover many web sites still
+        in their infancy. Various versions have evolved over the years,
+        sometimes by accident, sometimes on purpose (injected humour and the
+        like).
+      </p>
+    </div>
+    <div class="features small-enabled">
+      <h1>Features</h1>
+      <div class="cards">
+        <div class="card card1">
+          <div class="container">
+            <img src="images/moon1.jpg" alt="" />
           </div>
-          <div class="card card2">
-            <div class="container">
-              <img src="images/moon1.jpg" alt="" />
-            </div>
-            <div class="details">
-              <h4>MoonShot</h4>
-              <p>
-                Lorem ipsum dolor sit amet consectetur adipisicing elit.
-                Voluptas accusantium magni, cumque obcaecati hic eos ut tenetur
-                magnam expedita recusandae quibusdam, omnis itaque fugit.
-              </p>
-            </div>
+          <div class="details">
+            <h4>MoonShot</h4>
+            <p>
+              Lorem ipsum dolor sit, amet consectetur adipisicing elit. Fugit,
+              commodi molestias perferendis quia, nulla accusamus voluptatem
+              iure hic ipsa, blanditiis ea. Ipsa eos nobis sequi eaque quam
+              numquam repellendus ab pariatur?
+            </p>
           </div>
-          <div class="card card3">
-            <div class="container">
-              <img src="images/moon1.jpg" />
+        </div>
+        <div class="card card2">
+          <div class="container">
+            <img src="images/moon1.jpg" alt="" />
+          </div>
+          <div class="details">
+            <h4>MoonShot</h4>
+            <p>
+              Lorem ipsum dolor sit amet consectetur adipisicing elit. Voluptas
+              accusantium magni, cumque obcaecati hic eos ut tenetur magnam
+              expedita recusandae quibusdam, omnis itaque fugit.
+            </p>
+          </div>
+        </div>
+        <div class="card card3">
+          <div class="container">
+            <img src="images/moon1.jpg" />
             <div class="details">
               <h4>MoonShot</h4>
               <p>
@@ -122,21 +111,29 @@
           </div>
         </div>
       </div>
-      <div class="get-started small-enabled">
-        <h1>GET STARTED</h1>
-        <div class="content">
-          <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Consectetur amet vitae quod veniam iste iusto quis natus minus, exercitationem illo porro. Dolores fuga ipsa eaque?
-          Lorem ipsum dolor sit amet consectetur adipisicing elit. Quia, doloribus quidem. Distinctio adipisci doloremque et accusamus commodi aliquam cum ducimus recusandae alias quae porro omnis, voluptates reiciendis nam itaque magni sequi. Labore vero impedit quis nobis aspernatur soluta consequuntur dolorem, quas magni optio, omnis eius nesciunt neque similique. Necessitatibus, cumque?
-          </p>
-          <img src="images/github.svg" alt="" width="100" height="100">
-        </div>
+    </div>
+    <div class="get-started small-enabled">
+      <h1>Get started</h1>
+      <div class="content">
+        <p>
+          Lorem ipsum dolor sit amet consectetur adipisicing elit. Consectetur
+          amet vitae quod veniam iste iusto quis natus minus, exercitationem
+          illo porro. Dolores fuga ipsa eaque? Lorem ipsum dolor sit amet
+          consectetur adipisicing elit. Quia, doloribus quidem. Distinctio
+          adipisci doloremque et accusamus commodi aliquam cum ducimus
+          recusandae alias quae porro omnis, voluptates reiciendis nam itaque
+          magni sequi. Labore vero impedit quis nobis aspernatur soluta
+          consequuntur dolorem, quas magni optio, omnis eius nesciunt neque
+          similique. Necessitatibus, cumque?
+        </p>
+        <img src="images/github.svg" alt="" width="100" height="100" />
       </div>
-      <div class="footer small-enabled">
-        <a class ="links" href="/">LEARN</a>
-        <a class ="links" href="/">GITHUB</a>
-        <a class ="links" href="/">INSTALL</a>
-        <a class ="links" href="/">LICENSE</a>
-      </div>
+    </div>
+    <div class="footer small-enabled">
+      <a class="links" href="/">LEARN</a>
+      <a class="links" href="/">GITHUB</a>
+      <a class="links" href="/">INSTALL</a>
+      <a class="links" href="/">LICENSE</a>
     </div>
   </body>
 </html>
