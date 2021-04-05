@@ -35,7 +35,7 @@ body {
   display: inline;
   text-decoration: none;
   font-weight: bold;
-  font-size: 3vw;
+  font-size: 1.5vw;
   padding: 20px;
   align-items: center;
 }
@@ -58,7 +58,7 @@ body {
     left: 50%;
   }
   .navigation .center a {
-    font-size: 4vw;
+    font-size: 3vw;
     text-align: center;
     display: inline-block;
     padding-right: 42.5px;
@@ -106,13 +106,13 @@ body {
   font-size: 40px;
   align-self: left;
   color: var(--dark-text);
-  text-align: center;
+  text-align: left;
 }
 .lua p {
   position: relative;
   font-size: 20px;
   color: var(--dark-text);
-  padding-left: 50px;
+  /* padding-left: 50px; */
   padding-right: 50px;
 }
 .lua {
@@ -154,16 +154,20 @@ body {
   background-color: var(--white);
   border-radius: 20px;
   box-shadow: 0 0 30px rgba(0, 0, 0, 0.18);
+  padding-left: 10px;
 }
 
 .container {
   position: relative;
+  
 }
 
 .card .container img {
-  width: 100%;
+  width: 60%;
   display: block;
   border-radius: 20px 20px 0 0;
+  align-items: center;
+  padding-left: 75px;
 }
 
 .card .details {
@@ -192,6 +196,7 @@ body {
   position: relative;
   padding: 10px 35px;
   display: grid;
+  padding-bottom: 50px;
 }
 
 .get-started h1 {
@@ -210,7 +215,6 @@ body {
   font-size: 20px;
   color: var(--dark-text);
   text-align: left;
-  padding-left: 50px;
 }
 
 .get-started .content img {
@@ -239,6 +243,7 @@ body {
   margin: 50.2px;
   text-decoration: none;
   color: var(--white);
+  text-align: center;
 }
 
 @media only screen and (max-width: 1000px) {
