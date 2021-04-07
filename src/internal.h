@@ -155,17 +155,24 @@ typedef struct{
   int written; // 1 if the file was written to output yet
 } Require;
 
-// List of all scope types
+// Enum for all traversal steps
+enum STEPS{
+  STEP_HEADER,
+  STEP_CHECK,
+  STEP_OUTPUT
+};
+
+// Enum for all scope types
 enum SCOPE_TYPES{
   SCOPE_FUNCTION, SCOPE_CLASS, SCOPE_NONE
 };
 
-// List of all equivalent type relationships
+// Enum for all equivalent type relationships
 enum RELATIONS{
   RL_EXTENDS, RL_EQUALS, RL_IMPLEMENTS
 };
 
-// List of all possible tokens
+// Enum for all possible tokens
 enum TOKENS{
 
   // Lua reserved keywords (starts with 0)
@@ -193,55 +200,56 @@ enum TOKENS{
 
 };
 
-// List of all grammar rules
+// Enum for all grammar rules
+
 enum RULES{
-  // NULL,
+  // node's data is NULL
   AST_NONE, AST_BREAK, AST_TYPE_ANY, AST_TYPE_VARARG,
 
-  // char*
+  // node's data is char*
   AST_LABEL, AST_GOTO, AST_ID, AST_TYPE_BASIC,
 
-  // List*
+  // node's data is List*
   AST_STMT, AST_DO, AST_LTUPLE, AST_TYPE_TUPLE, AST_ELSE,
 
-  // AstListNode*
+  // node's data is AstListNode*
   AST_REPEAT, AST_WHILE, AST_TYPE_FUNC, AST_TUPLE,
 
-  // ClassNode*
+  // node's data is ClassNode*
   AST_CLASS,
 
-  // InterfaceNode*
+  // node's data is InterfaceNode*
   AST_INTERFACE,
 
-  // FunctionNode*
+  // node's data is FunctionNode*
   AST_FUNCTION,
 
-  // TableNode*
+  // node's data is TableNode*
   AST_TABLE,
 
-  // AstAstNode*
+  // node's data is AstAstNode*
   AST_SET, AST_CALL, AST_SUB,
 
-  // Binary node
+  // node's data is Binary node
   AST_BINARY, AST_UNARY, AST_DEFINE,
 
-  // AstNode*
+  // node's data is AstNode*
   AST_RETURN, AST_PAREN, AST_REQUIRE, AST_SUPER, AST_LIST,
 
-  // StringAstNode*
+  // node's data is StringAstNode*
   AST_FIELD, AST_LOCAL, AST_TYPEDEF, AST_PRIMITIVE,
 
-  // FornumNode*
+  // node's data is FornumNode*
   AST_FORNUM,
 
-  // ForinNode*
+  // node's data is ForinNode*
   AST_FORIN, AST_ELSEIF, AST_IF,
 
-  // Miscellaneous
+  // node's data is something else
   AST_UNKNOWN
 };
 
-// moonshot.c
+// implemented in moonshot.c
 void add_error_internal(int line,const char* msg,va_list args);
 char* format_string(int indent,const char* msg,va_list args);
 int require_file(char* filename,int validate);
@@ -252,11 +260,11 @@ char* strip_quotes(char* str);
 char* copy_string(char* str);
 char* string_from_int(int a);
 
-// tokenizer.c
+// implemented in tokenizer.c
 void dealloc_token(Token* tk);
 List* tokenize(FILE* f);
 
-// parser.c
+// implemented in parser.c
 AstNode* parse(List* ls);
 AstNode* parse_function(AstNode* type,int include_body);
 AstNode* parse_constructor(char* classname);
@@ -296,10 +304,7 @@ AstNode* parse_lhs();
 AstNode* parse_if();
 AstNode* parse_do();
 
-// nodes.c
-void dealloc_ast_type(AstNode* node);
-void dealloc_ast_node(AstNode* node);
-AstNode* new_node(int type,int line,void* data);
+// implemented in nodes.c
 FornumNode* new_fornum_node(char* name,AstNode* num1,AstNode* num2,AstNode* num3,List* body);
 FunctionNode* new_function_node(AstNode* name,AstNode* type,List* args,List* body);
 ClassNode* new_class_node(char* name,char* parent,List* interfaces,List* ls);
@@ -314,23 +319,35 @@ AstListNode* new_ast_list_node(AstNode* ast,List* list);
 AstAstNode* new_ast_ast_node(AstNode* l,AstNode* r);
 TableNode* new_table_node(List* keys,List* vals);
 BinaryNode* new_unary_node(char* op,AstNode* e);
+AstNode* new_node(int type,int line,void* data);
+void dealloc_ast_type(AstNode* node);
+void dealloc_ast_node(AstNode* node);
 
 /*
 *   The parsing step should not have
 *   access to these functions or it may
-*   cause a segmentation fault
+*   cause a segmentation fault.
 */
 #ifndef MOONSHOT_PARSING
 
-// scopes.c
+// implemented in scopes.c
 void push_function_scope(FunctionNode* node);
+void register_interface(InterfaceNode* node);
+InterfaceNode* interface_exists(char* name);
+void register_function(FunctionNode* node);
 StringAstNode* get_scoped_var(char* name);
+FunctionNode* function_exists(char* name);
+void register_primitive(const char* name);
 int add_scoped_var(StringAstNode* node);
 int field_defined_in_class(char* name);
 void push_class_scope(ClassNode* node);
+void register_class(ClassNode* node);
+ClassNode* class_exists(char* name);
 FunctionNode* get_function_scope();
 FunctionNode* get_method_scope();
+void register_type(char* name);
 ClassNode* get_class_scope();
+int type_exists(char* name);
 void preempt_scopes();
 void dealloc_scopes();
 int get_num_scopes();
@@ -338,18 +355,9 @@ Scope* get_scope();
 void init_scopes();
 void push_scope();
 void pop_scope();
-void register_interface(InterfaceNode* node);
-InterfaceNode* interface_exists(char* name);
-void register_function(FunctionNode* node);
-FunctionNode* function_exists(char* name);
-void register_primitive(const char* name);
-void register_class(ClassNode* node);
-ClassNode* class_exists(char* name);
-void register_type(char* name);
-int type_exists(char* name);
 
 
-// types.c
+// implemented in types.c
 int add_type_equivalence(char* name,AstNode* type,int relation);
 int add_child_type(char* child,char* parent,int relation);
 int is_primitive(AstNode* node,const char* type);
@@ -367,7 +375,7 @@ void print_types_graph();
 void dealloc_types();
 void init_types();
 
-// entities.c
+// implemented in entities.c
 FunctionNode* get_parent_method(ClassNode* clas,FunctionNode* method);
 int methods_equivalent(FunctionNode* f1,FunctionNode* f2);
 List* get_missing_class_methods(ClassNode* node);
@@ -377,7 +385,7 @@ List* get_all_expected_fields(AstNode* node);
 List* get_all_class_fields(ClassNode* data);
 int num_constructors(ClassNode* data);
 
-// traversal.c
+// implemented in traversal.c
 void traverse(AstNode* node,int validate);
 void dealloc_traverse();
 void init_traverse();
