@@ -4,6 +4,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdarg.h>
+#include <assert.h>
 #define ERROR_BUFFER_LENGTH 256 // Maximum length for an error message
 static int line_written; // Zero if there's no content on the current output line yet
 static List* srcs; // Stack of files you're parsing/traversing
@@ -206,9 +207,9 @@ void dummy_required_file(char* filename){
     remove_from_list(srcs,srcs->n-1);
   }
   Require* r=(Require*)malloc(sizeof(Require));
+  r->completed=STEP_OUTPUT;
   r->filename=copy;
   r->tokens=NULL;
-  r->written=1;
   r->tree=NULL;
   add_to_list(requires,r);
   add_to_list(srcs,copy);
@@ -220,23 +221,26 @@ void dummy_required_file(char* filename){
   Also checks to ensure that we're not processing a file we've already processed
   Returns 1 if the required file is a Moonshot source file
 */
-int require_file(char* filename,int validate){
+int require_file(char* filename,int step){
   char* copy=strip_quotes(filename);
   int l=strlen(copy);
   if(l<5 || strcmp(copy+l-5,".moon")){
     free(copy);
     return 0;
   }
-  add_to_list(srcs,copy);
-  if(validate){
-    for(int a=0;a<requires->n;a++){
-      Require* r=(Require*)get_from_list(requires,a);
-      if(!strcmp(r->filename,copy)){
-        remove_from_list(srcs,srcs->n-1);
+  for(int a=0;a<requires->n;a++){
+    Require* r=(Require*)get_from_list(requires,a);
+    if(!strcmp(r->filename,copy)){
+      if(r->completed<step){
+        if(step<STEP_OUTPUT) r->completed=step;
+      }else{
         free(copy);
         return 1;
       }
     }
+  }
+  add_to_list(srcs,copy);
+  if(step==STEP_TYPEDEF){
     FILE* f=fopen(copy,"r");
     if(!f){
       add_error(-1,"cannot open file %s",copy);
@@ -261,24 +265,26 @@ int require_file(char* filename,int validate){
     }
     Require* r=(Require*)malloc(sizeof(Require));
     r->filename=copy;
-    r->written=0;
+    r->completed=0;
     r->tokens=ls;
     r->tree=root;
     add_to_list(requires,r);
-    traverse(root,1);
-  }else{
-    for(int a=0;a<requires->n;a++){
-      Require* r=(Require*)get_from_list(requires,a);
-      if(!strcmp(r->filename,copy) && !r->written){
-        r->written=1;
-        if(r->tree) traverse(r->tree,0);
-        remove_from_list(srcs,srcs->n-1);
-        free(copy);
-        return 1;
-      }
-    }
-    free(copy);
   }
+  for(int a=0;a<requires->n;a++){
+    Require* r=(Require*)get_from_list(requires,a);
+    if(!strcmp(r->filename,copy) && (step!=STEP_OUTPUT || r->completed<STEP_OUTPUT)){
+      if(step==STEP_OUTPUT) r->completed=STEP_OUTPUT;
+      if(r->tree){
+        assert(r->tree->type==AST_STMT);
+        List* ls=(List*)(r->tree->data);
+        for(int b=0;b<ls->n;b++){
+          process_node((AstNode*)get_from_list(ls,b));
+        }
+      }
+      break;
+    }
+  }
+  if(step!=STEP_TYPEDEF) free(copy);
   remove_from_list(srcs,srcs->n-1);
   return 1;
 }
@@ -337,9 +343,9 @@ int moonshot_compile(){
 
   // AST traversal
   init_traverse();
-  traverse(root,1);
+  traverse(root,STEP_CHECK);
   check_broken_promises();
-  if(!errors->n) traverse(root,0);
+  if(!errors->n) traverse(root,STEP_OUTPUT);
   dealloc_traverse();
   dealloc_requires();
   dealloc_ast_node(root);

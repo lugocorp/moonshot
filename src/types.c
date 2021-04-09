@@ -1,6 +1,7 @@
 #include "./internal.h"
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 static List* types_graph; // List of EqualTypesNodes
 static List* promises; // List of promised types
 
@@ -300,36 +301,35 @@ char* base_type(char* name){
 
 /*
   Goes recursively through a compound type (tuple or function) or singular type
-  Makes a promise that every referenced type has to be defined in the future
+  Returns 1 if every type referenced in the compound type exists
 */
-void make_type_promise(AstNode* node){
-  if(!node) return;
+int compound_type_exists(AstNode* node){
+  if(!node) return 1;
   switch(node->type){
-    case AST_TYPE_ANY: return;
-    case AST_TYPE_VARARG: return;
+    case AST_TYPE_ANY: return 1;
+    case AST_TYPE_VARARG: return 1;
     case AST_TYPE_BASIC:{
       char* t=(char*)(node->data);
-      if(!type_exists(t)){
-        add_to_list(promises,t);
-      }
-      return;
+      if(!type_exists(t)) return 0;
+      return 1;
     }
     case AST_TYPE_TUPLE:{
       List* ls=(List*)(node->data);
       for(int a=0;a<ls->n;a++){
-        make_type_promise((AstNode*)get_from_list(ls,a));
+        if(!compound_type_exists((AstNode*)get_from_list(ls,a))) return 0;
       }
-      return;
+      return 1;
     }
     case AST_TYPE_FUNC:{
       AstListNode* data=(AstListNode*)(node->data);
-      make_type_promise(data->node);
+      if(!compound_type_exists(data->node)) return 0;
       for(int a=0;a<data->list->n;a++){
-        make_type_promise((AstNode*)get_from_list(data->list,a));
+        if(!compound_type_exists((AstNode*)get_from_list(data->list,a))) return 0;
       }
-      return;
+      return 1;
     }
   }
+  assert(0); // You should never get here
 }
 
 /*

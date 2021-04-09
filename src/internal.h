@@ -152,14 +152,15 @@ typedef struct{
   char* filename; // Filename of the required file
   AstNode* tree; // Parsed AST tree
   List* tokens; // Token list for file
-  int written; // 1 if the file was written to output yet
+  int completed; // The highest step completed on this file
 } Require;
 
 // Enum for all traversal steps
 enum STEPS{
-  STEP_HEADER,
-  STEP_CHECK,
-  STEP_OUTPUT
+  STEP_TYPEDEF,  // Step for processing type definitions, runs for each scope
+  STEP_RELATE,  // Step for processing type relations, runs after typedef step for each scope
+  STEP_CHECK,   // General validation step, runs after relate step for each scope
+  STEP_OUTPUT   // Post-validation step for outputting Lua code, runs once after all validation
 };
 
 // Enum for all scope types
@@ -252,8 +253,8 @@ enum RULES{
 // implemented in moonshot.c
 void add_error_internal(int line,const char* msg,va_list args);
 char* format_string(int indent,const char* msg,va_list args);
-int require_file(char* filename,int validate);
 void add_error(int line,const char* msg,...);
+int require_file(char* filename,int step);
 char* collapse_string_list(List* ls);
 void dealloc_token_buffer(List* ls);
 char* strip_quotes(char* str);
@@ -362,9 +363,10 @@ int add_type_equivalence(char* name,AstNode* type,int relation);
 int add_child_type(char* child,char* parent,int relation);
 int is_primitive(AstNode* node,const char* type);
 int types_equivalent(char* name,AstNode* type);
+int compound_type_exists(AstNode* node);
 List* get_equivalent_types(char* name);
 int typed_match(AstNode* l,AstNode* r);
-void make_type_promise(AstNode* node);
+//void make_type_promise(AstNode* node);
 int is_variadic_function(List* args);
 char* stringify_type(AstNode* node);
 AstNode* get_type(AstNode* node);
@@ -386,7 +388,7 @@ List* get_all_class_fields(ClassNode* data);
 int num_constructors(ClassNode* data);
 
 // implemented in traversal.c
-void traverse(AstNode* node,int validate);
+void traverse(AstNode* node,int step);
 void dealloc_traverse();
 void init_traverse();
 int get_num_indents();
@@ -395,21 +397,20 @@ AstNode* int_type_const();
 AstNode* bool_type_const();
 AstNode* float_type_const();
 void set_output(FILE* output);
-void process_node(AstNode* node);
-void process_stmt(AstNode* node);
-void process_define(AstNode* node);
-void process_typedef(AstNode* node);
-void process_primitive(AstNode* node);
-void process_list_node(AstNode* node);
+void process_node_list(List* ls);
+void process_list_primitive_node(AstNode* node);
 void process_interface(AstNode* node);
+void process_primitive(AstNode* node);
 void process_function(AstNode* node);
 void process_require(AstNode* node);
+void process_typedef(AstNode* node);
 void process_repeat(AstNode* node);
 void process_ltuple(AstNode* node);
 void process_return(AstNode* node);
 void process_binary(AstNode* node);
 void process_fornum(AstNode* node);
 void process_elseif(AstNode* node);
+void process_define(AstNode* node);
 void process_class(AstNode* node);
 void process_super(AstNode* node);
 void process_break(AstNode* node);
@@ -422,6 +423,7 @@ void process_local(AstNode* node);
 void process_while(AstNode* node);
 void process_field(AstNode* node);
 void process_label(AstNode* node);
+void process_node(AstNode* node);
 void process_goto(AstNode* node);
 void process_call(AstNode* node);
 void process_else(AstNode* node);
