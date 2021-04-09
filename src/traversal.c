@@ -618,7 +618,8 @@ void process_define(AstNode* node){
         free(data1);
       }
     }
-    write("local %s=",data->text);
+    if(get_num_scopes()>1) write("local ");
+    write("%s=",data->text);
     if(data->r) process_node(data->r);
     else write("nil");
     write("\n");
