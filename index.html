@@ -34,12 +34,12 @@
       <div id="section"></div>
       <script>
         var editor = CodeMirror(document.getElementById("section"), {
-          value:
-            " class MoonShot extends Lua where \n\tfunction getNewFeatures() \n \t-- Adds OOP and optional typing \n \tend \n\t function compile() \n\t-- Runs compile-time safety checks \n\t end \nend",
-          mode: "lua",
-          theme: "neo",
+          value: "class MoonShot extends Lua where\n\tfunction getNewFeatures()\n\t\t-- Adds OOP and optional typing\n\tend\n\tfunction compile()\n\t\t-- Runs compile-time safety checks\n\tend\nend",
+          flattenSpans: true,
           lineNumbers: true,
           readOnly: true,
+          theme: "neo",
+          mode: "lua",
         });
       </script>
     </div>
@@ -113,27 +113,31 @@
       </div>
     </div>
     <div class="get-started small-enabled">
-      <h1>Get started</h1>
       <div class="content">
-        <p>
-          Lorem ipsum dolor sit amet consectetur adipisicing elit. Consectetur
-          amet vitae quod veniam iste iusto quis natus minus, exercitationem
-          illo porro. Dolores fuga ipsa eaque? Lorem ipsum dolor sit amet
-          consectetur adipisicing elit. Quia, doloribus quidem. Distinctio
-          adipisci doloremque et accusamus commodi aliquam cum ducimus
-          recusandae alias quae porro omnis, voluptates reiciendis nam itaque
-          magni sequi. Labore vero impedit quis nobis aspernatur soluta
-          consequuntur dolorem, quas magni optio, omnis eius nesciunt neque
-          similique. Necessitatibus, cumque?
-        </p>
-        <img src="res/github.svg" alt="" width="100" height="100" />
+        <div>
+          <h1>Get started</h1>
+          <p>
+            Lorem ipsum dolor sit amet consectetur adipisicing elit. Consectetur
+            amet vitae quod veniam iste iusto quis natus minus, exercitationem
+            illo porro. Dolores fuga ipsa eaque? Lorem ipsum dolor sit amet
+            consectetur adipisicing elit. Quia, doloribus quidem. Distinctio
+            adipisci doloremque et accusamus commodi aliquam cum ducimus
+            recusandae alias quae porro omnis, voluptates reiciendis nam itaque
+            magni sequi. Labore vero impedit quis nobis aspernatur soluta
+            consequuntur dolorem, quas magni optio, omnis eius nesciunt neque
+            similique. Necessitatibus, cumque?
+          </p>
+        </div>
+        <div>
+          <img src="res/github.svg" alt="" width="100" height="100" />
+        </div>
       </div>
     </div>
     <div class="footer small-enabled">
-      <a class="links" href="/">LEARN</a>
-      <a class="links" href="/">GITHUB</a>
-      <a class="links" href="/">INSTALL</a>
-      <a class="links" href="/">LICENSE</a>
+      <a class="links" href="/">Learn</a>
+      <a class="links" href="/">GitHub</a>
+      <a class="links" href="/">Install</a>
+      <a class="links" href="/">License</a>
     </div>
   </body>
 </html>

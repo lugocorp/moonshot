@@ -15,6 +15,11 @@ body {
   padding: 0;
 }
 
+.CodeMirror {
+  border-radius: 10px;
+  font-size: 20px;
+}
+
 /* Navigation */
 .navigation {
   grid-template-columns: 90px calc(100% - 180px) 90px;
@@ -48,7 +53,7 @@ body {
   color: var(--dark-text);
 }
 
-@media only screen and (max-width: 1000px) {
+@media only screen and (max-width: 800px) {
   .navigation > .left-side,
   .navigation > .right-side,
   .navigation > .center {
@@ -83,14 +88,14 @@ body {
 }
 .splash {
   background-color: var(--blue);
+  padding: 10px 35px 25px 35px;
   position: relative;
-  padding: 10px 35px;
 }
 
 @media only screen and (max-width: 1000px) {
   .splash {
-    padding-left: 0px;
-    padding-right: 0px;
+    padding-right: 10px;
+    padding-left: 10px;
   }
 }
 
@@ -117,8 +122,8 @@ body {
 
 @media only screen and (max-width: 1000px) {
   .lua {
-    padding-left: 0px;
-    padding-right: 0px;
+    padding-right: 10px;
+    padding-left: 10px;
   }
 }
 
@@ -145,52 +150,48 @@ body {
 }
 
 .card {
+  box-shadow: 0 0 30px rgba(0, 0, 0, 0.18);
   background-color: var(--white);
   border-radius: 20px;
-  box-shadow: 0 0 30px rgba(0, 0, 0, 0.18);
-  padding-left: 10px;
 }
 
-.container {
+.card .container {
   position: relative;
-
 }
 
 .card .container img {
-  width: 60%;
-  display: block;
   border-radius: 20px 20px 0 0;
-  align-items: center;
-  padding-left: 75px;
+  padding-left: 20%;
+  display: block;
+  width: 60%;
 }
 
 .card .details {
-  padding: 20px 10px;
+  text-align: center;
+  padding: 20px;
 }
 
 .card .details > h4 {
   color: var(--dark-text);
+  margin: 10px 0 15px 0;
   font-weight: 600;
   font-size: 18px;
-  margin: 10px 0 15px 0;
-  text-align: center;
 }
 
 .card .details p {
   color: var(--dark-text);
-  font-size: 15px;
   line-height: 20px;
   font-weight: 400;
+  font-size: 15px;
 }
 
 /* Get Started  */
 
 .get-started {
   background: var(--white);
+  padding-bottom: 50px;
   position: relative;
   padding: 10px 35px;
-  display: grid;
-  padding-bottom: 50px;
 }
 
 .get-started h1 {
@@ -201,51 +202,58 @@ body {
 }
 
 .get-started .content {
-  display: grid;
   grid-template-columns: 70% 30%;
+  display: grid;
 }
 
 .get-started .content p {
-  font-size: 20px;
   color: var(--dark-text);
   text-align: left;
+  font-size: 20px;
 }
 
 .get-started .content img {
-  width: 100%;
+  transform: translate(-50%,-50%);
+  position: relative;
   cursor: pointer;
+  width: 80%;
+  left: 50%;
+  top:50%;
 }
 
 @media only screen and (max-width: 1000px) {
+  .get-started .content{
+    grid-template-columns: 100%;
+  }
   .get-started {
-    padding-left: 0px;
-    padding-right: 0px;
+    padding-right: 10px;
+    padding-left: 10px;
   }
 }
 
 /* FOOTER  */
 
 .footer {
+  grid-template-columns: 25% 25% 25% 25%;
+  text-align: center;
   background: black;
-  padding-top: 20px;
-  padding-bottom: 20px;
-  margin-bottom: 0px;
+  padding: 20px 0;
+  display: grid;
 }
 
 .footer .links {
-  padding-left: 125px;
-  margin: 50.2px;
   text-decoration: none;
   color: var(--white);
   text-align: center;
+  font-size: 18px;
 }
 
-@media only screen and (max-width: 1000px) {
+.footer .links:hover {
+  text-decoration: underline;
+}
+
+@media only screen and (max-width: 400px) {
   .footer {
-    text-align: center;
-  }
-  .footer .links {
-    /* padding-bottom: 60px; */
-    font-size: 4vw;
+    grid-template-columns: 100%;
   }
 }
