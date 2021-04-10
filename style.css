@@ -1,24 +1,24 @@
 /* CSS variables for colors  */
 :root {
+  --text-color: #030380;
+  --white-text: #ffffff;
+  --dark-text: #000000;
   --white: #ffffff;
   --blue: #030380;
-  --text-color: #030380;
-  --dark-text: black;
-  --white-text: #ffffff;
 }
 
 body {
   font-family: sans-serif;
+  color: var(--white);
   overflow-x: hidden;
   margin: 0px;
   padding: 0;
-  color: var(--white);
 }
 
 /* Navigation */
 .navigation {
-  grid-template-columns: 10% 70% 20%;
-  padding: 19px;
+  grid-template-columns: 90px calc(100% - 180px) 90px;
+  padding: 5px 19px;
   display: grid;
 }
 
@@ -28,16 +28,20 @@ body {
 
 .navigation .right-side img {
   cursor: pointer;
+  width: 80px;
+}
+
+.navigation .left-side img {
+  height: 80px;
 }
 
 .navigation .center a {
-  color: var(--blue);
-  display: inline;
   text-decoration: none;
+  display: inline-block;
+  color: var(--blue);
   font-weight: bold;
-  font-size: 1.5vw;
+  font-size: 30px;
   padding: 20px;
-  align-items: center;
 }
 
 .navigation .center a:hover {
@@ -46,22 +50,12 @@ body {
 
 @media only screen and (max-width: 1000px) {
   .navigation > .left-side,
-  .navigation > .right-side {
+  .navigation > .right-side,
+  .navigation > .center {
     text-align: center;
-  }
-  .navigation .left-side * {
-    display: block;
-  }
-  .navigation .left-side img {
-    transform: translateX(-50%);
-    position: relative;
-    left: 50%;
   }
   .navigation .center a {
-    font-size: 3vw;
-    text-align: center;
-    display: inline-block;
-    padding-right: 42.5px;
+    display: block;
   }
   .navigation {
     grid-template-columns: 100%;
@@ -159,7 +153,7 @@ body {
 
 .container {
   position: relative;
-  
+
 }
 
 .card .container img {
