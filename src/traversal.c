@@ -14,6 +14,15 @@ static AstNode* bool_type; // AstNode constant representing the BOOL type
 static AstNode* int_type; // AstNode constant representing the INT type
 static AstNode* any_type; // AstNode constant representing the ANY type
 
+/*
+  The traversal step of this compiler has 4 phases:
+    typedef, relate, check, output
+  The typedef phase is when we traverse through a scope (an AST subtree) and register the types defined there
+  The relate phase is where we go through each type and register any equivalencies (since the types need to exist first)
+  The check phase is when we perform general compile-time checks
+  The output phase happen after all checks have been performed, this is when we write Lua code to output
+*/
+
 // Get number of indents
 int get_num_indents(){
   return num_indents;
@@ -125,8 +134,27 @@ static void conditional_newline(AstNode* node){
     }
   }
 }
+
+/*
+  Canonical traversal method structure:
+  if step==STEP_TYPEDEF
+    do your typedef step
+  else if step==STEP_RELATE
+    do your relate step
+  else
+    push scope
+    do your check and output steps
+    pop scope
+  end
+*/
+
+/*
+  Process a list of AstNodes
+  Usually called once for each scope
+*/
 void process_node_list(List* ls){
   if(step==STEP_CHECK){
+    // We need to load up scoped types before we can check this scope
     step=STEP_TYPEDEF;
     for(int a=0;a<ls->n;a++) process_node((AstNode*)get_from_list(ls,a));
 
@@ -144,19 +172,6 @@ void process_node_list(List* ls){
     }
   }
 }
-
-/*
-  Canonical traversal method structure:
-  if step==STEP_TYPEDEF
-    do your typedef step
-  else if step==STEP_RELATE
-    do your relate step
-  else
-    push scope
-    do your check and output steps
-    pop scope
-  end
-*/
 
 /*
   Switch for calling a specific traversal method by AstNode type
@@ -454,7 +469,7 @@ void process_super(AstNode* node){
     ClassNode* parent=class_exists(clas->parent);
     FunctionNode* method=get_parent_method(parent,func);
     if(step==STEP_CHECK){
-      // I'm assuming func->name is of type AST_ID
+      assert(func->name->type==AST_ID); // I'm assuming func->name is of type AST_ID
       ERROR(!method && func->is_constructor,node->line,"constructor in class %s does not override a super constructor",clas->name);
       ERROR(!method && !func->is_constructor,node->line,"method %s in class %s does not override a super method",(char*)(func->name->data),clas->name);
       char* target=(char*)malloc(sizeof(char)*(strlen(parent->name)+22));

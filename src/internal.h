@@ -366,7 +366,6 @@ int types_equivalent(char* name,AstNode* type);
 int compound_type_exists(AstNode* node);
 List* get_equivalent_types(char* name);
 int typed_match(AstNode* l,AstNode* r);
-//void make_type_promise(AstNode* node);
 int is_variadic_function(List* args);
 char* stringify_type(AstNode* node);
 AstNode* get_type(AstNode* node);

@@ -1,6 +1,7 @@
 #include "./internal.h"
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 
 /*
   Return the number of constructors present within a single class
@@ -146,8 +147,9 @@ List* get_missing_class_methods(ClassNode* c){
   Helpful for overriding or implementing methods from ancestors
 */
 int methods_equivalent(FunctionNode* f1,FunctionNode* f2){
-  // Assumes the two methods belong to clases (name nodes are of type AST_ID)
   if(!f1->name || !f2->name) return 0;
+  assert(f1->name->type==AST_ID); // Assumes the two methods belong to classes (name nodes are of type AST_ID)
+  assert(f2->name->type==AST_ID); // Assumes the two methods belong to classes (name nodes are of type AST_ID)
   AstNode* node=new_node(AST_FUNCTION,-1,f1);
   AstNode* type1=get_type(node);
   free(node);
@@ -184,7 +186,8 @@ Map* collapse_ancestor_class_fields(List* ls){
     if(node->type==AST_FUNCTION){
       FunctionNode* data=(FunctionNode*)(node->data);
       if(!data->name) continue;
-      name=(char*)(data->name->data); // Assumes the function's name is AST_ID
+      assert(data->name->type==AST_ID); // Assumes the function's name is AST_ID
+      name=(char*)(data->name->data);
     }
     AstNode* e=(AstNode*)get_from_map(m,name);
     if(e){
@@ -215,8 +218,9 @@ FunctionNode* get_parent_method(ClassNode* clas,FunctionNode* method){
         if(func->is_constructor) return func;
       }else if(func->is_constructor){
         continue;
-      }else {
-        // I'm assuming both method->name and func->name are AST_ID types
+      }else{
+        assert(method->name->type==AST_ID); // I'm assuming both method->name and func->name are AST_ID types
+        assert(func->name->type==AST_ID); // I'm assuming both method->name and func->name are AST_ID types
         if(strcmp((char*)(method->name->data),(char*)(func->name->data))) continue;
         AstNode* func_type=get_type(e);
         AstNode* m=new_node(AST_FUNCTION,-1,method);

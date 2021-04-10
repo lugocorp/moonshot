@@ -302,7 +302,8 @@ FunctionNode* function_exists(char* name){
     List* ls=scope->functions_registry;
     for(int b=0;b<ls->n;b++){
       FunctionNode* node=(FunctionNode*)get_from_list(ls,b);
-      char* funcname=(char*)(node->name->data); // I'm assuming func->name is of type AST_ID
+      assert(node->name->type==AST_ID); // I'm assuming func->name is of type AST_ID
+      char* funcname=(char*)(node->name->data);
       if(node->name && !strcmp(name,funcname)){
         return node;
       }
