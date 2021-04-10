@@ -30,7 +30,7 @@
       </div>
     </div>
     <div class="splash small-enabled">
-      <h1>Optional static typing over lua</h1>
+      <h1>Moonshot brings static typing to lua</h1>
       <div id="section"></div>
       <script>
         var editor = CodeMirror(document.getElementById("section"), {
@@ -46,24 +46,19 @@
     <div class="lua small-enabled">
       <h1>Lua Redefined</h1>
       <p>
-        Lorem Ipsum is simply dummy text of the printing and typesetting
-        industry. Lorem Ipsum has been the industry's standard dummy text ever
-        since the 1500s, when an unknown printer took a galley of type and
-        scrambled it to make a type specimen book. It has survived not only five
-        centuries, but also the leap into electronic typesetting, remaining
-        essentially unchanged. It was popularised in the 1960s with the release
-        of Letraset sheets containing Lorem Ipsum passages, and more recently
-        with desktop publishing software like Aldus PageMaker including versions
-        of Lorem Ipsum. It is a long established fact that a reader will be
-        distracted by the readable content of a page when looking at its layout.
-        The point of using Lorem Ipsum is that it has a more-or-less normal
-        distribution of letters, as opposed to using 'Content here, content
-        here', making it look like readable English. Many desktop publishing
-        packages and web page editors now use Lorem Ipsum as their default model
-        text, and a search for 'lorem ipsum' will uncover many web sites still
-        in their infancy. Various versions have evolved over the years,
-        sometimes by accident, sometimes on purpose (injected humour and the
-        like).
+        Moonshot is a compiled, optionally type-checked extension language that compiles to Lua.
+        It allows programmers to refactor much larger codebases without experiencing type discrepancies at runtime.
+        Programmers can define a variable with any of Lua's primitive types, or use typedefs to represent composite types.
+        Moonshot even provides an inheritance-based class system, so you can defined interfaces and classes to your heart's content.
+        Never deal with large, hard-to-maintain untyped codebases in Lua again.
+        With Moonshot you can access the power of the entire Lua ecosystem...but through a compiled language frontend!
+      </p>
+      <p>
+        Moonshot was designed to be as similar to Lua as possible.
+        The new language features all follow a Lua-like syntax, introducing several new keywords such as <i>class</i>, <i>interface</i>, <i>typedef</i> and <i>where</i>.
+        This design choice was made to minimize the learning curve that sits between Lua and Moonshot.
+        We hope that you'll enjoy using Moonshot for all your larger Lua-based projects!
+        If you're ready to get started then check out <a href="#getting-started">down below</a>.
       </p>
     </div>
     <div class="features small-enabled">
@@ -71,48 +66,49 @@
       <div class="cards">
         <div class="card card1">
           <div class="container">
-            <img src="res/moon1.jpg" alt="" />
+            <img src="res/moonshot.svg"/>
           </div>
           <div class="details">
-            <h4>MoonShot</h4>
+            <h4>Optional Type System</h4>
             <p>
-              Lorem ipsum dolor sit, amet consectetur adipisicing elit. Fugit,
-              commodi molestias perferendis quia, nulla accusamus voluptatem
-              iure hic ipsa, blanditiis ea. Ipsa eos nobis sequi eaque quam
-              numquam repellendus ab pariatur?
+              Moonshot is like the TypeScript of Lua.
+              It allows you to define variable that must hold a particular type, or you can use untyped varibles by default.
+              It's up to you what structure you'd like to encode into your projects.
+              Moonshot will simply enforce your own rules at compile-time.
             </p>
           </div>
         </div>
         <div class="card card2">
           <div class="container">
-            <img src="res/moon1.jpg" alt="" />
+            <img src="res/moonshot.svg"/>
           </div>
           <div class="details">
-            <h4>MoonShot</h4>
+            <h4>Inheritance-Based OOP</h4>
             <p>
-              Lorem ipsum dolor sit amet consectetur adipisicing elit. Voluptas
-              accusantium magni, cumque obcaecati hic eos ut tenetur magnam
-              expedita recusandae quibusdam, omnis itaque fugit.
+              Moonshot brings inheritance-based object-oriented programming to the Lua programming language.
+              Create interfaces and classes to your heart's content.
+              This allows you to reuse code and enforce access policies, all while leveraging Lua's rich ecosystem.
             </p>
           </div>
         </div>
         <div class="card card3">
           <div class="container">
-            <img src="res/moon1.jpg" />
+            <img src="res/moonshot.svg"/>
             <div class="details">
-              <h4>MoonShot</h4>
+              <h4>Interoperability</h4>
               <p>
-                Lorem ipsum dolor sit amet consectetur adipisicing elit. Numquam
-                ducimus qui tempore eius facere! Fuga laboriosam quae suscipit
-                impedit iusto placeat necessitatibus aspernatur laborum neque.
-                Labore excepturi provident vitae sed rerum.
+                Lua is a very lightweight, embeddable language.
+                You can install and run it on just about any system you want.
+                Moonshot was designed as an extension over Lua's grammar, so you just write pure Lua with it if you wanted to.
+                Moonshot also compiles into basic Lua code, without adding any additional runtime type checks.
+                This means that using Moonshot will have no effect on your code's runtime performance.
               </p>
             </div>
           </div>
         </div>
       </div>
     </div>
-    <div class="get-started small-enabled">
+    <div class="get-started small-enabled" id="getting-started">
       <div class="content">
         <div>
           <h1>Get started</h1>

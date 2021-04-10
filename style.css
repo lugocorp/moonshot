@@ -8,11 +8,20 @@
 }
 
 body {
+  background-color: var(--white);
   font-family: sans-serif;
-  color: var(--white);
   overflow-x: hidden;
-  margin: 0px;
   padding: 0;
+  margin: 0;
+}
+
+a {
+  text-decoration: none;
+  color: var(--blue);
+}
+
+a:hover {
+  text-decoration: underline;
 }
 
 .CodeMirror {
@@ -157,10 +166,10 @@ body {
 
 .card .container {
   position: relative;
+  padding-top: 20px;
 }
 
 .card .container img {
-  border-radius: 20px 20px 0 0;
   padding-left: 20%;
   display: block;
   width: 60%;
