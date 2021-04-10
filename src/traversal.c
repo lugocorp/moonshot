@@ -121,7 +121,8 @@ static void conditional_newline(AstNode* node){
     if(node->type==AST_FUNCTION) write("\n");
     if(node->type==AST_CALL) write("\n");
     if(node->type==AST_REQUIRE){
-      AstNode* data=(AstNode*)(node->data); // data is AST_PRIMITIVE with type string
+      AstNode* data=(AstNode*)(node->data);
+      assert(data->type==AST_PRIMITIVE); // data is AST_PRIMITIVE with type string
       StringAstNode* primitive=(StringAstNode*)(data->data);
       char* filename=primitive->text;
       int l=strlen(filename);
@@ -470,7 +471,9 @@ void process_super(AstNode* node){
     ClassNode* parent=class_exists(clas->parent);
     FunctionNode* method=get_parent_method(parent,func);
     if(step==STEP_CHECK){
-      assert(func->name->type==AST_ID); // I'm assuming func->name is of type AST_ID
+      if(!func->is_constructor){
+        assert(func->name->type==AST_ID); // I'm assuming func->name is of type AST_ID
+      }
       ERROR(!method && func->is_constructor,node->line,"constructor in class %s does not override a super constructor",clas->name);
       ERROR(!method && !func->is_constructor,node->line,"method %s in class %s does not override a super method",(char*)(func->name->data),clas->name);
       char* target=(char*)malloc(sizeof(char)*(strlen(parent->name)+22));
@@ -602,7 +605,8 @@ void process_id(AstNode* node){
   Traverses through nodes that define new things
 */
 void process_require(AstNode* node){
-  AstNode* data=(AstNode*)(node->data); // data is AST_PRIMITIVE with type string
+  AstNode* data=(AstNode*)(node->data);
+  assert(data->type==AST_PRIMITIVE); // data is AST_PRIMITIVE with type string
   StringAstNode* primitive=(StringAstNode*)(data->data);
   if(!require_file(primitive->text,step)){
     write("require %s",primitive->text);

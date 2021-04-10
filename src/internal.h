@@ -205,53 +205,53 @@ enum TOKENS{
 // Enum for all grammar rules
 
 enum RULES{
-  // node's data is NULL
+  // Node's data is NULL
   AST_NONE, AST_BREAK, AST_TYPE_ANY, AST_TYPE_VARARG,
 
-  // node's data is char*
+  // Node's data is char*
   AST_LABEL, AST_GOTO, AST_ID, AST_TYPE_BASIC,
 
-  // node's data is List*
+  // Node's data is List*
   AST_STMT, AST_DO, AST_LTUPLE, AST_TYPE_TUPLE, AST_ELSE,
 
-  // node's data is AstListNode*
+  // Node's data is AstListNode*
   AST_REPEAT, AST_WHILE, AST_TYPE_FUNC, AST_TUPLE,
 
-  // node's data is ClassNode*
+  // Node's data is ClassNode*
   AST_CLASS,
 
-  // node's data is InterfaceNode*
+  // Node's data is InterfaceNode*
   AST_INTERFACE,
 
-  // node's data is FunctionNode*
+  // Node's data is FunctionNode*
   AST_FUNCTION,
 
-  // node's data is TableNode*
+  // Node's data is TableNode*
   AST_TABLE,
 
-  // node's data is AstAstNode*
+  // Node's data is AstAstNode*
   AST_SET, AST_CALL, AST_SUB,
 
-  // node's data is Binary node
+  // Node's data is Binary node
   AST_BINARY, AST_UNARY, AST_DEFINE,
 
-  // node's data is AstNode*
+  // Node's data is AstNode*
   AST_RETURN, AST_PAREN, AST_REQUIRE, AST_SUPER, AST_LIST,
 
-  // node's data is StringAstNode*
+  // Node's data is StringAstNode*
   AST_FIELD, AST_LOCAL, AST_TYPEDEF, AST_PRIMITIVE,
 
-  // node's data is FornumNode*
+  // Node's data is FornumNode*
   AST_FORNUM,
 
-  // node's data is ForinNode*
+  // Node's data is ForinNode*
   AST_FORIN, AST_ELSEIF, AST_IF,
 
-  // node's data is something else
+  // Node's data is something else
   AST_UNKNOWN
 };
 
-// implemented in moonshot.c
+// Implemented in moonshot.c
 void add_error_internal(int line,const char* msg,va_list args);
 char* format_string(int indent,const char* msg,va_list args);
 void add_error(int line,const char* msg,...);
@@ -262,11 +262,11 @@ char* strip_quotes(char* str);
 char* copy_string(char* str);
 char* string_from_int(int a);
 
-// implemented in tokenizer.c
+// Implemented in tokenizer.c
 void dealloc_token(Token* tk);
 List* tokenize(FILE* f);
 
-// implemented in parser.c
+// Implemented in parser.c
 AstNode* parse(List* ls);
 AstNode* parse_function(AstNode* type,int include_body);
 AstNode* parse_constructor(char* classname);
@@ -306,7 +306,7 @@ AstNode* parse_lhs();
 AstNode* parse_if();
 AstNode* parse_do();
 
-// implemented in nodes.c
+// Implemented in nodes.c
 FornumNode* new_fornum_node(char* name,AstNode* num1,AstNode* num2,AstNode* num3,List* body);
 EqualTypesNode* new_equal_types_node(char* name,AstNode* type,int relation,int scope);
 FunctionNode* new_function_node(AstNode* name,AstNode* type,List* args,List* body);
@@ -332,7 +332,7 @@ void dealloc_ast_node(AstNode* node);
 */
 #ifndef MOONSHOT_PARSING
 
-// implemented in scopes.c
+// Implemented in scopes.c
 void push_function_scope(FunctionNode* node);
 void register_interface(InterfaceNode* node);
 InterfaceNode* interface_exists(char* name);
@@ -358,7 +358,7 @@ void init_scopes();
 void push_scope();
 void pop_scope();
 
-// implemented in types.c
+// Implemented in types.c
 int add_type_equivalence(char* name,AstNode* type,int relation);
 int add_child_type(char* child,char* parent,int relation);
 void quell_expired_scope_equivalences(int scope);
@@ -375,7 +375,7 @@ void print_types_graph();
 void dealloc_types();
 void init_types();
 
-// implemented in entities.c
+// Implemented in entities.c
 FunctionNode* get_parent_method(ClassNode* clas,FunctionNode* method);
 int methods_equivalent(FunctionNode* f1,FunctionNode* f2);
 List* get_missing_class_methods(ClassNode* node);
@@ -385,7 +385,7 @@ List* get_all_expected_fields(AstNode* node);
 List* get_all_class_fields(ClassNode* data);
 int num_constructors(ClassNode* data);
 
-// implemented in traversal.c
+// Implemented in traversal.c
 void traverse(AstNode* node,int step);
 void dealloc_traverse();
 void init_traverse();
