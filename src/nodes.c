@@ -337,9 +337,10 @@ IfNode* new_if_node(AstNode* expr,AstNode* next,List* body){
   Creates an EqualTypesNode, which is used in the equivalent types graph
   These nodes help keep track of type relationships
 */
-EqualTypesNode* new_equal_types_node(char* name,AstNode* type,int relation){
+EqualTypesNode* new_equal_types_node(char* name,AstNode* type,int relation,int scope){
   EqualTypesNode* node=(EqualTypesNode*)malloc(sizeof(EqualTypesNode));
   node->relation=relation;
+  node->scope=scope;
   node->type=type;
   node->name=name;
   return node;

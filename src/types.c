@@ -17,10 +17,11 @@ void init_types(){
   Deallocate registers and equivalence graphs
 */
 void dealloc_types(){
-  for(int a=0;a<types_graph->n;a++){
+  assert(types_graph->n==0);
+  /*for(int a=0;a<types_graph->n;a++){
     EqualTypesNode* node=(EqualTypesNode*)get_from_list(types_graph,a);
     free(node);
-  }
+  }*/
   dealloc_list(types_graph);
   dealloc_list(promises);
 }
@@ -405,7 +406,8 @@ int add_type_equivalence(char* name,AstNode* type,int relation){
     free(r);
     if(cycle) return 0;
   }
-  add_to_list(types_graph,new_equal_types_node(name,type,relation));
+  assert(get_num_scopes()>0); // Ensure that there is a scope
+  add_to_list(types_graph,new_equal_types_node(name,type,relation,get_num_scopes()));
   return 1;
 }
 
@@ -428,6 +430,23 @@ List* get_equivalent_types(char* name){
 int types_equivalent(char* name,AstNode* type){
   if(type->type==AST_TYPE_BASIC && !strcmp(name,(char*)(type->data))) return 1;
   return path_exists(name,type);
+}
+
+/*
+  Cleans expired edges from the types equivalency graph
+  Expired means we have exited the scope that an equivalence was defined in
+*/
+void quell_expired_scope_equivalences(int scope){
+  int a=0;
+  while(a<types_graph->n){
+    EqualTypesNode* node=(EqualTypesNode*)get_from_list(types_graph,a);
+    assert(node->scope<=scope);
+    if(node->scope==scope){
+      remove_from_list(types_graph,a);
+    }else{
+      a++;
+    }
+  }
 }
 
 /*

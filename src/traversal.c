@@ -163,6 +163,7 @@ void process_node_list(List* ls){
 
     step=STEP_CHECK;
     for(int a=0;a<ls->n;a++) process_node((AstNode*)get_from_list(ls,a));
+    quell_expired_scope_equivalences(get_num_scopes());
   }
   if(step==STEP_OUTPUT){
     for(int a=0;a<ls->n;a++){

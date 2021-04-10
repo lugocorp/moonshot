@@ -16,7 +16,7 @@ make install
 
 ## Todo
 - [x] In the validation step, process type definitions first in a stmt, then check promises and then process all other nodes
-- [ ] Update the types equivalency graph as scoped types come and go
+- [x] Update the types equivalency graph as scoped types come and go
 - [ ] Give AST nodes a line number for better traversal stage error messages
 - [ ] Create a VSCode syntax highlighting plugin
 - [ ] Change file extension for source files

@@ -135,6 +135,7 @@ typedef struct{
   AstNode* type; // Type that the registered type is equivalent to
   int relation; // Type equivalence type (check enum Relations)
   char* name; // Name of the registered type
+  int scope; // The index of the scope where this equivalence was defined
 } EqualTypesNode;
 
 typedef struct{
@@ -307,9 +308,9 @@ AstNode* parse_do();
 
 // implemented in nodes.c
 FornumNode* new_fornum_node(char* name,AstNode* num1,AstNode* num2,AstNode* num3,List* body);
+EqualTypesNode* new_equal_types_node(char* name,AstNode* type,int relation,int scope);
 FunctionNode* new_function_node(AstNode* name,AstNode* type,List* args,List* body);
 ClassNode* new_class_node(char* name,char* parent,List* interfaces,List* ls);
-EqualTypesNode* new_equal_types_node(char* name,AstNode* type,int relation);
 InterfaceNode* new_interface_node(char* name,char* parent,List* ls);
 ForinNode* new_forin_node(AstNode* lhs,AstNode* tuple,List* body);
 StringAstNode* new_primitive_node(char* text,const char* type);
@@ -361,6 +362,7 @@ void pop_scope();
 // implemented in types.c
 int add_type_equivalence(char* name,AstNode* type,int relation);
 int add_child_type(char* child,char* parent,int relation);
+void quell_expired_scope_equivalences(int scope);
 int is_primitive(AstNode* node,const char* type);
 int types_equivalent(char* name,AstNode* type);
 int compound_type_exists(AstNode* node);
