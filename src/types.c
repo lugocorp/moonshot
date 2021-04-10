@@ -3,27 +3,22 @@
 #include <string.h>
 #include <assert.h>
 static List* types_graph; // List of EqualTypesNodes
-static List* promises; // List of promised types
 
 /*
   Initialize the data structures used in this module
 */
 void init_types(){
   types_graph=new_default_list();
-  promises=new_default_list();
 }
 
 /*
   Deallocate registers and equivalence graphs
 */
 void dealloc_types(){
+  // Quelling scoped type equivalences means there shouldn't be
+  // any equivalences left by the time we get here
   assert(types_graph->n==0);
-  /*for(int a=0;a<types_graph->n;a++){
-    EqualTypesNode* node=(EqualTypesNode*)get_from_list(types_graph,a);
-    free(node);
-  }*/
   dealloc_list(types_graph);
-  dealloc_list(promises);
 }
 
 /*
@@ -331,33 +326,6 @@ int compound_type_exists(AstNode* node){
     }
   }
   assert(0); // You should never get here
-}
-
-/*
-  Removes all promises about this type from the promises list
-  Call this when a type gets defined
-*/
-void uphold_promise(char* type){
-  int a=0;
-  while(a<promises->n){
-    char* t=(char*)get_from_list(promises,a);
-    if(!strcmp(t,type)){
-      remove_from_list(promises,a);
-    }else{
-      a++;
-    }
-  }
-}
-
-/*
-  Check if there are any promises left over
-  Throw errors if any referenced types remain undefined after compilation
-*/
-void check_broken_promises(){
-  for(int a=0;a<promises->n;a++){
-    char* type=(char*)get_from_list(promises,a);
-    add_error(-1,"reference to undefined type %s",type);
-  }
 }
 
 /*

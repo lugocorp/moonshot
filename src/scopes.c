@@ -250,7 +250,6 @@ void register_primitive(const char* name){
 void register_type(char* name){
   Scope* scope=get_scope();
   add_to_list(scope->types_registry,name);
-  uphold_promise(name);
 }
 
 /*

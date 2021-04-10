@@ -358,7 +358,6 @@ void init_scopes();
 void push_scope();
 void pop_scope();
 
-
 // implemented in types.c
 int add_type_equivalence(char* name,AstNode* type,int relation);
 int add_child_type(char* child,char* parent,int relation);
@@ -371,8 +370,6 @@ int typed_match(AstNode* l,AstNode* r);
 int is_variadic_function(List* args);
 char* stringify_type(AstNode* node);
 AstNode* get_type(AstNode* node);
-void uphold_promise(char* type);
-void check_broken_promises();
 char* base_type(char* name);
 void print_types_graph();
 void dealloc_types();

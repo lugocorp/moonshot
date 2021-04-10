@@ -344,7 +344,6 @@ int moonshot_compile(){
   // AST traversal
   init_traverse();
   traverse(root,STEP_CHECK);
-  check_broken_promises();
   if(!errors->n) traverse(root,STEP_OUTPUT);
   dealloc_traverse();
   dealloc_requires();
