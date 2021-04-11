@@ -1,5 +1,5 @@
 #include <stdio.h>
-#define VERSION "1.0.0"
+#define VERSION "0.9.0 (beta)"
 
 void moonshot_configure(FILE* input,FILE* output);
 void dummy_required_file(char* filename);

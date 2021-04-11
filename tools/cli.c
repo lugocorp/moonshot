@@ -27,7 +27,7 @@ static void help(){
 // Argument parsing
 static int check_args(FILE** output,char** source,int argc,char** argv,int a){
   if(!strcmp(argv[a],"--version")){
-    printf("Moonshot version %s\n",VERSION);
+    printf("Moonshot v%s\n",VERSION);
     return 2;
   }
   if(!strcmp(argv[a],"--help")){
