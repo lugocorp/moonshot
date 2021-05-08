@@ -1,12 +1,80 @@
 #!/bin/bash
 make moonshot
 [ "$?" == 1 ] && exit 1
+moontests=( $(ls testing/queries | grep -e "\.moon$") )
+luatests=( $(ls testing/queries | grep -e "\.lua$") )
+tmp="bin/vanilla.txt"
+tmp2="bin/moon.txt"
+src="bin/src.lua"
+successes=0
+failures=0
+echo ""
 
-tests=( $(ls testing/tests | grep -e "\.lua$") )
-for test in "${tests[@]}"; do
-  echo "Test: $test"
-  cat "testing/tests/$test" | ./moonshot --stdin --print | lua5.3 > bin/custom.txt
-  cat "testing/tests/$test" | lua5.3 > bin/vanilla.txt
-  diff bin/custom.txt bin/vanilla.txt
-  echo ""
+# Run Moon tests
+for test in "${moontests[@]}"; do
+  output="testing/outputs/${test/.moon/.txt}"
+  ./moonshot --print "testing/queries/$test" > $src
+  if [ "$?" == 0 ]; then
+    cat "$src" | lua5.3 > "$tmp2" 2>&1
+  else
+    cat "$src" > "$tmp2"
+  fi
+  diff "$tmp2" "$output" > /dev/null 2>&1
+  if [ $? == 0 ]; then
+    successes="$(expr $successes + 1)"
+  else
+    failures="$(expr $failures + 1)"
+    echo -e "\033[4m$failures) $test\033[0m"
+    echo -e "\033[1mExpected:\033[0m"
+    cat "$output"
+    echo ""
+    echo -e "\033[1mActual:\033[0m"
+    cat "$tmp2"
+    echo ""
+  fi
 done
+
+# Run Lua tests
+for test in "${luatests[@]}"; do
+  output="testing/outputs/${test/.lua/.txt}"
+  ./moonshot --print "testing/queries/$test" > $src
+  if [ "$?" == 0 ]; then
+    cat "$src" | lua5.3 > "$tmp2" 2>&1
+  else
+    cat "$src" > "$tmp2"
+  fi
+  diff "$tmp2" "$output" > /dev/null 2>&1
+  if [ $? == 0 ]; then
+    cat "testing/queries/$test" | lua5.3 > "$tmp" 2>&1
+    diff "$tmp" "$tmp2" > /dev/null 2>&1
+    if [ $? == 0 ]; then
+      successes="$(expr $successes + 1)"
+    else
+      failures="$(expr $failures + 1)"
+      echo -e "\033[4m$failures) $test\033[0m"
+      echo -e "\033[1mExpected:\033[0m"
+      cat "$tmp"
+      echo ""
+      echo -e "\033[1mActual:\033[0m"
+      cat "$tmp2"
+      echo ""
+    fi
+  else
+    failures="$(expr $failures + 1)"
+    echo -e "\033[4m$failures) $test\033[0m"
+    echo -e "\033[1mExpected:\033[0m"
+    cat "$output"
+    echo ""
+    echo -e "\033[1mActual:\033[0m"
+    cat "$tmp2"
+    echo ""
+  fi
+done
+
+# Print results
+echo -e "\033[4mResults\033[0m"
+echo -e "$(expr $successes + $failures) \033[1mtotal\033[0m"
+echo -e "$successes \033[1m\033[32msuccesses\033[0m"
+if [ "$failures" -gt "0" ]; then
+  echo -e "$failures \033[1m\033[31mfailures\033[0m"
+fi

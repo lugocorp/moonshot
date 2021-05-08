@@ -37,5 +37,11 @@ while false do
   break
 end
 
+a=true
 ::hello::
-goto hello
+print("Got to hello")
+if a then
+  a=false
+  goto hello
+end
+print("Goodbye lol")

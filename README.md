@@ -18,8 +18,6 @@ make install
 
 ## Todo
 - [ ] Give AST nodes a line number for better traversal stage error messages
-- [ ] Create a VSCode syntax highlighting plugin
-- [ ] Change file extension for source files
 
 ## Developers
 Moonshot was developed by [LugoCorp](http://lugocorp.net)

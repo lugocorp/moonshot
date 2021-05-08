@@ -1,6 +1,9 @@
 
 (string,string) hello(string a,...)
   string b=trust arg[1]
+  if b==nil then
+    b="b"
+  end
   return a.." x "..b,a
 end
 

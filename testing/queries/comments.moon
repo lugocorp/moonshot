@@ -1,5 +1,5 @@
-local lib=require "library"
-require "hello"
+--local lib=require "library"
+--[[require "hello"]]
 
 --[[""]]
 
