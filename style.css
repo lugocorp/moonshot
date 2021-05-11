@@ -126,7 +126,7 @@ a:hover {
 .lua {
   background-color: var(--white);
   position: relative;
-  padding: 10px 35px;
+  padding: 50px 35px;
 }
 
 @media only screen and (max-width: 1000px) {
@@ -200,7 +200,7 @@ a:hover {
   background: var(--white);
   padding-bottom: 50px;
   position: relative;
-  padding: 10px 35px;
+  padding: 50px 35px;
 }
 
 .get-started h1 {
