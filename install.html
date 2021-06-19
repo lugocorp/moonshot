@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="codemirror/lib/codemirror.css" />
+    <link rel="stylesheet" href="codemirror/theme/neo.css" />
+    <title>MoonShot - Install</title>
+  </head>
+  <body>
+    <div class="navigation">
+      <div class="left-side">
+        <img src="res/moonshot.svg" alt="MOONSHOT" width="60" height="60" />
+      </div>
+      <div class="center">
+        <a href="index.html">Home</a>
+        <a href="/">Reference</a>
+        <a href="#">Install</a>
+      </div>
+      <div class="right-side">
+        <div class="brand small-enabled">
+          <a href="https://github.com/lugocorp/moonshot">
+            <img src="res/github.svg" alt="GITHUB" width="75" height="75" />
+          </a>
+        </div>
+      </div>
+    </div>
+    <div class="splash small-enabled">
+      <h1>Install MoonShot</h1>
+    </div>
+    <div class="lua small-enabled">
+      <h1>How to install</h1>
+      <p>
+        Moonshot is supposed to be simple to install.
+        It has no external dependencies, so you'll only have to run the build script provided with the source code.
+      </p>
+      <p>
+        Step 1 to installing Moonshot is to download it.
+        You'll want to go to the <a href="https://github.com/lugocorp/moonshot">GitHub page</a> and download the repository.
+        Once you've cloned or downloaded the project, you can run the build script.
+      </p>
+      <p>
+        The Moonshot project uses a Makefile for the build system.
+        To build the project, simply run <i>make moonshot</i>.
+        If you'd like to install the command-line interface in your <i>$(HOME)/bin</i> folder, run <i>make install</i>.
+      </p>
+      <p>
+        Once this command has run successfully, you can use the <i>moonshot</i> command from the terminal.
+        If you find you can't use the command, you may need to add <i>$(HOME)/bin</i> to your <i>PATH</i> variable.
+      </p>
+    </div>
+    <div class="footer small-enabled">
+      <a class="links" href="/">Learn</a>
+      <a class="links" href="https://github.com/lugocorp/moonshot">GitHub</a>
+      <a class="links" href="#">Install</a>
+      <a class="links" href="license.html">License</a>
+    </div>
+  </body>
+</html>
